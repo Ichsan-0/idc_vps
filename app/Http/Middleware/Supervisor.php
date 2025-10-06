@@ -15,13 +15,23 @@ class Supervisor
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if ($request->user()->role != 'supervisor') {
-            if ($request->user()->role === 'user') {
-                return redirect('/');
-            } else {
-                return redirect('admin/dashboard');
-            }
+        $user = $request->user();
+
+
+        if ($user && $user->role === 'supervisor') {
+            return $next($request);
         }
+
+
+        return match ($user?->role) {
+            'user' => redirect('/'),
+            'opt-kecamatan' => redirect('/operator-kecamatan/data/camat-keuchik'),
+            'opt-sekolah' => redirect('/operator-sekolah/data/kepsek-pamong'),
+            'super_admin' => redirect('/admin/data/setting'),
+            'supervisor_kpm' => redirect('/supervisor/classroom/home'),
+            "admin" => redirect('/admin/dashboard'),
+        };
+
         return $next($request);
     }
 }

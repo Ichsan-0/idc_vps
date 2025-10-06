@@ -1,16 +1,18 @@
+import ButtomFooter from "@/Components/frontpage/ButtomFooter";
 import Header from "@/Components/SupervisorKPM/Classroom/Header/Header";
-import { usePage } from "@inertiajs/react";
+import { Head, usePage } from "@inertiajs/react";
 import React, { useState } from "react";
 
-const ClassroomLayout = ({ children }) => {
+const ClassroomLayout = ({ children, title, disableScroll=false }) => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const { url, component } = usePage();
     const { pathname, search } = new URL(url, window.location.origin);
 
     return (
-        <div className="dark:bg-boxdark-2 dark:text-bodydark font-satoshi bg-white">
+        <div className={`dark:bg-boxdark-2 dark:text-bodydark ${disableScroll ? "overflow-hidden" : ""}   font-satoshi bg-white`}>
+            <Head title={title}/>
             {/* <!-- ===== Page Wrapper Start ===== --> */}
-            <div className="flex h-screen overflow-hidden">
+            <div className="flex h-fit">
                 {/* <!-- ===== Sidebar Start ===== --> */}
                 {/* <Sidebar
                     sidebarOpen={sidebarOpen}
@@ -19,7 +21,7 @@ const ClassroomLayout = ({ children }) => {
                 {/* <!-- ===== Sidebar End ===== --> */}
 
                 {/* <!-- ===== Content Area Start ===== --> */}
-                <div className="relative flex flex-1 flex-col overflow-y-auto overflow-x-hidden">
+                <div className="relative flex-1 flex-col">
                     {/* <!-- ===== Header Start ===== --> */}
                     <Header
                         sidebarOpen={sidebarOpen}
@@ -29,11 +31,12 @@ const ClassroomLayout = ({ children }) => {
                     {/* <!-- ===== Header End ===== --> */}
 
                     {/* <!-- ===== Main Content Start ===== --> */}
-                    <main>
-                        <div className="mx-auto  p-4 md:p-6 2xl:p-10 justify-center flex">
+                    <main className="flex-1 ">
+                        <div className="justify-center w-full flex">
                             {children}
                         </div>
                     </main>
+                    {/* <ButtomFooter/> */}
                     {/* <!-- ===== Main Content End ===== --> */}
                 </div>
                 {/* <!-- ===== Content Area End ===== --> */}

@@ -17,6 +17,12 @@ import Footer from "@/Components/frontpage/Footer";
 import { kabupaten, kecamatan, desa } from "daftar-wilayah-indonesia";
 import axios from "axios";
 import { useInView } from "react-intersection-observer";
+import Navigation from "@/Components/Mahasiswa/Navigation";
+import ButtomFooter from "@/Components/frontpage/ButtomFooter";
+import LowonganList from "@/Components/Mahasiswa/LowonganPPL/LowonganList";
+import Search from "@/Components/Search";
+import { SettingsSystemDaydream } from "@mui/icons-material";
+import PaginationControls from "@/Components/Mahasiswa/LowonganKPM/PaginationControlls";
 function CustomTabPanel(props) {
     const { children, value, index, ...other } = props;
 
@@ -59,8 +65,12 @@ const PPL = ({ flash, tempat_ppl, auth }) => {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const [page, setPage] = useState(1);
-    const [searchKey, setSearchKey] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(null);
+
+    const [searchKey, setSearchKey] = useState(null);
+    const [searchInput, setSearchInput] = useState(null);
+
     const [dataLowongan, setDataLowongan] = useState([]);
     const [rawData, setRawData] = useState([]);
     const [filters, setFilters] = useState({
@@ -85,13 +95,18 @@ const PPL = ({ flash, tempat_ppl, auth }) => {
         setError(null);
 
         axios
-            .get(`/api/lowonganppl`, {
-                params: { page, ...filters_a },
+            .get(`/api/user/ppl/vacancies`, {
+                params: { 
+                    page: currentPage, 
+                    nim:auth?.user?.username,
+                    search : searchKey || ""
+                 },
             })
             .then((response) => {
                 const { data } = response;
-                setDataLowongan((prev) => [...prev, ...data.data]);
+                setDataLowongan(data.data);
                 setRawData(data);
+                setTotalPages(data?.last_page);
             })
             .catch((err) => {
                 setError(err.response?.data?.message || "An error occurred");
@@ -103,18 +118,22 @@ const PPL = ({ flash, tempat_ppl, auth }) => {
 
     useEffect(() => {
         fetchData();
-    }, [page]);
+    }, [currentPage, searchKey]);
 
-    // useEffect(() => {
-    //     if (inView && rawData.current_page < rawData.last_page) {
-    //         setPage((prev) => prev + 1);
-    //     }
-    // }, [inView]);
     const handleCloseNotify = (event, reason) => {
         if (reason === "clickaway") {
             return;
         }
         setNotify(false);
+    };
+
+    const handleSearchChange = (e) => {
+        setSearchInput(e.target.value);
+        setTimeout(()=>{
+            setSearchKey(e.target.value);
+            setCurrentPage(1);
+
+        },2500);
     };
 
     return (
@@ -145,178 +164,30 @@ const PPL = ({ flash, tempat_ppl, auth }) => {
                 <div className="flex justify-center items-center w-full mt-4 flex-col">
                     <div className="h-5"></div>
 
-                    <section className="bg-white w-full rounded-md px-4 pt-3 max-w-5xl">
+                    <section className="bg-white w-full rounded-xl ring-gray-200 px-4 pt-3 max-w-5xl">
                         <div className="py-5">
                             <p className="text-neutral-600 font-bold text-lg">
                                 Pilihan Tempat PPL
                             </p>
                             <div className="flex flex-col w-full gap-y-3">
-                                <div class="max-w-md ">
-                                    <label
-                                        for="default-search"
-                                        class="mb-2 text-sm font-medium text-gray-900 sr-only dark:text-white"
-                                    >
-                                        Search
-                                    </label>
-                                    <div class="relative">
-                                        <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-                                            <svg
-                                                class="w-4 h-4 text-gray-500 dark:text-gray-400"
-                                                aria-hidden="true"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                fill="none"
-                                                viewBox="0 0 20 20"
-                                            >
-                                                <path
-                                                    stroke="currentColor"
-                                                    stroke-linecap="round"
-                                                    stroke-linejoin="round"
-                                                    stroke-width="2"
-                                                    d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
-                                                />
-                                            </svg>
-                                        </div>
-                                        <input
-                                            className="block w-full p-4 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                            placeholder="Cari Sekolah"
-                                            onChange={(e) => {
-                                                setSearchKey(e.target.value);
-                                            }}
-                                        />
-                                        <button
-                                            class="text-white absolute end-2.5 bottom-2.5 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-                                            onClick={() => {
-                                                setDataLowongan([]);
-                                                const fl = {
-                                                    ...filters,
-                                                    search: searchKey,
-                                                };
-                                                fetchData(fl);
-                                            }}
-                                        >
-                                            Search
-                                        </button>
-                                    </div>
-                                </div>
+                                <Search
+                                    value={searchInput}
+                                    onChange={handleSearchChange}
+                                />
+                                <LowonganList
+                                    data={dataLowongan}
+                                    loading={loading}
+                                />
                             </div>
-                            <div className="mt-6 flex flex-col gap-y-3">
-                                {dataLowongan.map((ppl, index) => {
-                                    let locationDetails = "null";
-
-                                    if (
-                                        ppl.sekolah.regency !== null &&
-                                        ppl.sekolah.sub_district !== null &&
-                                        ppl.sekolah.village !== null
-                                    ) {
-                                        const kab =
-                                            kabupaten("11").find(
-                                                (itm) =>
-                                                    itm.kode ===
-                                                    ppl.sekolah.regency
-                                            )?.nama || "Unknown Regency";
-                                        const kec =
-                                            kecamatan(ppl.sekolah.regency).find(
-                                                (itm) =>
-                                                    itm.kode ===
-                                                    ppl.sekolah.sub_district
-                                            )?.nama || "Unknown Sub-district";
-                                        const des =
-                                            desa(ppl.sekolah.sub_district).find(
-                                                (itm) =>
-                                                    itm.kode ===
-                                                    ppl.sekolah.village
-                                            )?.nama || "Unknown Village";
-
-                                        locationDetails = `${kab}, ${kec}, ${des}`;
-                                    }
-
-                                    return (
-                                        <div
-                                            key={`${ppl.id} - ${index}`}
-                                            className="flex w-full bg-white ring-1 ring-gray-400 rounded-md py-5 px-3 shadow-md"
-                                        >
-                                            <div className="flex w-full justify-between items-end">
-                                                <div className="flex w-full flex-col">
-                                                    <p className="font-bold">
-                                                        {ppl?.name}
-                                                    </p>
-                                                    <div className="flex flex-row gap-x-2 items-center">
-                                                        <FaBuilding />
-
-                                                        <span>
-                                                            {ppl?.sekolah?.name}
-                                                        </span>
-                                                    </div>
-                                                    <p className="text-gray-500">
-                                                        {locationDetails}
-                                                    </p>
-                                                    <div>
-                                                        <p className="flex px-2 py-1 w-fit  rounded-md bg-tertiary/30 text-tertiary ">
-                                                            Kuota{" "}
-                                                            <span className="font-bold  ml-2">
-                                                                {ppl?.quota}
-                                                            </span>
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <div>
-                                                    <Button
-                                                        size="small"
-                                                        disableElevation
-                                                        variant="contained"
-                                                        onClick={(e) => {
-                                                            e.preventDefault();
-
-                                                            router.visit(
-                                                                `/lowonganppl/detail/${ppl.id}`
-                                                            );
-                                                        }}
-                                                        sx={{
-                                                            color: "white",
-                                                            textTransform:
-                                                                "capitalize",
-                                                        }}
-                                                    >
-                                                        Lihat
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                            <div></div>
-                                        </div>
-                                    );
-                                })}
-                                <div className="flex w-full justify-center">
-                                    {loading && <CircularProgress />}
-                                </div>
-                            </div>
-                            <div className="flex w-full justify-center">
-                                <Button
-                                    variant="contained"
-                                    disableElevation
-                                    disabled={loading}
-                                    sx={{
-                                        textTransform: "capitalize",
-                                        color: "white",
-                                    }}
-                                    onClick={() => {
-                                        if (
-                                            rawData.current_page <
-                                            rawData.last_page
-                                        ) {
-                                            setPage((prev) => prev + 1);
-                                        }
-                                    }}
-                                >
-                                    Muat Lebih Banyak
-                                </Button>
-                            </div>
+                            <PaginationControls currentPage={currentPage} totalPages={totalPages} onChange={setCurrentPage}/>
                         </div>
                     </section>
 
-                    <div className="h-72 w-0"></div>
                 </div>
             </main>
-            <Footer currentTab={1} />
+            <ButtomFooter />
+
+            <Navigation />
         </ThemeProvider>
     );
 };

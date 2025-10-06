@@ -8,6 +8,7 @@ import { Head, router } from "@inertiajs/react";
 import Header from "@/Components/frontpage/Header";
 import Footer from "@/Components/frontpage/Footer";
 import { kabupaten, kecamatan, desa } from "daftar-wilayah-indonesia";
+import Navigation from "@/Components/Mahasiswa/Navigation";
 
 const StyledTabs = styled((props) => (
     <Tabs
@@ -472,7 +473,7 @@ const RiwayatLamaran = ({ flash, lamaran_kpm, lamaran_ppl }) => {
                     <div className="h-72 w-0"></div>
                 </div>
             </main>
-            <Footer currentTab={2} />
+            <Navigation/>
         </ThemeProvider>
     );
 };

@@ -41,41 +41,114 @@ class ClassroomController extends Controller
         ]);
     }
 
+    // public function queryNilai(Request $request)
+    // {
+    //     $search = $request->search; // Ambil keyword pencarian
+    //     $idGelombang = $request->id_gelombang;
+
+    //     // Buat query utama dengan ROW_NUMBER()
+    //     $query = DB::table(DB::raw('( 
+    //             SELECT 
+    //                 ROW_NUMBER() OVER (ORDER BY t_kpm.name) AS number, 
+    //                 lamaran_kpm_tbl.username_mahasiswa, 
+    //                 us.name AS nama_mahasiswa, 
+    //                 t_kpm.name AS nama_tempat_kpm,
+    //                 (SELECT name FROM users WHERE users.username = t_kpm.username_supervisor) as nama_supervisor 
+    //             FROM lamaran_kpm_tbl
+    //             JOIN users AS us ON lamaran_kpm_tbl.username_mahasiswa = us.username
+    //             JOIN tempat_kpm_tbl AS t_kpm ON lamaran_kpm_tbl.id_tempat_kpm = t_kpm.id
+    //             WHERE lamaran_kpm_tbl.status = "accepted" AND tempat_kpm_tbl.id_gelombang = "$idGelombang"
+    //         ) as numbered_data'));
+
+    //     if (!empty($search)) {
+    //         $query->where(function ($q) use ($search) {
+    //             $q->where('numbered_data.username_mahasiswa', 'LIKE', "%$search%")
+    //                 ->orWhere('numbered_data.nama_mahasiswa', 'LIKE', "%$search%")
+    //                 ->orWhere('numbered_data.nama_tempat_kpm', 'LIKE', "%$search%");
+    //         });
+    //     }
+
+    //     $mahasiswaPaginated = $query->paginate(10);
+
+    //     $data = $mahasiswaPaginated->items();
+
+    //     $taskHeaders = DB::table('task')
+    //         ->select('id as id_tugas', 'name as nama_tugas')
+    //         ->orderBy('created_at', 'asc')
+    //         ->get();
+
+    //     foreach ($data as &$mahasiswa) {
+    //         $username = $mahasiswa->username_mahasiswa;
+
+    //         $tasks = DB::table('task as t')
+    //             ->leftJoin('task_submission as ts', function ($join) use ($username) {
+    //                 $join->on('t.id', '=', 'ts.id_tugas')
+    //                     ->where('ts.username_mahasiswa', '=', $username);
+    //             })
+    //             ->select(
+    //                 't.id as id_tugas',
+    //                 't.name as nama_tugas',
+    //                 DB::raw('COALESCE(ts.score, 0) as score')
+    //             )
+    //             ->orderBy('t.created_at', 'asc')
+    //             ->get();
+
+    //         $mahasiswa->tasks = $tasks;
+    //     }
+
+
+    //     return response()->json([
+    //         'current_page' => $mahasiswaPaginated->currentPage(),
+    //         'headers' => $taskHeaders,
+    //         'data' => $data,
+    //         'last_page' => $mahasiswaPaginated->lastPage(),
+    //         'next_page_url' => $mahasiswaPaginated->nextPageUrl(),
+    //         'prev_page_url' => $mahasiswaPaginated->previousPageUrl(),
+    //         'total' => $mahasiswaPaginated->total(),
+    //         'to' => min($mahasiswaPaginated->currentPage() * 10, $mahasiswaPaginated->total()),
+
+    //     ]);
+    // }
+
     public function queryNilai(Request $request)
     {
-        $search = $request->search; // Ambil keyword pencarian
+        $search = $request->search;
+        $idGelombang = $request->gelombang;
 
-        // Buat query utama dengan ROW_NUMBER()
-        $query = DB::table(DB::raw('( 
-                SELECT 
-                    ROW_NUMBER() OVER (ORDER BY t_kpm.name) AS number, 
-                    lamaran_kpm_tbl.username_mahasiswa, 
-                    us.name AS nama_mahasiswa, 
-                    t_kpm.name AS nama_tempat_kpm,
-                    (SELECT name FROM users WHERE users.username = t_kpm.username_supervisor) as nama_supervisor 
-                FROM lamaran_kpm_tbl
-                JOIN users AS us ON lamaran_kpm_tbl.username_mahasiswa = us.username
-                JOIN tempat_kpm_tbl AS t_kpm ON lamaran_kpm_tbl.id_tempat_kpm = t_kpm.id
-                WHERE lamaran_kpm_tbl.status = "accepted"
-            ) as numbered_data'));
+        // Query utama dengan join dan numbering
+        $query = DB::table('lamaran_kpm_tbl')
+            ->join('users as us', 'lamaran_kpm_tbl.username_mahasiswa', '=', 'us.username')
+            ->join('tempat_kpm_tbl as t_kpm', 'lamaran_kpm_tbl.id_tempat_kpm', '=', 't_kpm.id')
+            ->select(
+                DB::raw('ROW_NUMBER() OVER (ORDER BY t_kpm.name) as number'),
+                'lamaran_kpm_tbl.username_mahasiswa',
+                'us.name as nama_mahasiswa',
+                't_kpm.name as nama_tempat_kpm',
+                DB::raw('(SELECT name FROM users WHERE users.username = t_kpm.username_supervisor) as nama_supervisor')
+            )
+            ->where('lamaran_kpm_tbl.status', 'accepted')
+            ->where('t_kpm.id_gelombang', $idGelombang);
 
+        // Filter pencarian
         if (!empty($search)) {
             $query->where(function ($q) use ($search) {
-                $q->where('numbered_data.username_mahasiswa', 'LIKE', "%$search%")
-                    ->orWhere('numbered_data.nama_mahasiswa', 'LIKE', "%$search%")
-                    ->orWhere('numbered_data.nama_tempat_kpm', 'LIKE', "%$search%");
+                $q->where('lamaran_kpm_tbl.username_mahasiswa', 'LIKE', "%$search%")
+                    ->orWhere('us.name', 'LIKE', "%$search%")
+                    ->orWhere('t_kpm.name', 'LIKE', "%$search%");
             });
         }
 
+        // Pagination
         $mahasiswaPaginated = $query->paginate(10);
-
         $data = $mahasiswaPaginated->items();
 
+        // Header daftar tugas
         $taskHeaders = DB::table('task')
             ->select('id as id_tugas', 'name as nama_tugas')
             ->orderBy('created_at', 'asc')
             ->get();
 
+        // Tambahkan nilai setiap mahasiswa
         foreach ($data as &$mahasiswa) {
             $username = $mahasiswa->username_mahasiswa;
 
@@ -84,17 +157,18 @@ class ClassroomController extends Controller
                     $join->on('t.id', '=', 'ts.id_tugas')
                         ->where('ts.username_mahasiswa', '=', $username);
                 })
+                ->leftJoin("tempat_kpm_tbl as t_kpm", 'ts.id_kelas', 't_kpm.id')
                 ->select(
                     't.id as id_tugas',
                     't.name as nama_tugas',
                     DB::raw('COALESCE(ts.score, 0) as score')
                 )
+                ->where('t_kpm.id_gelombang', $idGelombang)
                 ->orderBy('t.created_at', 'asc')
                 ->get();
 
             $mahasiswa->tasks = $tasks;
         }
-
 
         return response()->json([
             'current_page' => $mahasiswaPaginated->currentPage(),
@@ -105,9 +179,9 @@ class ClassroomController extends Controller
             'prev_page_url' => $mahasiswaPaginated->previousPageUrl(),
             'total' => $mahasiswaPaginated->total(),
             'to' => min($mahasiswaPaginated->currentPage() * 10, $mahasiswaPaginated->total()),
-
         ]);
     }
+
     public function nilaiPPL()
     {
         return Inertia::render('Admin/pages/ClassroomKPM/Tugas/ListNilaiMahasiswaPPL', [
@@ -115,12 +189,13 @@ class ClassroomController extends Controller
         ]);
     }
 
-    public function exportNilaiKPM()
+    public function exportNilaiKPM(Request $request)
     {
+        $idGelombang = $request->gelombang;
 
+        // return response()->json($idGelombang);
 
-
-        return Excel::download(new NilaiKPMExport, 'nilai kpm.xlsx');;
+        return Excel::download(new NilaiKPMExport($idGelombang), 'nilai kpm.xlsx');
     }
 
     public function exportStudentsScorePPL()

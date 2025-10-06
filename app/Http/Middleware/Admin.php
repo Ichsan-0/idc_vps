@@ -16,16 +16,14 @@ class Admin
             return $next($request);
         }
 
-        if ($request->expectsJson()) {
-            return response()->json(['message' => 'Unauthorized.'], 403);
-        }
 
         return match ($user?->role) {
             'user' => redirect('/'),
             'opt-kecamatan' => redirect('/operator-kecamatan/data/camat-keuchik'),
             'opt-sekolah' => redirect('/operator-sekolah/data/kepsek-pamong'),
+            'super_admin' => redirect('/admin/data/setting'),
             'supervisor_kpm' => redirect('/supervisor/classroom/home'),
-            default => redirect('/supervisor/dashboard'),
+            "supervisor" => redirect('/supervisor/dashboard'),
         };
     }
 }

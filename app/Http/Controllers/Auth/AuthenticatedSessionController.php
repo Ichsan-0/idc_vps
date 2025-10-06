@@ -34,8 +34,8 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        $token = $request->user()->createToken('auth_token')->plainTextToken;
-        session(['access_token' => $token]);
+        // $token = $request->user()->createToken('auth_token')->plainTextToken;
+        // session(['access_token' => $token]);
 
         if ($request->user()->role != 'user') {
             if ($request->user()->role === 'admin') {
@@ -44,17 +44,17 @@ class AuthenticatedSessionController extends Controller
                 return redirect('/operator-sekolah/data/kepsek-pamong');
             } else if ($request->user()->role === 'opt-kecamatan') {
                 return redirect('/operator-kecamatan/data/camat-keuchik');
-            } else if ($request->user()->role = 'supervisor_kpm') {
+            } else if ($request->user()->role === 'supervisor_kpm') {
                 return redirect('/supervisor/classroom/home');
             } else if ($request->user()->role === 'super_admin'){
                 return redirect('/superadmin/data/setting');
-            }else {
+            }else if($request->user()-> role === 'supervisor') {
                 return redirect('supervisor/dashboard');
             }
         }
 
 
-        return redirect()->intended(route('frontpage'));
+        return redirect()->intended(route('profil'));
     }
 
     /**

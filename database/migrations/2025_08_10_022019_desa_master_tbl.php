@@ -11,9 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('gelombang_tbl', function (Blueprint $table) {
+        Schema::create('master_desa_tbl', function (Blueprint $table) {
+            $table->id();
             $table->string('name');
-            
+            $table->text('description');
+            $table->string('regency')->nullable();
+            $table->string('sub_district')->nullable();
+            $table->string('village')->nullable();
+
+            $table->timestamps();
         });
     }
 
@@ -22,8 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('mahasiswa_tbl', function(Blueprint $table){
-            $table->dropColumn('name');
-        });
+        Schema::dropIfExists('master_desa_tbl');
     }
 };

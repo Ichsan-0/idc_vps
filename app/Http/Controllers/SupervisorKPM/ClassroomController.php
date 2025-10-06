@@ -4,6 +4,7 @@ namespace App\Http\Controllers\SupervisorKPM;
 
 use App\Http\Controllers\Controller;
 use App\Models\Comment;
+use App\Models\Gelombang;
 use App\Models\Sekolah;
 use App\Models\Task;
 use App\Models\TempatKPM;
@@ -21,12 +22,16 @@ class ClassroomController extends Controller
     public function index()
     {
 
-        $kelas = TempatKPM::where('username_supervisor', Auth::user()->username)->get();
+        $kelas = TempatKPM::where('tempat_kpm_tbl.username_supervisor', Auth::user()->username)
+            ->with(['gelombang'])
+            ->orderBy('tempat_kpm_tbl.id_gelombang', 'DESC')
+            ->get();
+        $latestGelombang = Gelombang::latest()->first();
         $kelas_ppl = Sekolah::where('username_supervisor', Auth::user()->username)->get();
 
         return Inertia::render(
             'SupervisorKPM/Classroom/Home',
-            ['kelas' => $kelas, 'kelas_ppl' => $kelas_ppl]
+            ['kelas' => $kelas, 'kelas_ppl' => $kelas_ppl, 'latestGelombang' => $latestGelombang]
         );
     }
 
@@ -41,6 +46,7 @@ class ClassroomController extends Controller
                 ->where('id_kelas', $request->id_kelas)
                 ->where('id_tugas', $request->id_tugas)
                 ->where('receiver', $request->username_mahasiswa)
+                ->where('comment.tipe', 'private')
                 ->select(
                     'us.name as sender_name',
                     'comment.message',
@@ -53,12 +59,14 @@ class ClassroomController extends Controller
                 ->where('id_kelas', $request->id_kelas)
                 ->where('id_tugas', $request->id_tugas)
                 ->where('created_by', $request->username_mahasiswa)
+                ->where('comment.tipe', 'private')
                 ->select(
                     'us.name as sender_name',
                     'comment.message',
                     'comment.id as id_comment',
                     'comment.created_at'
                 );
+
 
             $comments = collect($supervisor->union($mahasiswa)->get())->sortBy('created_at')->values();
 

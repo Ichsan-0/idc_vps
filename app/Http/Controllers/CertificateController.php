@@ -47,7 +47,7 @@ class CertificateController extends Controller
 
                 $data_certificate_setting->base_number = $kode->kode;
 
-                $data_mahasiswa = DB::table('nilai_ppkpm_view')
+                $data_mahasiswa = DB::table('nilai_ppkpm_view_2')
                     ->where('nim', $request->nim)
                     ->first();
                 $data = array_merge((array)$data_mahasiswa, (array)$data_certificate_setting);
@@ -119,7 +119,7 @@ class CertificateController extends Controller
 
     public function getAllNilai(Request $request)
     {
-        $query = DB::table('nilai_ppkpm_view');
+        $query = DB::table('nilai_ppkpm_view_2');
         if ($request->has('search_key') && !empty($request->search_key)) {
             $query->where(function ($subQuery) use ($request) {
                 $subQuery->where('nilai_ppkpm_view.nim', 'like', '%' . $request->search_key . '%')

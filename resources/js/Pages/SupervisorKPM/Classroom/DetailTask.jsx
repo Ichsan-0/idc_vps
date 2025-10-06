@@ -152,8 +152,8 @@ const DetailTask = ({ base_url, data, auth }) => {
                     <ThreeDot color="#4F61E3" size="medium" />
                 </div>
             )}
-            <div className="flex w-full max-w-screen-lg flex-col gap-3">
-                <div className="w-full ">
+            <div className="flex min-h-screen h-fit w-full border p-5 rounded-3xl max-w-screen-lg flex-col gap-3">
+                <div className="w-full">
                     <div className="py-4">
                         <Breadcrumbs>
                             <Link
@@ -165,7 +165,7 @@ const DetailTask = ({ base_url, data, auth }) => {
                             <Typography>Detail</Typography>
                         </Breadcrumbs>
                     </div>
-                    <div className="bg-white flex justify-start ">
+                    <div className="bg-white  flex justify-start ">
                         <div
                             className={`w-fit h-fit border-primary/0 border-b-2 hover:border-primary ${
                                 pathname.includes("task") && "!border-primary"
@@ -199,7 +199,7 @@ const DetailTask = ({ base_url, data, auth }) => {
                 </div>
 
                 <div className="flex w-full">
-                    <div className="w-full  rounded-lg p-3 flex gap-x-8 bg-white ">
+                    <div className="w-full  rounded-lg p-3 flex gap-x-8  bg-white ">
                         <div className="bg-[#129eaf] w-fit h-fit p-3 rounded-full">
                             <svg
                                 focusable="false"
@@ -257,6 +257,11 @@ const DetailTask = ({ base_url, data, auth }) => {
                                                 ></img>
                                             </div>
                                         )}
+                                        {/* {Array.from({length : 20}, (_, i)) => (
+                                            
+
+                                        )} */}
+                                        
                                     </ul>
                                     <div className="flex gap-x-1">
                                         <TextField
@@ -291,6 +296,7 @@ const DetailTask = ({ base_url, data, auth }) => {
                         </div>
                     </div>
                 </div>
+                <div className="h-10"></div>
             </div>
         </ClassroomLayout>
     );

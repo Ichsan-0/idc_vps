@@ -7,13 +7,16 @@ use App\Http\Controllers\Admin\AlokasiPPL;
 use App\Http\Controllers\Admin\CamatKeuchikController;
 use App\Http\Controllers\Admin\ClassroomController as AdminClassroomController;
 use App\Http\Controllers\Admin\ClassroomPPLController;
+use App\Http\Controllers\Admin\DesaMasterController;
 use App\Http\Controllers\Admin\KepsekkPamongController;
+use App\Http\Controllers\Admin\KPMAlocation;
 use App\Http\Controllers\Admin\LowonganPPLController;
 use App\Http\Controllers\Admin\MahasiswaKPMController;
 use App\Http\Controllers\Admin\MahasiswaPPKPMController;
 use App\Http\Controllers\Admin\MahasiswaPPLContoller;
 use App\Http\Controllers\Admin\MahsiswaController;
 use App\Http\Controllers\Admin\ProdiController;
+use App\Http\Controllers\Admin\SekolahController;
 use App\Http\Controllers\Admin\SupervisorController as AdminSupervisorController;
 use App\Http\Controllers\Admin\SupervisorKPMController;
 use App\Http\Controllers\Admin\TempatKPM;
@@ -43,7 +46,7 @@ use App\Models\LowonganPPL as ModelsLowonganPPL;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
-
+use Maatwebsite\Excel\Row;
 
 Route::middleware(['auth', 'opt-sekolah'])->group(function () {
     Route::get('/operator-sekolah/dashboard', [OpratorSekolahController::class, 'index']);
@@ -59,10 +62,7 @@ Route::middleware(['auth', 'opt-kecamatan'])->group(function () {
     Route::get('/operator-kecamatan/data/camat-keuchik/add', [OperatorKecamatanController::class, 'camat_keuchik_add']);
     Route::get('/operator-kecamatan/data/camat-keuchik/detail/{id}', [OperatorKecamatanController::class, 'camat_keuchik_detail']);
 });
-// Route::middleware([])->group(function () {
-//     Route::get('/mahasiswa/classroom/1/task', [HomeController::class, 'index']);
-//     Route::get('/mahasiswa/classroom/1/task/1/detail', [TaskController::class, 'detail']);
-// });
+
 
 Route::middleware(['auth', 'supervisor-kpm'])->group(function () {
     Route::get('/supervisor/classroom/home', [ClassroomController::class, 'index']);
@@ -77,6 +77,25 @@ Route::middleware(['auth', 'supervisor-kpm'])->group(function () {
 });
 
 Route::middleware(['auth', 'admin'])->group(function () {
+    Route::prefix('admin')->group(function () {
+        Route::prefix('data')->group(function () {
+            Route::get('master-sekolah', [SekolahController::class, 'listSekolah']);
+            Route::get('master-sekolah/{id}', [SekolahController::class, 'viewSekolah']);
+
+            Route::get('master-desa', [DesaMasterController::class, 'index']);
+            Route::get('master-desa/{id}', [DesaMasterController::class, 'detail']);
+
+
+
+        });
+
+        Route::prefix('kpm')->group(function(){
+            Route::get('tempatkpm', [TempatKPM::class, 'home']);
+            Route::get('tempatkpm/detail', [TempatKPM::class, 'viewTempatKPM']);
+            Route::get('kpm-alocations', [KPMAlocation::class, 'index']);
+
+        });
+    });
     Route::get('/admin/dashboard', [DashboardController::class, 'index'])->name("admin.dashboard");
     Route::get('/admin/data/camat-keuchik', [CamatKeuchikController::class, 'list']);
     Route::get('/admin/data/kepsek-pamong', [KepsekkPamongController::class, 'list']);
@@ -131,9 +150,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::delete('/admin/tempatppl/delete/{id}', [TempatPPLController::class, 'delete'])->name('admin.tempatppl.delete');
 
     Route::get('/admin/ppl/ppl-alocation', [AlokasiPPL::class, 'list']);
-    
 
-    
+
+
 
     Route::get('/admin/lowonganppl/add', [LowonganPPLController::class, 'add'])->name('admin.lowonganppl.add');
     Route::post('/admin/lowonganppl/save', [LowonganPPLController::class, 'save'])->name('admin.lowonganppl.save');
@@ -207,17 +226,20 @@ Route::middleware(['auth', 'admin'])->group(function () {
 });
 
 Route::middleware(['auth', 'user'])->group(function () {
-    Route::get('/', [HomeControler::class, 'index'])->name("frontpage")->middleware(['profil', 'open_kpm']);
+    // Route::get('/', [HomeControler::class, 'index'])->name("frontpage")->middleware(['profil', 'open_kpm']);
+    Route::get('/kpm-vacancies', [HomeControler::class, 'index'])->name("frontpage")->middleware(['profil', 'open_kpm']);
+    Route::get('/ppl-vacancies', [LowonganPPL::class, 'all'])->name('lownganppl')->middleware(['profil', 'open_ppl']);
+
     Route::get('/classroom', [StudentClassroomController::class, 'home']);
 
-    Route::get('/lowongankpm/detail/{id}', [LowonganKPM::class, 'index'])->name("lowongankpm.detail")->middleware(['profil']);
+    Route::get('/kpm-vacancies/detail/{id}', [LowonganKPM::class, 'index'])->name("lowongankpm.detail")->middleware(['profil']);
     Route::post('/lowongankpm/lamar', [LowonganKPM::class, 'lamar'])->name('lowongankpm.lamar')->middleware(['profil']);
-    Route::get('/riwayat', [RiwayatLamaran::class, 'index'])->name('riwayat')->middleware(['profil']);
+    Route::get('/my-proposal', [RiwayatLamaran::class, 'index'])->name('riwayat')->middleware(['profil']);
     Route::get('/lowonganppl', [LowonganPPL::class, 'all'])->name('lownganppl')->middleware(['profil', 'open_ppl']);
-    Route::get('/lowonganppl/detail/{id}', [LowonganPPL::class, 'detail'])->name('lownganppl.detail')->middleware(['profil']);
+    Route::get('/ppl-vacancies/detail/{id}', [LowonganPPL::class, 'detail'])->name('lownganppl.detail')->middleware(['profil']);
     Route::post('/lowonganppl/lamar', [LowonganPPL::class, 'lamar'])->name('lownganppl.lamar')->middleware(['profil']);
     Route::get('/profil', [MahasiswaProfilController::class, 'index'])->name("profil");
-    Route::get('/nilai', [NilaiController::class, 'index'])->name("nilai")->middleware(['profil']);
+    Route::get('/grade', [NilaiController::class, 'index'])->name("nilai")->middleware(['profil']);
     Route::post('/profil/save', [MahasiswaProfilController::class, 'save'])->name('profil.save')->middleware(['save_profil']);
 
     Route::get('/student/classroom/{id}/task', [StudentClassroomController::class, 'tasks']);
@@ -226,8 +248,6 @@ Route::middleware(['auth', 'user'])->group(function () {
 
     Route::get('/student/classroom-ppl/tasks', [MahasiswaClassroomPPLController::class, 'tasks']);
     Route::get('/student/classroom-ppl/tasks/{id_task}', [MahasiswaClassroomPPLController::class, 'detailTask']);
-    
-
 });
 
 
@@ -236,7 +256,7 @@ Route::middleware(['auth', 'user'])->group(function () {
 // })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::get('/pw', [testcontroller::class, 'index'])->name('index');
-Route::get('/certificate', function(){
+Route::get('/certificate', function () {
     return view('certificate');
 });
 
@@ -250,4 +270,3 @@ Route::middleware('auth')->group(function () {
 
 require __DIR__ . '/auth.php';
 require __DIR__ . '/super_admin.php';
-

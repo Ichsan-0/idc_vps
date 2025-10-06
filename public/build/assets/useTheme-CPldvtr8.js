@@ -1,0 +1,1 @@
+import{r as n}from"./app-Cc-Am69f.js";import{D as o,E as r}from"./ButtonBase-BNURvvVc.js";function f(e){return e&&e.ownerDocument||document}function u(e){return Object.keys(e).length===0}function s(e=null){const t=n.useContext(o);return!t||u(t)?e:t}const m=r();function h(e=m){return s(e)}export{s as a,f as o,h as u};

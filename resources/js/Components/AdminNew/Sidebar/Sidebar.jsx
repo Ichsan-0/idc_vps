@@ -63,7 +63,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
     return (
         <aside
             ref={sidebar}
-            className={`absolute left-0 top-0 z-999 flex h-screen w-72.5 flex-col overflow-y-hidden bg-black duration-300 ease-linear dark:bg-boxdark lg:static lg:translate-x-0 ${
+            className={`absolute left-0 top-0 z-[150] flex h-screen w-72.5 flex-col overflow-y-hidden bg-black duration-300 ease-linear dark:bg-boxdark lg:static lg:translate-x-0 ${
                 sidebarOpen ? "translate-x-0" : "-translate-x-full"
             }`}
         >
@@ -356,6 +356,36 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                                                             Pamong & Kepsek
                                                         </NavLink>
                                                     </li>
+                                                    <li>
+                                                        <NavLink
+                                                            href="/admin/data/master-sekolah"
+                                                            className={`group relative flex items-center gap-2.5 rounded-md px-4 font-medium duration-300 ease-in-out hover:text-white ${
+                                                                (pathname ===
+                                                                    "/admin/data/master-sekolah" ||
+                                                                    pathname.includes(
+                                                                        "master-sekolah"
+                                                                    )) &&
+                                                                "!text-white"
+                                                            }`}
+                                                        >
+                                                            Master Sekolah
+                                                        </NavLink>
+                                                    </li>
+                                                    <li>
+                                                        <NavLink
+                                                            href="/admin/data/master-desa"
+                                                            className={`group relative flex items-center gap-2.5 rounded-md px-4 font-medium duration-300 ease-in-out hover:text-white ${
+                                                                (pathname ===
+                                                                    "/admin/data/master-desa" ||
+                                                                    pathname.includes(
+                                                                        "master-desa"
+                                                                    )) &&
+                                                                "!text-white"
+                                                            }`}
+                                                        >
+                                                            Master Desa
+                                                        </NavLink>
+                                                    </li>
                                                 </ul>
                                             </div>
                                             {/* <!-- Dropdown Menu End --> */}
@@ -377,9 +407,9 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                                                 to="#"
                                                 className={`group relative flex items-center gap-2.5 rounded-sm px-4 py-2 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
                                                     (pathname ===
-                                                        "/admin/tempatkpm" ||
+                                                        "/admin/kpm" ||
                                                         pathname.includes(
-                                                            "tempatkpm"
+                                                            "/admin/kpm"
                                                         )) &&
                                                     "bg-graydark dark:bg-meta-4"
                                                 }`}
@@ -445,10 +475,10 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                                                 <ul className="mt-4 mb-5.5 flex flex-col gap-2.5 pl-6">
                                                     <li>
                                                         <NavLink
-                                                            href="/admin/tempatkpm"
+                                                            href="/admin/kpm/tempatkpm"
                                                             className={`group relative flex items-center gap-2.5 rounded-md px-4 font-medium duration-300 ease-in-out hover:text-white ${
                                                                 (pathname ===
-                                                                    "/admin/tempatkpm" ||
+                                                                    "/admin/kpm/tempatkpm" ||
                                                                     pathname.includes(
                                                                         "tempatkpm"
                                                                     )) &&
@@ -458,7 +488,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                                                             Tempat KPM
                                                         </NavLink>
                                                     </li>
-                                                    <li>
+                                                    {/* <li>
                                                         <NavLink
                                                             href="/admin/tempatkpm/pelamar/list"
                                                             className={`group relative flex items-center gap-2.5 rounded-md px-4 font-medium duration-300 ease-in-out hover:text-white ${
@@ -472,7 +502,23 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                                                         >
                                                             List Pelamar
                                                         </NavLink>
+                                                    </li> */}
+                                                    <li>
+                                                        <NavLink
+                                                            href="/admin/kpm/kpm-alocations"
+                                                            className={`group relative flex items-center gap-2.5 rounded-md px-4 font-medium duration-300 ease-in-out hover:text-white ${
+                                                                (pathname ===
+                                                                    "/admin/kpm/kpm-alocations" ||
+                                                                    pathname.includes(
+                                                                        "kpm-alocations"
+                                                                    )) &&
+                                                                "!text-white"
+                                                            }`}
+                                                        >
+                                                            Alokasi KPM
+                                                        </NavLink>
                                                     </li>
+
                                                 </ul>
                                             </div>
                                             {/* <!-- Dropdown Menu End --> */}

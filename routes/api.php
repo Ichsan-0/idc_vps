@@ -5,9 +5,13 @@ use App\Http\Controllers\Admin\AdminSekolahController;
 use App\Http\Controllers\Admin\CamatKeuchikController;
 use App\Http\Controllers\Admin\ClassroomController as AdminClassroomController;
 use App\Http\Controllers\Admin\ClassroomPPLController;
+use App\Http\Controllers\Admin\DesaMasterController;
 use App\Http\Controllers\Admin\KepsekkPamongController;
+use App\Http\Controllers\Admin\KPMAlocation;
 use App\Http\Controllers\Admin\LowonganPPLController;
+use App\Http\Controllers\Admin\PplAlocationController;
 use App\Http\Controllers\Admin\ProdiController;
+use App\Http\Controllers\Admin\SekolahController;
 use App\Http\Controllers\LowonganKPMApiController;
 use App\Http\Controllers\LowonganKPMController;
 use App\Http\Controllers\LowonganPPLApiController;
@@ -22,14 +26,22 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Admin\SupervisorController;
 use App\Http\Controllers\Admin\SupervisorKPMController;
+use App\Http\Controllers\Admin\TempatKPM;
+use App\Http\Controllers\Admin\TempatPPLController;
 use App\Http\Controllers\CertificateController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\LamaranKPMController;
 use App\Http\Controllers\Mahasiswa\ClassroomPPLController as MahasiswaClassroomPPLController;
 use App\Http\Controllers\Mahasiswa\NilaiController;
+use App\Http\Controllers\MahasiswaKPM;
 use App\Http\Controllers\SchoolCertificateController;
 use App\Http\Controllers\SuperAdmin\GelombangController;
+use App\Http\Controllers\SuperAdmin\ImportDataController;
 use App\Http\Controllers\SuperAdmin\SuperAdminController;
 use App\Http\Controllers\SupervisorKPM\ClassroomController;
 use App\Http\Controllers\SupervisorKPM\SupervisorSubmissionController;
+use App\Http\Middleware\PendaftaranPPL;
+use App\Models\LamaranKPM;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -45,10 +57,90 @@ Route::middleware(['auth:sanctum', 'super_admin_api'])
             Route::get('gelombang', [GelombangController::class, 'all']);
             Route::post('gelombang', [GelombangController::class, 'create']);
             Route::delete('gelombang/{id}', [GelombangController::class, 'delete']);
+
+            Route::post('import/mahasiswa', [ImportDataController::class, 'importMahasiswa']);
+            Route::post('import/supervisor', [ImportDataController::class, 'importSupervisor']);
+
         });
     });
 
 
+Route::middleware(['auth:sanctum', 'user_api'])
+    ->prefix('user')
+    ->group(function(){
+        Route::prefix('ppl')->group(function(){
+            Route::get('vacancies', [LowonganPPLApiController::class, 'index']);
+            Route::get('vacancies', [LowonganPPLApiController::class, 'getVacancies']);
+
+        });
+
+    });
+
+Route::middleware(['auth:sanctum', 'admin_api'])
+    ->prefix('admin')
+    ->group(function () {
+        Route::prefix('ppl')->group(function () {
+            Route::get('alocation', [PplAlocationController::class, 'getDataAlocation']);
+            Route::post('lowongan/bulk', [PplAlocationController::class, 'bulkGenerateLowongan']);
+            Route::delete('lowongan/bulk', [PplAlocationController::class, 'bulkDeleteLowongan']);
+            Route::patch('lowongan/bulk', [PplAlocationController::class, 'bulkSave']);
+
+            
+        });
+        Route::prefix('dashboard')->group(function(){
+            Route::get('data', [DashboardController::class, 'getData']);
+
+        });
+        Route::prefix('data')->group(function(){
+            Route::get('master-sekolah', [SekolahController::class, 'getSekolahData']);
+            Route::post('master-sekolah', [SekolahController::class, 'createSekolah']);
+            Route::delete('master-sekolah/{id}', [SekolahController::class, 'deleteSekolah']);
+            Route::get('master-sekolah/{id}', [SekolahController::class, 'getData']);
+            Route::patch('master-sekolah/{id}', [SekolahController::class, 'updateData']);
+
+
+            Route::get('master-desa', [DesaMasterController::class, 'getDataDesa']);
+            Route::post('master-desa', [DesaMasterController::class, 'createDesa']);
+            Route::delete('master-desa/{id}', [DesaMasterController::class, 'deleteDesa']);
+            Route::get('master-desa/{id}', [DesaMasterController::class, 'getDataById']);
+            Route::patch('master-desa/{id}', [DesaMasterController::class, 'updateDataById']);
+        });
+
+        Route::prefix('kpm')->group(function(){
+            Route::get('tempatkpm', [TempatKPM::class, 'getData']);
+            Route::get('alocations', [KPMAlocation::class, 'getDataAlocation']);
+            Route::patch('/lowongan/bulk', [KPMAlocation::class, 'saveBulk']);
+            Route::post('lowongan/bulk', [KPMAlocation::class, 'bulkGenerateLowongan']);
+            Route::delete('lowongan/bulk', [KPMAlocation::class, 'bulkDeleteLowongan']);
+            Route::delete('lowongan/{id}', [KPMAlocation::class, 'deleteLowongan']);
+            Route::get('desa', [TempatKPM::class, 'getDataDesa']);
+            Route::get('supervisor', [TempatKPM::class, 'getSupervisor']);
+            Route::post('/lowongan', [KPMAlocation::class, 'createLowongan']);
+            Route::patch('/lowongan', [KPMAlocation::class, 'updateLowongan']);
+
+            
+
+
+            
+
+        });
+    });
+Route::middleware(['auth:sanctum', 'role:admin'])
+    ->group(function(){
+        Route::get('/tempatkpm/mahasiswa', [MahasiswaKPM::class, 'getMahasiswa']);
+        Route::get('/tempatkpm/{id}', [TempatKPM::class, 'getDataById']);
+        Route::get('/admin/student', [TempatKPM::class, 'getAllStudents']);
+        Route::get('/tempatkpm', [TempatKPM::class, 'getAllTempatKPM']);
+        Route::post('/kpm/lamaran', [LamaranKPMController::class, 'create']);
+        Route::get('/kpm/lamaran', [LamaranKPMController::class, 'getById']);
+        Route::delete('/kpm/lamaran', [LamaranKPMController::class, 'delete']);
+        Route::patch('/kpm/lamaran', [LamaranKPMController::class, 'update']);
+
+    });
+
+
+
+Route::get('/gelombang', [GelombangController::class, 'getGelombangData']);
 
 Route::get('/lowonganppl', [LowonganPPLApiController::class, 'index']);
 Route::get('/lowongankpm', [LowonganKPMApiController::class, 'index']);

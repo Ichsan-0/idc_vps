@@ -1,12 +1,14 @@
 import Header from "@/Components/AdminNew/Header/Header";
 import Sidebar from "@/Components/AdminNew/Sidebar/Sidebar";
+import { Head } from "@inertiajs/react";
 import React, { useState } from "react";
 
-const AdminLayout = ({ children }) => {
+const AdminLayout = ({ children, title="IDC" }) => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
     return (
         <div className="dark:bg-boxdark-2 dark:text-bodydark font-satoshi">
+            <Head title={title}/>
             {/* <!-- ===== Page Wrapper Start ===== --> */}
             <div className="flex h-screen overflow-hidden">
                 {/* <!-- ===== Sidebar Start ===== --> */}

@@ -13,7 +13,9 @@ class GelombangController extends Controller
 {
     public function list()
     {
-        return Inertia::render('SuperAdmin/settings/Setting');
+
+        
+        return Inertia::render('SuperAdmin/settings/Setting', ['DATA'=>'HALOOWOEIROAUWIER']);
     }
 
     public function create(Request $request)
@@ -95,5 +97,22 @@ class GelombangController extends Controller
             'message' => 'Data gelombang berhasil dihapus',
             'id' => $id
         ], 200);
+    }
+
+    public function getGelombangData(){
+        try{
+            $data = Gelombang::select('id', 'name', 'tahun')->get();
+
+            return response()->json([
+                'data' => $data,
+                'message' => 'Successfully get all data',
+            ]);
+
+        }catch(Exception $e){
+            return response()->json([
+                'message' => 'Internal server error',
+                'error' => $e->getMessage()
+            ], $e->getCode() || 500);
+        }
     }
 }

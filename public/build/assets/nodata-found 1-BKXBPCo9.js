@@ -1,0 +1,1 @@
+import{j as o}from"./app-Cc-Am69f.js";import{c as n}from"./ButtonBase-BNURvvVc.js";const a=n(o.jsx("path",{d:"M2.01 21 23 12 2.01 3 2 10l15 2-15 2z"}),"SendSharp"),r="/build/assets/nodata-found%201-B9ICLTSP.png";export{a as S,r as n};

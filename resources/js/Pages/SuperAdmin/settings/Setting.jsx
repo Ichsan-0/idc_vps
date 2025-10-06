@@ -3,7 +3,7 @@ import SuperAdminLayout from "../../../Layouts/SuperAdmin/SuperAdminLayout";
 import GelombangTable from "@/Components/SuperAdmin/Tables/GelombangTable";
 import PageBreadcrumb from "@/Components/PageBreadcrumb";
 
-const Setting = () => {
+const Setting = ({DATA}) => {
     return (
         <SuperAdminLayout>
             <div className="flex flex-col">

@@ -3,18 +3,48 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Middleware\User;
+use App\Models\DesaMaster;
+use App\Models\Gelombang;
 use App\Models\LamaranKPM;
 use App\Models\LamaranPPL;
 use App\Models\TempatKPM as ModelsTempatKPM;
 use App\Models\User as ModelsUser;
+use Error;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use Termwind\Components\Raw;
+
+use function PHPUnit\Framework\isEmpty;
 
 class TempatKPM extends Controller
 {
+    public function getAllTempatKPM(){
+
+        $gelombangData = Gelombang::latest()->first();
+        
+        
+        $data = ModelsTempatKPM::where('id_gelombang', $gelombangData->id)->get();
+        return response()->json(['data'=>$data]);
+    }
+
+    public function getAllStudents(Request $request)
+    {
+        $query = ModelsUser::query();
+        $data = [];
+
+        $search = $request->search;
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('users.name', 'like', "%$search%")
+                ->orWhere('users.username', 'like', "%$search%");
+            })->where('users.role', 'user');
+            $data = $query->get();
+        }
+
+        return response()->json(['data' => $data]);
+    }
     public function list_pelamar()
     {
         // $pelamar = DB::raw('SELECT * FROM users');
@@ -190,5 +220,179 @@ class TempatKPM extends Controller
         $tempat = ModelsTempatKPM::find($id);
         $tempat->delete();
         return redirect()->back();
+    }
+
+    public function home()
+    {
+        return Inertia::render('Admin/pages/KPM/TempatKPM/ListTempatKPM');
+    }
+
+    public function getData(Request $request)
+    {
+
+
+        $query = ModelsTempatKPM::query();
+        $search = $request->query('search');
+        $sortBy = $request->query('sortBy', 'created_at');
+        $sortOrder = $request->query('sortOrder', 'desc');
+        $perPage = $request->query('perPage', 10);
+        $idGelombang = $request->query('idGelombang');
+        $data = [];
+
+
+        try {
+            $query
+                ->select(
+                    'tempat_kpm_tbl.id',
+                    'dt.name',
+                    'dt.regency',
+                    'dt.sub_district',
+                    'dt.village',
+                    'username_supervisor',
+                    'tempat_kpm_tbl.qouta',
+                    'tempat_kpm_tbl.quota_lk',
+                    'tempat_kpm_tbl.quota_pr',
+                    DB::raw('COUNT(lkt.username_mahasiswa) as total'),
+                    DB::raw("SUM(CASE WHEN mtb.jk = 'Pria' THEN 1 ELSE 0 END) as total_male"),
+                    DB::raw("SUM(CASE WHEN mtb.jk = 'Wanita' THEN 1 ELSE 0 END) as total_female")
+
+                )
+                ->join('master_desa_tbl as dt', 'tempat_kpm_tbl.id_desa', '=', 'dt.id')
+                ->join('gelombang_tbl as gt', 'tempat_kpm_tbl.id_gelombang', '=', 'gt.id')
+                ->leftjoin('lamaran_kpm_tbl as lkt', 'tempat_kpm_tbl.id', '=', 'lkt.id_tempat_kpm')
+                ->leftjoin('mahasiswa_tbl as mtb', 'lkt.username_mahasiswa', '=', 'mtb.nim')
+                ->where(function ($q) {
+                    $q->where('lkt.status', 'accepted')
+                        ->orWhereNull('lkt.status');
+                })
+                ->groupBy('tempat_kpm_tbl.id');
+
+
+            if ($idGelombang) {
+                $query->where('tempat_kpm_tbl.id_gelombang', $idGelombang);
+            }
+            if (in_array($sortBy, ['name']) && in_array($sortOrder, ['ASC', 'DESC'])) {
+                $query->orderBy($sortBy, $sortOrder);
+            }
+            if ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('dt.name', 'like', "%$search%");
+                    // ->orWhere('tahun', 'like', "%$search%");
+                });
+            }
+
+            // $sql = $query->toSql();
+            // $bindings = $query->getBindings();
+
+            // return response()->json([
+            //     'message' => 'Debugging SQL',
+            //     'sql' => $sql,
+            //     'bindings' => $bindings,
+            //     'gelombang' => $idGelombang
+            // ]);
+
+            $data = $query->paginate($perPage);
+
+
+
+            return response()->json([
+                'message' => 'Successfully get all data',
+                'data' => $data,
+                'gelombang' => $idGelombang
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'Failed when getting data',
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    public function viewTempatKPM(Request $request)
+    {
+        $query = $request->query('x');
+        // dd($query);
+        return Inertia::render('Admin/pages/KPM/TempatKPM/ViewTempatKPM', ['id' => $query]);
+    }
+
+    public function getDataById($id)
+    {
+        try {
+            $data = ModelsTempatKPM::select(
+                    'tempat_kpm_tbl.id',
+                    'md.name as nama_desa',
+                    'md.id as id_desa',
+                    'md.regency',
+                    'md.sub_district',
+                    'md.village',
+                    'tempat_kpm_tbl.username_supervisor',
+                    'tempat_kpm_tbl.qouta',
+                    'tempat_kpm_tbl.quota_lk',
+                    'tempat_kpm_tbl.quota_pr',
+                    'tempat_kpm_tbl.id_gelombang',
+                    'us.name as nama_supervisor',
+                    DB::raw("(select SUM(total.jumlah) as jumlah from (SELECT mt.jk AS jenis_kelamin, COUNT(*) AS jumlah FROM lamaran_kpm_tbl lkt JOIN mahasiswa_tbl mt on lkt.username_mahasiswa  = mt.nim WHERE lkt.id_tempat_kpm = 71 and lkt.status = 'accepted' GROUP BY mt.jk) as total) as terisi"),
+                    DB::raw("(select SUM(total.jumlah) as jumlah from (SELECT mt.jk AS jenis_kelamin, COUNT(*) AS jumlah FROM lamaran_kpm_tbl lkt JOIN mahasiswa_tbl mt on lkt.username_mahasiswa  = mt.nim WHERE lkt.id_tempat_kpm = 71 and lkt.status = 'accepted' and mt.jk = 'Pria' GROUP BY mt.jk) as total) as jumlah_pria"),
+                    DB::raw("(select SUM(total.jumlah) as jumlah from (SELECT mt.jk AS jenis_kelamin, COUNT(*) AS jumlah FROM lamaran_kpm_tbl lkt JOIN mahasiswa_tbl mt on lkt.username_mahasiswa  = mt.nim WHERE lkt.id_tempat_kpm = 71 and lkt.status = 'accepted' and mt.jk = 'Wanita' GROUP BY mt.jk) as total) as jumlah_wanita")
+                )
+                ->join('master_desa_tbl as md', 'tempat_kpm_tbl.id_desa', '=', 'md.id')
+                ->leftjoin('users as us', 'tempat_kpm_tbl.username_supervisor', '=', 'us.username')
+                ->where('tempat_kpm_tbl.id', $id)
+                ->first();
+
+            if (!$data) return throw new Error('Not Found', 404);
+
+            return response()->json(['data' => $data]);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+                'error' => 'Internal server error'
+            ]);
+        }
+    }
+
+    public function getDataDesa(Request $request)
+    {
+        $search = $request->input('search');
+        try {
+
+            $data = DesaMaster::select(
+                'id',
+                'name'
+            );
+
+            if ($search) {
+                $data->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%$search%");
+                });
+            }
+
+            $data = $data->get();
+
+
+            return response()->json([
+                'data' => $data
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'error' => 'Internal Server Error',
+                'message' => $e->getMessage()
+            ], $e->getCode());
+        }
+    }
+
+    public function getSupervisor(Request $request)
+    {
+        $search = $request->input('search');
+        try {
+            $data = ModelsUser::where('role', 'supervisor_kpm')->get();
+
+            return response()->json($data);
+        } catch (Exception $e) {
+            return response()->json([
+                'error' => 'Internal Server Error',
+                'message' => $e->getMessage()
+            ], $e->getCode());
+        }
     }
 }

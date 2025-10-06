@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use PhpParser\Node\Expr\FuncCall;
 
 class TempatKPM extends Model
 {
@@ -18,8 +19,13 @@ class TempatKPM extends Model
         'regency',
         'sub_district',
         'village',
-        'username_supervisor'
+        'username_supervisor',
+        'id_desa',
+        'quota_lk',
+        'quota_pr',
+        'id_gelombang'
     ];
+    
 
 
 
@@ -31,5 +37,10 @@ class TempatKPM extends Model
     public function pelamar()
     {
         return $this->hasMany(LamaranKPM::class, 'id_tempat_kpm')->where('status', 'accepted');
+    }
+
+    public function gelombang()
+    {
+        return $this->belongsTo(Gelombang::class, 'id_gelombang', 'id');
     }
 }

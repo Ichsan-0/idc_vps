@@ -4,7 +4,7 @@ import { BiTask } from "react-icons/bi";
 import { Head, router } from "@inertiajs/react";
 import HomeClassroomLayout from "@/Layouts/SupervisorKPM/Classroom/HomeClassroomLayout";
 
-const Home = ({ kelas, kelas_ppl }) => {
+const Home = ({ kelas, kelas_ppl, latestGelombang }) => {
     return (
         <HomeClassroomLayout>
             <Head title="Classroom" />
@@ -12,7 +12,7 @@ const Home = ({ kelas, kelas_ppl }) => {
                 {kelas.map((item) => (
                     <div
                         key={item.id}
-                        className="flex flex-col bg-white border rounded-lg w-70 cursor-pointer hover:bg-primary/5"
+                        className={`flex flex-col bg-white  ${item.id_gelombang == latestGelombang.id ? 'opacity-100 ' : 'opacity-60 line-through'} border rounded-lg w-70 cursor-pointer hover:bg-primary/5`}
                         onClick={(e) =>
                             router.visit(
                                 `/supervisor-kpm/classroom/${item.id}/task`
@@ -31,7 +31,7 @@ const Home = ({ kelas, kelas_ppl }) => {
                                     {item.name}
                                 </li>
                                 <li className="text-sm">
-                                    PPKPM Ganjil 2025/2026
+                                    {item?.gelombang?.name}
                                 </li>
                             </ul>
                         </div>

@@ -40,7 +40,7 @@ const DynamicModal = ({
     : "relative w-full rounded-3xl bg-white dark:bg-gray-900";
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center overflow-y-auto z-[99999]">
+    <div className="fixed inset-0 flex items-center justify-center overflow-y-auto z-[500]">
       {!isFullscreen && (
         <div
           className="fixed inset-0 bg-gray-400/50 backdrop-blur-[32px]"

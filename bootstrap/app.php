@@ -1,17 +1,20 @@
 <?php
 
 use App\Http\Middleware\Admin;
+use App\Http\Middleware\AdminAPIMiddleware;
 use App\Http\Middleware\LengkapiProfil;
 use App\Http\Middleware\OptKecamatan;
 use App\Http\Middleware\OptSekolah;
 use App\Http\Middleware\PendaftaranKPM;
 use App\Http\Middleware\PendaftaranPPL;
 use App\Http\Middleware\Profil;
+use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\SuperAdmin;
 use App\Http\Middleware\SuperAdminApi;
 use App\Http\Middleware\Supervisor;
 use App\Http\Middleware\SupervisorKPM;
 use App\Http\Middleware\User;
+use App\Http\Middleware\UserApi;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -42,7 +45,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'open_ppl' => PendaftaranPPL::class,
             'save_profil' => LengkapiProfil::class,
             'super_admin' => SuperAdmin::class,
-            'super_admin_api' => SuperAdminApi::class 
+            'super_admin_api' => SuperAdminApi::class,
+            'admin_api' => AdminAPIMiddleware::class,
+            'user_api' => UserApi::class,
+            'role' => RoleMiddleware::class
+
 
 
 

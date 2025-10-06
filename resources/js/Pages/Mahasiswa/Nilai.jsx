@@ -7,6 +7,8 @@ import Header from "@/Components/frontpage/Header";
 import Footer from "@/Components/frontpage/Footer";
 import { ThreeDot } from "react-loading-indicators";
 import { data } from "autoprefixer";
+import Navigation from "@/Components/Mahasiswa/Navigation";
+import ButtomFooter from "@/Components/frontpage/ButtomFooter";
 
 const theme = createTheme({
     palette: {
@@ -311,7 +313,9 @@ const Nilai = ({ access_token, auth }) => {
                     <div className="h-72 w-0"></div>
                 </div>
             </main>
-            <Footer currentTab={3} />
+            <ButtomFooter/>
+
+            <Navigation/>
         </ThemeProvider>
     );
 };

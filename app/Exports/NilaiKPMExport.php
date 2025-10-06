@@ -10,23 +10,32 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 
 class NilaiKPMExport implements FromCollection, WithHeadings
 {
+
+    protected $idGelombang;
+
+    public function __construct($idGelombang)
+    {
+        $this->idGelombang = $idGelombang;
+        
+    }
+
     public function collection()
     {
 
         $tasks = Task::orderBy('created_at', 'asc')->get();
 
-        $query = DB::table(DB::raw('( 
-            SELECT 
-                ROW_NUMBER() OVER (ORDER BY t_kpm.name) AS number, 
-                lamaran_kpm_tbl.username_mahasiswa, 
-                us.name AS nama_mahasiswa, 
-                t_kpm.name AS nama_tempat_kpm,
-                (SELECT name FROM users WHERE users.username = t_kpm.username_supervisor) as nama_supervisor 
-            FROM lamaran_kpm_tbl
-            JOIN users AS us ON lamaran_kpm_tbl.username_mahasiswa = us.username
-            JOIN tempat_kpm_tbl AS t_kpm ON lamaran_kpm_tbl.id_tempat_kpm = t_kpm.id
-            WHERE lamaran_kpm_tbl.status = "accepted"
-        ) as numbered_data'));
+        $query = DB::table('lamaran_kpm_tbl')
+            ->join('users as us', 'lamaran_kpm_tbl.username_mahasiswa', '=', 'us.username')
+            ->join('tempat_kpm_tbl as t_kpm', 'lamaran_kpm_tbl.id_tempat_kpm', '=', 't_kpm.id')
+            ->select(
+                DB::raw('ROW_NUMBER() OVER (ORDER BY t_kpm.name) as number'),
+                'lamaran_kpm_tbl.username_mahasiswa',
+                'us.name as nama_mahasiswa',
+                't_kpm.name as nama_tempat_kpm',
+                DB::raw('(SELECT name FROM users WHERE users.username = t_kpm.username_supervisor) as nama_supervisor')
+            )
+            ->where('lamaran_kpm_tbl.status', 'accepted')
+            ->where('t_kpm.id_gelombang', $this->idGelombang);
 
         $students = $query->get();
 
@@ -44,11 +53,13 @@ class NilaiKPMExport implements FromCollection, WithHeadings
                     $join->on('t.id', '=', 'ts.id_tugas')
                         ->where('ts.username_mahasiswa', '=', $username);
                 })
+                ->leftjoin("tempat_kpm_tbl as t_kpm", "ts.id_kelas", 't_kpm.id')
                 ->select(
                     't.id as id_tugas',
                     't.name as nama_tugas',
                     DB::raw('COALESCE(ts.score, 0) as score')
                 )
+                ->where("t_kpm.id_gelombang", $this->idGelombang)
                 ->orderBy('t.created_at', 'asc')
                 ->get();
 

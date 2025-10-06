@@ -24,7 +24,7 @@ class User
                 return redirect('/operator-sekolah/data/kepsek-pamong');
             } else if ($request->user()->role = 'supervisor_kpm') {
                 return redirect('/supervisor/classroom/home');
-            } else {
+            } else if($request->user()->role() === 'supervisor'){
                 return redirect('supervisor/dashboard');
             }
         }

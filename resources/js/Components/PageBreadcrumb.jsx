@@ -2,7 +2,7 @@ import { Link } from "@inertiajs/react";
 
 
 
-const PageBreadcrumb = ({ pageTitle }) => {
+const PageBreadcrumb = ({ pageTitle, home }) => {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
       <h2
@@ -16,7 +16,7 @@ const PageBreadcrumb = ({ pageTitle }) => {
           <li>
             <Link
               className="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400"
-              href="/superadmin/data/setting"
+              href={home}
             >
               Home
               <svg

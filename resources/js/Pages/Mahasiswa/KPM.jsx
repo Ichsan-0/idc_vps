@@ -1,47 +1,21 @@
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
     Alert,
     Snackbar,
-    Autocomplete,
     Box,
-    Button,
-    TextField,
-    CircularProgress,
+    ThemeProvider,
+    createTheme,
     LinearProgress,
 } from "@mui/material";
-import PropTypes from "prop-types";
-
-import { styled, ThemeProvider, createTheme } from "@mui/material/styles";
-import React, { useEffect, useState } from "react";
-import { Head, router, useForm, usePage } from "@inertiajs/react";
-import Header from "@/Components/frontpage/Header";
-import Footer from "@/Components/frontpage/Footer";
-import { provinsi, kabupaten, kecamatan, desa } from "daftar-wilayah-indonesia";
-import { useInView } from "react-intersection-observer";
+import { Head } from "@inertiajs/react";
 import axios from "axios";
-
-function CustomTabPanel(props) {
-    const { children, value, index, ...other } = props;
-
-    return (
-        <div
-            role="tabpanel"
-            hidden={value !== index}
-            id={`simple-tabpanel-${index}`}
-            aria-labelledby={`simple-tab-${index}`}
-            {...other}
-        >
-            {value === index && (
-                <Box sx={{ p: 3, bgcolor: "#fcfcfc" }}>{children}</Box>
-            )}
-        </div>
-    );
-}
-
-CustomTabPanel.propTypes = {
-    children: PropTypes.node,
-    index: PropTypes.number.isRequired,
-    value: PropTypes.number.isRequired,
-};
+import Header from "@/Components/frontpage/Header";
+import { kabupaten, kecamatan, desa } from "daftar-wilayah-indonesia";
+import LowonganList from "@/Components/Mahasiswa/LowonganKPM/LowonganList";
+import PaginationControls from "@/Components/Mahasiswa/LowonganKPM/PaginationControlls";
+import FilterWilayah from "@/Components/Mahasiswa/LowonganKPM/FilterWilayah";
+import ButtomFooter from "@/Components/frontpage/ButtomFooter";
+import Navigation from "@/Components/Mahasiswa/Navigation";
 
 const theme = createTheme({
     palette: {
@@ -54,363 +28,139 @@ const theme = createTheme({
     },
 });
 
-const Profil = ({ flash, tempat_kpm }) => {
-    const { ref, inView, entry } = useInView({});
+export default function KPM({ flash }) {
     const [notify, setNotify] = useState(!!flash.message);
     const [notifyStatus, setNotifyStatus] = useState("default");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [dataLowongan, setDataLowongan] = useState([]);
     const [rawData, setRawData] = useState([]);
-    const [page, setPage] = useState(1);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(null);
     const [filters, setFilters] = useState({
         regency: "",
         sub_district: "",
         village: "",
     });
 
+    const [regency, setRegency] = useState(null);
+    const [subDistrict, setSubDistrict] = useState(null);
+    const [village, setVillage] = useState(null);
+    const listOfRegencies = useMemo(() => kabupaten("11"), []);
+    const [listOfSubdistricts, setListOfSubdistricts] = useState([]);
+    const [listOfVillages, setListOfVillages] = useState([]);
+
     useEffect(() => {
-        if (flash.message !== null) {
-            console.log("notify=> ", notify);
-            if (flash.message.success) {
-                setNotifyStatus("success");
-            } else {
-                setNotifyStatus("error");
-            }
+        if (flash.message) {
+            setNotifyStatus(flash.message.success ? "success" : "error");
+            setNotify(true);
         }
-        setNotify(true);
     }, [flash.message]);
-    const fetchData = async () => {
+
+    const fetchData = async (filterParams = filters, page = currentPage) => {
         setLoading(true);
         setError(null);
-
-        axios
-            .get(`/api/lowongankpm`, {
-                params: { page, ...filters },
-            })
-            .then((response) => {
-                const { data } = response;
-                setDataLowongan((prev) => [...prev, ...data.data]);
-                setRawData(data);
-            })
-            .catch((err) => {
-                setError(err.response?.data?.message || "An error occurred");
-            })
-            .finally(() => {
-                setLoading(false);
+        try {
+            const response = await axios.get("/api/lowongankpm", {
+                params: { page, ...filterParams },
             });
+            const { data } = response;
+            setDataLowongan(data.data);
+            setRawData(data);
+            setTotalPages(data?.last_page ?? 0);
+        } catch (err) {
+            setError(err.response?.data?.message || "An error occurred");
+        } finally {
+            setLoading(false);
+        }
     };
 
     useEffect(() => {
         fetchData();
-        console.log(filters);
-    }, [page]);
+    }, [currentPage]);
 
-    const handleCloseNotify = (event, reason) => {
-        if (reason === "clickaway") {
-            return;
-        }
-        setNotify(false);
-    };
-    const [regency, setRegency] = useState();
-    const [subDistrict, setSubDistrict] = useState();
-    const [village, setVillage] = useState();
-
-    const listOfRegencies = kabupaten("11");
-    const [listOfSubdistricts, setListOfSubdistricts] = useState([]);
-    const [listOfVillages, setListOfVillages] = useState([]);
-
-    const handleRegencyChange = (e, value) => {
-        setListOfSubdistricts(kecamatan(value.kode));
-        console.log(value.kode);
-
-        setRegency(value);
-    };
-
-    const handleSubDisctrictChange = (e, value) => {
-        setListOfVillages(desa(value.kode));
-        setSubDistrict(value);
-    };
-
-    const handleVillageChange = (e, value) => {
-        setVillage(value);
-    };
-    useEffect(() => {
-        setFilters({
+    const handleFilter = () => {
+        const newFilters = {
             regency: regency?.kode,
             sub_district: subDistrict?.kode,
-            village: village,
-        });
-    }, [regency, subDistrict, village]);
+            village: village?.kode,
+        };
+        console.log(newFilters);
+        setFilters(newFilters);
+        setCurrentPage(1);
+        fetchData(newFilters, 1);
+    };
+
+    const getLocationDetails = useCallback((kpm) => {
+        const kab = kabupaten("11").find((i) => i.kode === kpm.regency)?.nama;
+        const kec = kecamatan(kpm.regency).find((i) => i.kode === kpm.sub_district)?.nama;
+        const des = desa(kpm.sub_district).find((i) => i.kode === kpm.village)?.nama;
+        return `${kab}, ${kec}, ${des}`;
+    }, []);
+
 
     return (
         <ThemeProvider theme={theme}>
             <Head title="Lowongan KPM" />
             <Header />
-            {flash.message && (
-                <Snackbar
-                    open={notify}
-                    anchorOrigin={{
-                        vertical: "top",
-                        horizontal: "right",
-                    }}
-                    autoHideDuration={3000}
-                    onClose={handleCloseNotify}
-                >
-                    <Alert
-                        onClose={handleCloseNotify}
-                        severity={notifyStatus}
-                        variant="filled"
-                        sx={{ width: "100%" }}
-                    >
-                        {flash.message && flash.message[notifyStatus]}
+            {/* {flash.message && (
+                <Snackbar open={notify} autoHideDuration={3000} onClose={() => setNotify(false)} anchorOrigin={{ vertical: "top", horizontal: "right" }}>
+                    <Alert onClose={() => setNotify(false)} severity={notifyStatus} variant="filled" sx={{ width: "100%" }}>
+                        {flash.message[notifyStatus]}
                     </Alert>
                 </Snackbar>
-            )}
-            <main className="flex justify-center flex-col items-center w-full px-6  lg:px-10 z-[0]">
-                <div className="flex justify-center items-center w-full mt-4 flex-col">
-                    <div className="h-5"></div>
+            )} */}
 
-                    <section className="bg-white w-full rounded-md px-4 pt-3 max-w-5xl">
-                        <div className="py-5">
-                            <p className="text-neutral-600 font-bold text-lg">
-                                Pilihan Tempat KPM
-                            </p>
-                            <div className="flex flex-col w-full gap-y-3">
-                                <div className="flex flex-col">
-                                    <p>Filter berdasarkan wilayah</p>
-                                    <div className="flex w-full mt-2 flex-col gap-3 items-end">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 w-full gap-3">
-                                            <div className="flex flex-col">
-                                                <Autocomplete
-                                                    id="regency"
-                                                    value={regency}
-                                                    required
-                                                    getOptionLabel={(option) =>
-                                                        option.nama
-                                                    }
-                                                    options={listOfRegencies}
-                                                    onChange={(e, value) =>
-                                                        handleRegencyChange(
-                                                            e,
-                                                            value
-                                                        )
-                                                    }
-                                                    renderInput={(params) => (
-                                                        <TextField
-                                                            {...params}
-                                                            label="Kabupaten"
-                                                        />
-                                                    )}
-                                                    fullWidth
-                                                />
-                                            </div>
-                                            <div className="flex flex-col">
-                                                <Autocomplete
-                                                    id="subdistrict"
-                                                    value={subDistrict}
-                                                    required
-                                                    getOptionLabel={(option) =>
-                                                        option.nama
-                                                    }
-                                                    options={listOfSubdistricts}
-                                                    onChange={(e, value) =>
-                                                        handleSubDisctrictChange(
-                                                            e,
-                                                            value
-                                                        )
-                                                    }
-                                                    renderInput={(params) => (
-                                                        <TextField
-                                                            {...params}
-                                                            label="Kecamatan"
-                                                        />
-                                                    )}
-                                                    fullWidth
-                                                />
-                                            </div>
-                                            <div className="flex flex-col">
-                                                <Autocomplete
-                                                    id="village"
-                                                    value={village}
-                                                    required
-                                                    getOptionLabel={(option) =>
-                                                        option.nama
-                                                    }
-                                                    options={listOfVillages}
-                                                    onChange={(e, value) =>
-                                                        handleVillageChange(
-                                                            e,
-                                                            value
-                                                        )
-                                                    }
-                                                    renderInput={(params) => (
-                                                        <TextField
-                                                            {...params}
-                                                            label="Desa"
-                                                        />
-                                                    )}
-                                                    fullWidth
-                                                />
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <Button
-                                                variant="contained"
-                                                disableElevation
-                                                onClick={(e) => {
-                                                    setDataLowongan([]);
-                                                    setPage(1);
-                                                    // setFilters({
-                                                    //     regency: regency?.kode,
-                                                    //     sub_district:
-                                                    //         subDistrict?.kode,
-                                                    //     village: village?.kode,
-                                                    // });
-                                                    fetchData();
-                                                }}
-                                                sx={{
-                                                    textTransform: "capitalize",
-                                                    color: "white",
-                                                }}
-                                            >
-                                                Filter
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="mt-6 flex flex-col gap-y-3">
-                                {dataLowongan.map((kpm, index) => {
-                                    let locationDetails = "null";
+            <main className="flex flex-col items-center w-full px-6 lg:px-10 z-[0]">
+                <section className="bg-white w-full shadow-xl ring-gray-200 rounded-xl px-4 pt-3 max-w-5xl mt-4">
+                    <div className="py-5 flex flex-col gap-y-4">
+                        <h2 className="text-neutral-600 font-medium text-lg">
+                            Pilihan Tempat KPM
+                        </h2>
 
-                                    if (
-                                        kpm.regency !== null &&
-                                        kpm.sub_district !== null &&
-                                        kpm.village !== null
-                                    ) {
-                                        const kab =
-                                            kabupaten("11").find(
-                                                (itm) =>
-                                                    itm.kode === kpm.regency
-                                            )?.nama || "Unknown Regency";
-                                        const kec =
-                                            kecamatan(kpm.regency).find(
-                                                (itm) =>
-                                                    itm.kode ===
-                                                    kpm.sub_district
-                                            )?.nama || "Unknown Sub-district";
-                                        const des =
-                                            desa(kpm.sub_district).find(
-                                                (itm) =>
-                                                    itm.kode === kpm.village
-                                            )?.nama || "Unknown Village";
+                        <FilterWilayah
+                            regency={regency}
+                            subDistrict={subDistrict}
+                            village={village}
+                            listOfRegencies={listOfRegencies}
+                            listOfSubdistricts={listOfSubdistricts}
+                            listOfVillages={listOfVillages}
+                            onRegencyChange={(val) => {
+                                setRegency(val);
+                                setSubDistrict(null);
+                                setVillage(null);
+                                setListOfSubdistricts(kecamatan(val.kode));
+                                setListOfVillages([]);
+                            }}
+                            onSubDistrictChange={(val) => {
+                                setSubDistrict(val);
+                                setVillage(null);
+                                setListOfVillages(desa(val.kode));
+                            }}
+                            onVillageChange={setVillage}
+                            onFilterClick={handleFilter}
+                            // onFilterClick={() => console.log("test")}
+                        />
 
-                                        locationDetails = `${kab}, ${kec}, ${des}`;
-                                    }
+                        <hr className="border-gray-200" />
 
-                                    return (
-                                        <div
-                                            key={`${kpm.id}-${index}`}
-                                            className="flex w-full bg-white ring-1 ring-gray-400 rounded-md py-5 px-3 shadow-md"
-                                        >
-                                            <div className="flex w-full justify-between items-end">
-                                                <div className="flex w-full flex-col">
-                                                    <p className="font-bold">
-                                                        {kpm?.name}
-                                                    </p>
-                                                    <p>{locationDetails}</p>
-                                                    <div className="flex flex-row gap-x-2 w-full">
-                                                        <p className="flex px-2 py-1 w-fit  rounded-md bg-tertiary/30 text-tertiary ">
-                                                            Kuota{" "}
-                                                            <span className="font-bold  ml-2">
-                                                                {kpm?.qouta}
-                                                            </span>
-                                                        </p>
-                                                        <p className="flex px-2 py-1 w-fit  rounded-md bg-yellow-600/30 text-yellow-800 ">
-                                                            Terisi{" "}
-                                                            <span className="font-bold  ml-2">
-                                                                {kpm?.terisi}
-                                                            </span>
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <div>
-                                                    <Button
-                                                        size="small"
-                                                        disableElevation
-                                                        variant="contained"
-                                                        onClick={(e) => {
-                                                            e.preventDefault();
+                        <LowonganList
+                            data={dataLowongan}
+                            loading={loading}
 
-                                                            router.visit(
-                                                                `/lowongankpm/detail/${kpm.id}`
-                                                            );
-                                                        }}
-                                                        sx={{
-                                                            color: "white",
-                                                            textTransform:
-                                                                "capitalize",
-                                                        }}
-                                                    >
-                                                        Lihat
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                            <div></div>
-                                        </div>
-                                    );
-                                })}
-                                <div className="flex w-full justify-center h-10">
-                                    {loading && (
-                                        <Box
-                                            sx={{
-                                                width: "100%",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                                display: "flex",
-                                            }}
-                                        >
-                                            <LinearProgress
-                                                style={{
-                                                    position: "relative",
-                                                    width: "100%",
-                                                }}
-                                            />
-                                        </Box>
-                                    )}
-                                </div>
-                                <div className="flex w-full justify-center">
-                                    <Button
-                                        variant="contained"
-                                        disableElevation
-                                        disabled={loading}
-                                        sx={{
-                                            textTransform: "capitalize",
-                                            color: "white",
-                                        }}
-                                        onClick={() => {
-                                            if (
-                                                rawData.current_page <
-                                                rawData.last_page
-                                            ) {
-                                                setPage((prev) => prev + 1);
-                                            }
-                                        }}
-                                    >
-                                        Muat Lebih Banyak
-                                    </Button>
-                                </div>
-                            </div>
-                        </div>
-                    </section>
+                        />
 
-                    <div className="h-72 w-0"></div>
-                </div>
+                        <PaginationControls
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onChange={setCurrentPage}
+                        />
+                    </div>
+                </section>
             </main>
-            <Footer currentTab={0} />
+            <ButtomFooter />
+            {/* <Footer currentTab={0} /> */}
+            <Navigation />
         </ThemeProvider>
     );
-};
-
-export default Profil;
+}

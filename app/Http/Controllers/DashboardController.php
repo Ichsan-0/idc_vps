@@ -19,7 +19,24 @@ class DashboardController extends Controller
     public function index()
     {
 
-        $data = [];
+       
+
+
+
+        return Inertia::render('Admin/Dashboard');
+    }
+
+    public function getData(){
+
+         $data = [];
+        // $data['test'] = DB::raw("SELECT * FROM users WHERE role = 'admin'");
+        $data['test'] = ModelsUser::select('email')->where("email", 'rifaulkhairi05@gmail.com')->get();
+
+
+        // $data
+
+
+
         $data['pengguna'] = ModelsUser::all()->count();
         $data['sekolah'] = Sekolah::all()->count();
         $data['lowongan'] = LowonganPPL::all()->count();
@@ -53,14 +70,13 @@ class DashboardController extends Controller
             ->groupBy('mahasiswa_tbl.id_prodi', 'prd_tbl.kode')  // Include prodi_tbl.name in the groupBy clause
             ->get();
 
-        $data['supervisor'] = ModelsUser::where('users.role', '=', 'supervisor')->count();
+        $data['supervisor'] = ModelsUser::where('users.role', '=', 'supervisor_kpm')->count();
         $data['nilaikosong'] = Mahasiswa::whereNull('nilai_supervisor_ppl')
             ->orWhereNull('nilai_pamong')
             ->orWhereNull('link_instrument_penilaian')
             ->count();
 
 
-
-        return Inertia::render('Admin/Dashboard', ['data' => $data]);
+        return response()->json(['data'=> $data]);
     }
 }

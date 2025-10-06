@@ -101,7 +101,16 @@ export const AddTempatPPL = () => {
                                 placeholder="Deskripsi"
                                 onChange={(e) => handleDescriptionChange(e)}
                                 multiline
-                                sx={{ width: "100%" }}
+                                x={{
+                                    "& .MuiOutlinedInput-root.Mui-focused": {
+                                        outline: "none",
+                                        boxShadow: "none",
+                                    },
+                                    "& .MuiInputBase-input:focus": {
+                                        outline: "none",
+                                        boxShadow: "none",
+                                    },
+                                }}
                             ></TextField>
                             {errors.description && (
                                 <InputError message={errors.description} />

@@ -18,14 +18,11 @@ class HomeControler extends Controller
         //     ->select('tempat_ppl_tbl.*', 'lowongan_ppl_tbl.*', 'tempat_ppl_tbl.nama as nama_tempat_ppl', 'tempat_ppl_tbl.provinsi', 'tempat_ppl_tbl.kabupaten', 'tempat_ppl_tbl.kecamatan', 'tempat_ppl_tbl.desa', 'prodi_tbl.nama as nama_prodi')
         //     ->get(); // Execute the query to retrieve the results
 
-        $tempat_kpm = TempatKPM::all();
 
         return Inertia::render('Mahasiswa/KPM', [
             'canLogin' => Route::has('login'),
-            'tempat_kpm' => $tempat_kpm,
             'canRegister' => Route::has('register'),
-            'laravelVersion' => Application::VERSION,
-            'phpVersion' => PHP_VERSION,
+            
         ]);
     }
     

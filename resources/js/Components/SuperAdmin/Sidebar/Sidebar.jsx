@@ -296,6 +296,21 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                                                             Setting
                                                         </NavLink>
                                                     </li>
+                                                    <li>
+                                                        <NavLink
+                                                            href="/superadmin/data/import"
+                                                            className={`group relative flex items-center gap-2.5 rounded-md px-4 font-medium duration-300 ease-in-out hover:text-white ${
+                                                                (pathname ===
+                                                                    "/superadmin/data/import" ||
+                                                                    pathname.includes(
+                                                                        "/superadmin/data/import"
+                                                                    )) &&
+                                                                "!text-white"
+                                                            }`}
+                                                        >
+                                                            Import Data
+                                                        </NavLink>
+                                                    </li>
                                                     
                                                 </ul>
                                             </div>

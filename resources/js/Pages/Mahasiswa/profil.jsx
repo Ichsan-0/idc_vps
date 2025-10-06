@@ -23,6 +23,8 @@ import InputError from "@/Components/InputError";
 import { provinsi, kabupaten, kecamatan, desa } from "daftar-wilayah-indonesia";
 import { CloudUploadOutlined } from "@mui/icons-material";
 import { GrAttachment } from "react-icons/gr";
+import Navigation from "@/Components/Mahasiswa/Navigation";
+import ButtomFooter from "@/Components/frontpage/ButtomFooter";
 
 function CustomTabPanel(props) {
     const { children, value, index, ...other } = props;
@@ -736,7 +738,9 @@ const Profil = ({ lowongan_ppl, flash, mahasiswa, list_prodi, link_grup }) => {
                     <div className="h-72 w-0"></div>
                 </div>
             </main>
-            <Footer currentTab={4} />
+            <ButtomFooter/>
+            
+            <Navigation/>
         </ThemeProvider>
     );
 };

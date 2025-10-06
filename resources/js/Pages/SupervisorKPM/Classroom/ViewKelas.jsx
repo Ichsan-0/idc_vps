@@ -6,6 +6,7 @@ import ClassroomLayout from "@/Layouts/SupervisorKPM/Classroom/ClassroomLayout";
 import { useState } from "react";
 import { ThreeDot } from "react-loading-indicators";
 import { useEffect } from "react";
+import ButtomFooter from "@/Components/frontpage/ButtomFooter";
 
 const ViewKelas = ({ base_url, data }) => {
     const [responseError, setResponseError] = useState(null);
@@ -53,7 +54,7 @@ const ViewKelas = ({ base_url, data }) => {
                                 {dataKelas?.name}
                             </li>
                             <li className="text-md md:text-lg lg:text-xl">
-                                PPKPM Ganjil 2025/2026
+                                {dataKelas?.gelombang?.name}
                             </li>
                         </ul>
                     </div>
@@ -93,6 +94,8 @@ const ViewKelas = ({ base_url, data }) => {
                         </li>
                     ))}
                 </ul>
+            <ButtomFooter/>
+
             </div>
         </ClassroomLayout>
     );

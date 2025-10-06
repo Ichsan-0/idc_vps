@@ -23,7 +23,7 @@ class SuperAdmin
             'opt-sekolah' => redirect('/operator-sekolah/data/kepsek-pamong'),
             'supervisor_kpm' => redirect('/supervisor/classroom/home'),
             'admin' => redirect('/admin/dashboard'),
-            default => redirect('/supervisor/dashboard'),
+            "supervisor" => redirect('/supervisor/dashboard'),
         };
     }
 }

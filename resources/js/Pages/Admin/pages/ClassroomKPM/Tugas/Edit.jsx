@@ -143,6 +143,8 @@ const Edit = ({ daftarprodi, flash, message, base_url, id }) => {
                             >
                                 <MenuItem value={"Link"}>Link</MenuItem>
                                 <MenuItem value={"File"}>File</MenuItem>
+                                <MenuItem value={"Link Video"}>Link Video</MenuItem>
+                                
                             </Select>
                         </FormControl>
                     </div>

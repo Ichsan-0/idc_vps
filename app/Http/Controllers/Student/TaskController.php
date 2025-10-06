@@ -131,8 +131,10 @@ class TaskController extends Controller
             $data_kelas = TempatKPM::where('id', $id)
                 ->selectRaw(
                     'tempat_kpm_tbl.id,
-                tempat_kpm_tbl.name'
+                    tempat_kpm_tbl.name,
+                    tempat_kpm_tbl.id_gelombang'
                 )
+                ->with(['gelombang'])
                 ->first();
 
             $data_kelas['tasks'] = Task::orderBy('created_at', 'desc')->get();

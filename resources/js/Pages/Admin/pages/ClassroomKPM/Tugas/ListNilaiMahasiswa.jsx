@@ -1,12 +1,21 @@
 import React from "react";
 
 import { Head, Link, router } from "@inertiajs/react";
-import { Alert, Button, Chip, Snackbar } from "@mui/material";
+import {
+    Alert,
+    Autocomplete,
+    Button,
+    Chip,
+    Snackbar,
+    TextField,
+} from "@mui/material";
 import { useState } from "react";
 import { useEffect } from "react";
 import { useRef } from "react";
 import { ThreeDot } from "react-loading-indicators";
 import AdminLayout from "@/Layouts/Admin/AdminLayout";
+import { config } from "@/config/config";
+import axios from "axios";
 
 const ListNilaiMahasiswa = ({ flash, base_url }) => {
     const [openDialog, setOpenDialog] = useState(false);
@@ -24,6 +33,8 @@ const ListNilaiMahasiswa = ({ flash, base_url }) => {
     const [visiblePages, setVisiblePages] = useState([]);
     const [prevPage, setPrevPage] = useState(null);
     const [headerTugas, setHeaderTugas] = useState([]);
+    const [gelombangData, setGelombangData] = useState([]);
+    const [selectedGelombangData, setSelectedGelombangData] = useState(null);
 
     const getVisiblePages = (page, dataRuang) => {
         let totalPages = Math.ceil(dataRuang.total / dataRuang?.data?.length);
@@ -53,6 +64,32 @@ const ListNilaiMahasiswa = ({ flash, base_url }) => {
         setVisiblePages(vvisiblePages);
     };
 
+    const getGelombangData = async () => {
+        try {
+            setLoading(true);
+
+            const response = await axios.get(
+                `${config.base_url}/api/gelombang`
+            );
+            setGelombangData(response.data?.data);
+            if (response.data?.data.length > 0) {
+                const gelombang =
+                    response.data?.data[response.data?.data.length - 1];
+                setSelectedGelombangData(gelombang);
+                setFormData({ ...formData, id_gelombang: gelombang.id });
+            }
+        } catch (error) {
+            setLoading(false);
+        } finally {
+            fetchData();
+        }
+    };
+
+    useEffect(()=>{
+        getGelombangData();
+
+    }, []);
+
     const fetchData = async () => {
         setLoading(true);
         setError(null);
@@ -64,6 +101,7 @@ const ListNilaiMahasiswa = ({ flash, base_url }) => {
                     params: {
                         page: currentPage,
                         search: searchKey,
+                        gelombang : selectedGelombangData.id
                     },
                 }
             );
@@ -88,7 +126,11 @@ const ListNilaiMahasiswa = ({ flash, base_url }) => {
         try {
             const response = await axios.post(
                 `${base_url}/api/admin/classroom-kpm/nilai/export`,
-                {}, // Pass the request body here
+                {
+                   
+                    gelombang: selectedGelombangData.id,
+                   
+                }, // Pass the request body here
                 {
                     responseType: "blob", // Set responseType in Axios config
                 }
@@ -134,6 +176,11 @@ const ListNilaiMahasiswa = ({ flash, base_url }) => {
             setPrevPage(currentPage); // Update prevPage
         }
     }, [currentPage, prevPage]);
+
+    useEffect(()=>{
+        fetchData();
+        
+    }, [selectedGelombangData]);
 
     const handlePageChange = (page) => {
         if (page >= 1 && page <= lastPage) {
@@ -211,8 +258,8 @@ const ListNilaiMahasiswa = ({ flash, base_url }) => {
     return (
         <AdminLayout className="main flex">
             <div className="flex w-full flex-col">
-                <div className="px-3">
-                    <div className="flex w-full justify-start gap-x-2 py-2">
+                <div className="bg-white p-4 gap-2 right-1 ring-gray-400 flex flex-row rounded-lg">
+                    <div className="flex h-fit justify-start gap-x-2">
                         <Button
                             variant="contained"
                             disableElevation
@@ -225,9 +272,41 @@ const ListNilaiMahasiswa = ({ flash, base_url }) => {
                             Export
                         </Button>
                     </div>
+                    <div className="flex w-60">
+                        <Autocomplete
+                            id="gelomabng"
+                            name="gelombang"
+                            sx={{ width: "100%" }}
+                            value={selectedGelombangData}
+                            options={gelombangData}
+                            getOptionLabel={(option) => option.name}
+                            onChange={(e, value) => {
+                                setSelectedGelombangData(value);
+
+                                
+                            }}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Gelombang"
+                                    sx={{
+                                        "& .MuiOutlinedInput-root.Mui-focused":
+                                            {
+                                                outline: "none",
+                                                boxShadow: "none",
+                                            },
+                                        "& .MuiInputBase-input:focus": {
+                                            outline: "none",
+                                            boxShadow: "none",
+                                        },
+                                    }}
+                                />
+                            )}
+                        ></Autocomplete>
+                    </div>
                 </div>
 
-                <div className="px-3 ">
+                <div className="">
                     <p>{error}</p>
                     <div className="flex w-full  gap-x-3 py-2">
                         <div className="bg-white dark:bg-gray-800 w-full relative shadow-md sm:rounded-lg overflow-hidden">

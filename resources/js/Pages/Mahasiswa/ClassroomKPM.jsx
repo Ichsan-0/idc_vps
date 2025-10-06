@@ -4,6 +4,8 @@ import { Head, router, useForm, usePage } from "@inertiajs/react";
 import Header from "@/Components/frontpage/Header";
 import Footer from "@/Components/frontpage/Footer";
 import banner from "../../../../public/assets/img_backtoschool.jpg";
+import Navigation from "@/Components/Mahasiswa/Navigation";
+import ButtomFooter from "@/Components/frontpage/ButtomFooter";
 
 const theme = createTheme({
     palette: {
@@ -80,7 +82,8 @@ const ClassroomKPM = ({ flash, tempat_kpm, data }) => {
                     </div>
                 )}
             </main>
-            <Footer currentTab={0} />
+            <ButtomFooter/>
+            <Navigation/>
         </ThemeProvider>
     );
 };

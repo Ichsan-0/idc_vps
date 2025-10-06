@@ -239,6 +239,7 @@ Route::middleware(['auth', 'user'])->group(function () {
     Route::get('/ppl-vacancies/detail/{id}', [LowonganPPL::class, 'detail'])->name('lownganppl.detail')->middleware(['profil']);
     Route::post('/lowonganppl/lamar', [LowonganPPL::class, 'lamar'])->name('lownganppl.lamar')->middleware(['profil']);
     Route::get('/profil', [MahasiswaProfilController::class, 'index'])->name("profil");
+    Route::get('/', [MahasiswaProfilController::class, 'default']);
     Route::get('/grade', [NilaiController::class, 'index'])->name("nilai")->middleware(['profil']);
     Route::post('/profil/save', [MahasiswaProfilController::class, 'save'])->name('profil.save')->middleware(['save_profil']);
 

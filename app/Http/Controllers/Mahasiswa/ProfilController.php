@@ -17,6 +17,9 @@ use ZipStream\File;
 
 class ProfilController extends Controller
 {
+    public function default(){
+        return redirect('/profil');
+    }
     public function index()
     {
         $user = Auth::user()->username;

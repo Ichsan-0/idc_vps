@@ -20,24 +20,24 @@ const Navigation = () => {
     const { pathname } = new URL(url, window.location.origin);
 
     const navigationItems = [
-        {
-            id: "Lowongan KPM",
-            icon: MapPinHouse,
-            label: "Lowongan KPM",
-            path: "/kpm-vacancies",
-        },
-        {
-            id: "Lowngan PPL",
-            icon: School,
-            label: "Lowngan PPL",
-            path: "/ppl-vacancies",
-        },
-        {
-            id: "Lamaranku",
-            icon: Files,
-            label: "Lamaranku",
-            path: "/my-proposal",
-        },
+        // {
+        //     id: "Lowongan KPM",
+        //     icon: MapPinHouse,
+        //     label: "Lowongan KPM",
+        //     path: "/kpm-vacancies",
+        // },
+        // {
+        //     id: "Lowngan PPL",
+        //     icon: School,
+        //     label: "Lowngan PPL",
+        //     path: "/ppl-vacancies",
+        // },
+        // {
+        //     id: "Lamaranku",
+        //     icon: Files,
+        //     label: "Lamaranku",
+        //     path: "/my-proposal",
+        // },
         {
             id: "Classroom",
             icon: SquareLibrary,

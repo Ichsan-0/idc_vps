@@ -47,7 +47,7 @@ const ClassroomKPM = ({ flash, tempat_kpm, data }) => {
                                         {data.classroom_kpm.nama_tempat}
                                     </li>
                                     <li className="text-sm">
-                                        PPKPM Ganjil 2025/2026
+                                        {data.classroom_kpm.nama_gelombang}
                                     </li>
                                 </ul>
                             </div>
@@ -82,6 +82,7 @@ const ClassroomKPM = ({ flash, tempat_kpm, data }) => {
                     </div>
                 )}
             </main>
+            <h1 className="h-95"></h1>
             <ButtomFooter/>
             <Navigation/>
         </ThemeProvider>

@@ -15,8 +15,9 @@ class ClassroomController extends Controller
 {
     public function home()
     {
-        $classroom_kpm = LamaranKPM::join('tempat_kpm_tbl as t_kpm', 'lamaran_kpm_tbl.id_tempat_kpm', '=', 't_kpm.id')
-            ->select('t_kpm.name as nama_tempat', 't_kpm.id')
+        $classroom_kpm = LamaranKPM::select('t_kpm.name as nama_tempat', 't_kpm.id', 'g_tbl.name as nama_gelombang')
+            ->join('tempat_kpm_tbl as t_kpm', 'lamaran_kpm_tbl.id_tempat_kpm', '=', 't_kpm.id')
+            ->join('gelombang_tbl as g_tbl', 't_kpm.id_gelombang', '=', 'g_tbl.id')
             ->where('username_mahasiswa', Auth::user()->username)
             ->where('status', 'accepted')
             ->first();

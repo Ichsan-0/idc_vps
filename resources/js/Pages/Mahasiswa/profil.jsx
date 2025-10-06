@@ -291,7 +291,7 @@ const Profil = ({ lowongan_ppl, flash, mahasiswa, list_prodi, link_grup }) => {
                                 Profil
                             </p>
                             <ul className="flex flex-row justify-between mt-3">
-                                <li>
+                                {/* <li>
                                     {mahasiswa.data_mahasiswa.status ===
                                         "accepted" && (
                                         <a
@@ -305,7 +305,7 @@ const Profil = ({ lowongan_ppl, flash, mahasiswa, list_prodi, link_grup }) => {
                                             Join Group WhatsApp
                                         </a>
                                     )}
-                                </li>
+                                </li> */}
                                 <li>
                                     {getProfilStatus(
                                         mahasiswa.data_mahasiswa.status

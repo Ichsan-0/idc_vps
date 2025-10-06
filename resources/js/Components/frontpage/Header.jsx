@@ -67,7 +67,7 @@ const Header = () => {
 
                 {/* Right Section */}
                 <div className="flex justify-end w-1/3 gap-3">
-                    <NotificationDropdown />
+                    {/* <NotificationDropdown /> */}
                     <Box sx={{ flexGrow: 0 }}>
                         <Tooltip title="Open settings">
                             <IconButton

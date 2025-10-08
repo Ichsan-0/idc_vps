@@ -20,13 +20,14 @@ use function PHPUnit\Framework\isEmpty;
 
 class TempatKPM extends Controller
 {
-    public function getAllTempatKPM(){
+    public function getAllTempatKPM()
+    {
 
         $gelombangData = Gelombang::latest()->first();
-        
-        
+
+
         $data = ModelsTempatKPM::where('id_gelombang', $gelombangData->id)->get();
-        return response()->json(['data'=>$data]);
+        return response()->json(['data' => $data]);
     }
 
     public function getAllStudents(Request $request)
@@ -38,7 +39,7 @@ class TempatKPM extends Controller
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('users.name', 'like', "%$search%")
-                ->orWhere('users.username', 'like', "%$search%");
+                    ->orWhere('users.username', 'like', "%$search%");
             })->where('users.role', 'user');
             $data = $query->get();
         }
@@ -265,7 +266,17 @@ class TempatKPM extends Controller
                     $q->where('lkt.status', 'accepted')
                         ->orWhereNull('lkt.status');
                 })
-                ->groupBy('tempat_kpm_tbl.id');
+                ->groupBy(
+                    'tempat_kpm_tbl.id',
+                    'dt.name',
+                    'dt.regency',
+                    'dt.sub_district',
+                    'dt.village',
+                    'username_supervisor',
+                    'tempat_kpm_tbl.qouta',
+                    'tempat_kpm_tbl.quota_lk',
+                    'tempat_kpm_tbl.quota_pr'
+                );
 
 
             if ($idGelombang) {
@@ -280,16 +291,6 @@ class TempatKPM extends Controller
                     // ->orWhere('tahun', 'like', "%$search%");
                 });
             }
-
-            // $sql = $query->toSql();
-            // $bindings = $query->getBindings();
-
-            // return response()->json([
-            //     'message' => 'Debugging SQL',
-            //     'sql' => $sql,
-            //     'bindings' => $bindings,
-            //     'gelombang' => $idGelombang
-            // ]);
 
             $data = $query->paginate($perPage);
 
@@ -319,22 +320,22 @@ class TempatKPM extends Controller
     {
         try {
             $data = ModelsTempatKPM::select(
-                    'tempat_kpm_tbl.id',
-                    'md.name as nama_desa',
-                    'md.id as id_desa',
-                    'md.regency',
-                    'md.sub_district',
-                    'md.village',
-                    'tempat_kpm_tbl.username_supervisor',
-                    'tempat_kpm_tbl.qouta',
-                    'tempat_kpm_tbl.quota_lk',
-                    'tempat_kpm_tbl.quota_pr',
-                    'tempat_kpm_tbl.id_gelombang',
-                    'us.name as nama_supervisor',
-                    DB::raw("(select SUM(total.jumlah) as jumlah from (SELECT mt.jk AS jenis_kelamin, COUNT(*) AS jumlah FROM lamaran_kpm_tbl lkt JOIN mahasiswa_tbl mt on lkt.username_mahasiswa  = mt.nim WHERE lkt.id_tempat_kpm = 71 and lkt.status = 'accepted' GROUP BY mt.jk) as total) as terisi"),
-                    DB::raw("(select SUM(total.jumlah) as jumlah from (SELECT mt.jk AS jenis_kelamin, COUNT(*) AS jumlah FROM lamaran_kpm_tbl lkt JOIN mahasiswa_tbl mt on lkt.username_mahasiswa  = mt.nim WHERE lkt.id_tempat_kpm = 71 and lkt.status = 'accepted' and mt.jk = 'Pria' GROUP BY mt.jk) as total) as jumlah_pria"),
-                    DB::raw("(select SUM(total.jumlah) as jumlah from (SELECT mt.jk AS jenis_kelamin, COUNT(*) AS jumlah FROM lamaran_kpm_tbl lkt JOIN mahasiswa_tbl mt on lkt.username_mahasiswa  = mt.nim WHERE lkt.id_tempat_kpm = 71 and lkt.status = 'accepted' and mt.jk = 'Wanita' GROUP BY mt.jk) as total) as jumlah_wanita")
-                )
+                'tempat_kpm_tbl.id',
+                'md.name as nama_desa',
+                'md.id as id_desa',
+                'md.regency',
+                'md.sub_district',
+                'md.village',
+                'tempat_kpm_tbl.username_supervisor',
+                'tempat_kpm_tbl.qouta',
+                'tempat_kpm_tbl.quota_lk',
+                'tempat_kpm_tbl.quota_pr',
+                'tempat_kpm_tbl.id_gelombang',
+                'us.name as nama_supervisor',
+                DB::raw("(select SUM(total.jumlah) as jumlah from (SELECT mt.jk AS jenis_kelamin, COUNT(*) AS jumlah FROM lamaran_kpm_tbl lkt JOIN mahasiswa_tbl mt on lkt.username_mahasiswa  = mt.nim WHERE lkt.id_tempat_kpm = 71 and lkt.status = 'accepted' GROUP BY mt.jk) as total) as terisi"),
+                DB::raw("(select SUM(total.jumlah) as jumlah from (SELECT mt.jk AS jenis_kelamin, COUNT(*) AS jumlah FROM lamaran_kpm_tbl lkt JOIN mahasiswa_tbl mt on lkt.username_mahasiswa  = mt.nim WHERE lkt.id_tempat_kpm = 71 and lkt.status = 'accepted' and mt.jk = 'Pria' GROUP BY mt.jk) as total) as jumlah_pria"),
+                DB::raw("(select SUM(total.jumlah) as jumlah from (SELECT mt.jk AS jenis_kelamin, COUNT(*) AS jumlah FROM lamaran_kpm_tbl lkt JOIN mahasiswa_tbl mt on lkt.username_mahasiswa  = mt.nim WHERE lkt.id_tempat_kpm = 71 and lkt.status = 'accepted' and mt.jk = 'Wanita' GROUP BY mt.jk) as total) as jumlah_wanita")
+            )
                 ->join('master_desa_tbl as md', 'tempat_kpm_tbl.id_desa', '=', 'md.id')
                 ->leftjoin('users as us', 'tempat_kpm_tbl.username_supervisor', '=', 'us.username')
                 ->where('tempat_kpm_tbl.id', $id)

@@ -311,7 +311,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                                                             Settings
                                                         </NavLink>
                                                     </li>
-                                                    <li>
+                                                    {/* <li>
                                                         <NavLink
                                                             href="/admin/mahasiswappkpm"
                                                             className={`group relative flex items-center gap-2.5 rounded-md px-4 font-medium duration-300 ease-in-out hover:text-white ${
@@ -325,7 +325,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                                                         >
                                                             Mahasiswa PPKPM
                                                         </NavLink>
-                                                    </li>
+                                                    </li> */}
                                                     <li>
                                                         <NavLink
                                                             href="/admin/data/camat-keuchik"

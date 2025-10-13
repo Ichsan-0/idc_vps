@@ -249,7 +249,8 @@ class TempatKPM extends Controller
                     'dt.regency',
                     'dt.sub_district',
                     'dt.village',
-                    'username_supervisor',
+                    'tempat_kpm_tbl.username_supervisor',
+                    'usr.name as nama_supervisor',
                     'tempat_kpm_tbl.qouta',
                     'tempat_kpm_tbl.quota_lk',
                     'tempat_kpm_tbl.quota_pr',
@@ -262,6 +263,7 @@ class TempatKPM extends Controller
                 ->join('gelombang_tbl as gt', 'tempat_kpm_tbl.id_gelombang', '=', 'gt.id')
                 ->leftjoin('lamaran_kpm_tbl as lkt', 'tempat_kpm_tbl.id', '=', 'lkt.id_tempat_kpm')
                 ->leftjoin('mahasiswa_tbl as mtb', 'lkt.username_mahasiswa', '=', 'mtb.nim')
+                ->leftjoin("users as usr", 'tempat_kpm_tbl.username_supervisor', '=', 'usr.username')
                 ->where(function ($q) {
                     $q->where('lkt.status', 'accepted')
                         ->orWhereNull('lkt.status');

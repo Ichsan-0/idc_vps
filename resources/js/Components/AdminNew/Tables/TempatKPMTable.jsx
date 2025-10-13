@@ -485,6 +485,12 @@ const TempatKPMTable = () => {
                                 >
                                     Desa
                                 </th>
+                                <th
+                                    rowSpan={2}
+                                    className="px-5 py-3 min-w-50 text-xs font-medium text-gray-500"
+                                >
+                                    Supervisor
+                                </th>
 
                                 {/* Kelompok Kuota */}
                                 <th
@@ -555,6 +561,11 @@ const TempatKPMTable = () => {
                                           </td>
                                           <td className="px-4 py-3">
                                               {getDesa(row)}
+                                          </td>
+                                          <td className="px-4 py-3">
+                                            <p>{row?.nama_supervisor}</p>
+                                            <p>NPP/NIDN:{row?.username_supervisor}</p>
+                                              
                                           </td>
                                           <td className="px-4 py-3">
                                               {row?.qouta}

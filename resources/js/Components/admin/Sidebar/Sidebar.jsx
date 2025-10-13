@@ -90,14 +90,14 @@ const Sidebar = ({ tabId }) => {
                                     >
                                         Settings
                                     </Button>
-                                    <Button
+                                    {/* <Button
                                         className="w-full"
                                         onClick={(e) =>
                                             router.get("/admin/mahasiswappkpm")
                                         }
                                     >
                                         Mahasiswa PPKPM
-                                    </Button>
+                                    </Button> */}
                                     <Button
                                         className="w-full"
                                         onClick={(e) =>
@@ -154,12 +154,12 @@ const Sidebar = ({ tabId }) => {
                                     <Button
                                         className="w-full"
                                         onClick={(e) =>
-                                            router.visit("/admin/tempatkpm")
+                                            router.visit("/admin/kpm/tempatkpm")
                                         }
                                     >
                                         Tempat KPM
                                     </Button>
-                                    <Button
+                                    {/* <Button
                                         className="w-full"
                                         onClick={(e) => {
                                             router.visit(
@@ -168,7 +168,7 @@ const Sidebar = ({ tabId }) => {
                                         }}
                                     >
                                         List Pelamar
-                                    </Button>
+                                    </Button> */}
                                 </div>
                             </div>
                         </li>

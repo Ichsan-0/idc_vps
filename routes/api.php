@@ -9,6 +9,9 @@ use App\Http\Controllers\Admin\DesaMasterController;
 use App\Http\Controllers\Admin\KepsekkPamongController;
 use App\Http\Controllers\Admin\KPMAlocation;
 use App\Http\Controllers\Admin\LowonganPPLController;
+use App\Http\Controllers\Admin\PPL\LowonganPPLController as PPLLowonganPPLController;
+use App\Http\Controllers\Admin\PPL\PelamarPPLController;
+use App\Http\Controllers\Admin\PPL\TempatPPLController as PPLTempatPPLController;
 use App\Http\Controllers\Admin\PplAlocationController;
 use App\Http\Controllers\Admin\ProdiController;
 use App\Http\Controllers\Admin\SekolahController;
@@ -42,6 +45,7 @@ use App\Http\Controllers\SupervisorKPM\ClassroomController;
 use App\Http\Controllers\SupervisorKPM\SupervisorSubmissionController;
 use App\Http\Middleware\PendaftaranPPL;
 use App\Models\LamaranKPM;
+use Maatwebsite\Excel\Row;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -60,20 +64,17 @@ Route::middleware(['auth:sanctum', 'super_admin_api'])
 
             Route::post('import/mahasiswa', [ImportDataController::class, 'importMahasiswa']);
             Route::post('import/supervisor', [ImportDataController::class, 'importSupervisor']);
-
         });
     });
 
 
 Route::middleware(['auth:sanctum', 'user_api'])
     ->prefix('user')
-    ->group(function(){
-        Route::prefix('ppl')->group(function(){
+    ->group(function () {
+        Route::prefix('ppl')->group(function () {
             Route::get('vacancies', [LowonganPPLApiController::class, 'index']);
             Route::get('vacancies', [LowonganPPLApiController::class, 'getVacancies']);
-
         });
-
     });
 
 Route::middleware(['auth:sanctum', 'admin_api'])
@@ -84,14 +85,11 @@ Route::middleware(['auth:sanctum', 'admin_api'])
             Route::post('lowongan/bulk', [PplAlocationController::class, 'bulkGenerateLowongan']);
             Route::delete('lowongan/bulk', [PplAlocationController::class, 'bulkDeleteLowongan']);
             Route::patch('lowongan/bulk', [PplAlocationController::class, 'bulkSave']);
-
-            
         });
-        Route::prefix('dashboard')->group(function(){
+        Route::prefix('dashboard')->group(function () {
             Route::get('data', [DashboardController::class, 'getData']);
-
         });
-        Route::prefix('data')->group(function(){
+        Route::prefix('data')->group(function () {
             Route::get('master-sekolah', [SekolahController::class, 'getSekolahData']);
             Route::post('master-sekolah', [SekolahController::class, 'createSekolah']);
             Route::delete('master-sekolah/{id}', [SekolahController::class, 'deleteSekolah']);
@@ -106,7 +104,7 @@ Route::middleware(['auth:sanctum', 'admin_api'])
             Route::patch('master-desa/{id}', [DesaMasterController::class, 'updateDataById']);
         });
 
-        Route::prefix('kpm')->group(function(){
+        Route::prefix('kpm')->group(function () {
             Route::get('tempatkpm', [TempatKPM::class, 'getData']);
             Route::get('alocations', [KPMAlocation::class, 'getDataAlocation']);
             Route::patch('/lowongan/bulk', [KPMAlocation::class, 'saveBulk']);
@@ -117,16 +115,10 @@ Route::middleware(['auth:sanctum', 'admin_api'])
             Route::get('supervisor', [TempatKPM::class, 'getSupervisor']);
             Route::post('/lowongan', [KPMAlocation::class, 'createLowongan']);
             Route::patch('/lowongan', [KPMAlocation::class, 'updateLowongan']);
-
-            
-
-
-            
-
         });
     });
 Route::middleware(['auth:sanctum', 'role:admin'])
-    ->group(function(){
+    ->group(function () {
         Route::get('/tempatkpm/mahasiswa', [MahasiswaKPM::class, 'getMahasiswa']);
         Route::get('/tempatkpm/{id}', [TempatKPM::class, 'getDataById']);
         Route::get('/admin/student', [TempatKPM::class, 'getAllStudents']);
@@ -136,6 +128,38 @@ Route::middleware(['auth:sanctum', 'role:admin'])
         Route::delete('/kpm/lamaran', [LamaranKPMController::class, 'delete']);
         Route::patch('/kpm/lamaran', [LamaranKPMController::class, 'update']);
 
+        Route::prefix('ppl')->group(function () {
+            Route::get('/sekolah', [PPLTempatPPLController::class, 'getTempatPPL']);
+        });
+
+
+
+        Route::prefix('admin')->group(function () {
+            Route::get('/master-sekolah', [SekolahController::class, 'getAllDataWithoutPagination']);
+            Route::prefix('ppl')->group(function () {
+                Route::post('/sekolah', [PPLTempatPPLController::class, 'addTempatPPL']);
+                Route::get('/sekolah/detail', [PPLTempatPPLController::class, 'getDataTempatPPLByID']);
+                Route::patch('/sekolah/{id}', [PPLTempatPPLController::class, 'updateDataTempatPPLByID']);
+                Route::delete('/sekolah/delete/{id}', [PPLTempatPPLController::class, 'deleteTempatPPLById']);
+
+                Route::prefix('lowongan')->group(function () {
+                    Route::get('/list', [PPLLowonganPPLController::class, 'listWithPaginate']);
+                    Route::post('/add', [PPLLowonganPPLController::class, 'addLowongan']);
+                    Route::get('/listsbyschool', [PPLLowonganPPLController::class, 'listLowonganBySekolah']);
+                    Route::patch('/update/{id}', [PPLLowonganPPLController::class, 'updateLowongan']);
+                    Route::delete('/delete/{id}', [PPLLowonganPPLController::class, 'deleteLowonganById']);
+                    Route::get('/detail', [PPLLowonganPPLController::class, 'getLowonganPPLById']);
+
+                    Route::prefix('mahasiswa')->group(function () {
+                        Route::get('/list', [PelamarPPLController::class, 'listWithPaginate']);
+                        Route::post('/add', [PelamarPPLController::class, 'addPelamar']);
+                        Route::patch('/update/{id}', [PelamarPPLController::class, 'updatePelamarById']);
+                        Route::delete('/delete/{id}', [PelamarPPLController::class, 'deletePelamarById']);
+                        Route::get('/detail', [PelamarPPLController::class, 'getPelamarPPLById']);
+                    });
+                });
+            });
+        });
     });
 
 

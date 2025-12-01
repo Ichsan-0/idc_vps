@@ -1,23 +1,22 @@
 import React from "react";
 
 import { Head, Link, router } from "@inertiajs/react";
-import { Alert, Button, Chip, Snackbar } from "@mui/material";
+import {
+    Alert,
+    Autocomplete,
+    Button,
+    Chip,
+    Snackbar,
+    TextField,
+} from "@mui/material";
 import { useState } from "react";
 import { useEffect } from "react";
 import { useRef } from "react";
 import { ThreeDot } from "react-loading-indicators";
 import AdminLayout from "@/Layouts/Admin/AdminLayout";
-import {
-    OpenInBrowser,
-    OpenInBrowserRounded,
-    OpenInBrowserTwoTone,
-    OpenInNew,
-    OpenInNewOffTwoTone,
-    OpenInNewRounded,
-    OpenInNewSharp,
-    ViewAgenda,
-} from "@mui/icons-material";
+import { OpenInNewRounded } from "@mui/icons-material";
 import { MdOpenInNew } from "react-icons/md";
+import { config } from "@/config/config";
 
 const ListNilaiMahasiswa = ({ flash, base_url }) => {
     const [openDialog, setOpenDialog] = useState(false);
@@ -35,6 +34,45 @@ const ListNilaiMahasiswa = ({ flash, base_url }) => {
     const [visiblePages, setVisiblePages] = useState([]);
     const [prevPage, setPrevPage] = useState(null);
     const [headerTugas, setHeaderTugas] = useState([]);
+    const [gelombangData, setGelombangData] = useState([]);
+    const [selectedGelombangData, setSelectedGelombangData] = useState(null);
+
+    const getGelombangData = async () => {
+        console.log("test 1");
+
+        try {
+            setLoading(true);
+
+            const response = await axios.get(
+                `${config.base_url}/api/gelombang`
+            );
+            setGelombangData(response.data?.data);
+            console.log("test");
+            if (response.data?.data.length > 0) {
+                const gelombang =
+                    response.data?.data[response.data?.data.length - 1];
+                setSelectedGelombangData(gelombang);
+            }
+        } catch (error) {
+            console.log(error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (selectedGelombangData) {
+            fetchData();
+        }
+    }, [gelombangData]);
+
+    useEffect(() => {
+        fetchData();
+    }, [selectedGelombangData]);
+
+    useEffect(() => {
+        getGelombangData();
+    }, []);
 
     const getVisiblePages = (page, dataRuang) => {
         let totalPages = Math.ceil(dataRuang.total / dataRuang?.data?.length);
@@ -75,6 +113,7 @@ const ListNilaiMahasiswa = ({ flash, base_url }) => {
                     params: {
                         page: currentPage,
                         search: searchKey,
+                        id_gelombang: selectedGelombangData?.id,
                     },
                 }
             );
@@ -100,7 +139,7 @@ const ListNilaiMahasiswa = ({ flash, base_url }) => {
 
         try {
             const response = await axios.post(
-                `${base_url}/api/admin/classroom-ppl/student-score/export`,
+                `${base_url}/api/admin/classroom-ppl/student-score/export?id_gelombang=${selectedGelombangData?.id}`,
                 {}, // Pass the request body here
                 {
                     responseType: "blob", // Set responseType in Axios config
@@ -256,7 +295,7 @@ const ListNilaiMahasiswa = ({ flash, base_url }) => {
         <AdminLayout className="main flex">
             <Head title="Nilai PPL" />
             <div className="flex w-full flex-col">
-                <div className="px-3">
+                {/* <div className="px-3">
                     <div className="flex w-full justify-start gap-x-2 py-2">
                         <Button
                             variant="contained"
@@ -269,6 +308,51 @@ const ListNilaiMahasiswa = ({ flash, base_url }) => {
                         >
                             Export
                         </Button>
+                    </div>
+                </div> */}
+                <div className="bg-white p-4 gap-2 right-1 ring-gray-400 flex flex-row rounded-lg">
+                    <div className="flex h-fit justify-start gap-x-2">
+                        <Button
+                            variant="contained"
+                            disableElevation
+                            // disabled={loading}
+                            sx={{ textTransform: "capitalize" }}
+                            onClick={(e) => {
+                                exportExcel();
+                            }}
+                        >
+                            Export
+                        </Button>
+                    </div>
+                    <div className="flex w-60">
+                        <Autocomplete
+                            id="gelomabng"
+                            name="gelombang"
+                            sx={{ width: "100%" }}
+                            value={selectedGelombangData}
+                            options={gelombangData}
+                            getOptionLabel={(option) => option.name}
+                            onChange={(e, value) => {
+                                setSelectedGelombangData(value);
+                            }}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Gelombang"
+                                    sx={{
+                                        "& .MuiOutlinedInput-root.Mui-focused":
+                                            {
+                                                outline: "none",
+                                                boxShadow: "none",
+                                            },
+                                        "& .MuiInputBase-input:focus": {
+                                            outline: "none",
+                                            boxShadow: "none",
+                                        },
+                                    }}
+                                />
+                            )}
+                        ></Autocomplete>
                     </div>
                 </div>
 

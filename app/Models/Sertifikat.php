@@ -15,7 +15,8 @@ class Sertifikat extends Model
                 'kode_jenis_surat',
                 'bulan_tahun',
                 'open_print_certificate',
-                'base_number'
+                'base_number',
+                'tanggal_surat'
             ];
 
     protected $table = 'sertifikat_tbl';

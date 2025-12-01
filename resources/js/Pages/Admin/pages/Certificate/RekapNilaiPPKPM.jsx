@@ -1,7 +1,7 @@
 import React from "react";
 
 import { Head, Link, router } from "@inertiajs/react";
-import { Alert, Button, Chip, Snackbar } from "@mui/material";
+import { Alert, Button, Chip, Snackbar, FormControl, InputLabel, Select, MenuItem, Box } from "@mui/material";
 import { useState } from "react";
 import { useEffect } from "react";
 import { useRef } from "react";
@@ -30,6 +30,9 @@ const RekapNilaiPPKPM = ({ flash, base_url }) => {
     const [searchKey, setSearchKey] = useState("");
     const [visiblePages, setVisiblePages] = useState([]);
     const [prevPage, setPrevPage] = useState(null);
+    const [gelombangData, setGelombangData] = useState([]);
+    const [selectedGelombang, setSelectedGelombang] = useState(null);
+
 
     const getVisiblePages = (page, dataRuang) => {
         let totalPages = Math.ceil(dataRuang.total / dataRuang?.data?.length);
@@ -59,6 +62,22 @@ const RekapNilaiPPKPM = ({ flash, base_url }) => {
         setVisiblePages(vvisiblePages);
     };
 
+    const getGelombangData = async () => {
+        try {
+            const response = await axios.get(
+                `${base_url}/api/gelombang`
+            );
+            setGelombangData(response.data.data);
+            if (response.data.data && response.data.data.length > 0) {
+                // Set selected gelombang to the first one if available
+                const firstGelombangId = response.data.data[0].id;
+                setSelectedGelombang(firstGelombangId);
+            }
+        } catch (err) {
+            console.log(err);
+        }
+    };
+
     const fetchData = async () => {
         setLoading(true);
         setError(null);
@@ -70,6 +89,7 @@ const RekapNilaiPPKPM = ({ flash, base_url }) => {
                     params: {
                         page: currentPage,
                         search: searchKey,
+                        idGelombang: selectedGelombang,
                     },
                 }
             );
@@ -96,7 +116,8 @@ const RekapNilaiPPKPM = ({ flash, base_url }) => {
         try {
             const response = await axios.post(
                 `${base_url}/api/admin/certificate/nilai-ppkpm/export`,
-                {id_prodi : prodi?.id}, // Pass the request body here
+                {id_prodi : prodi?.id, id_gelombang: selectedGelombang},
+
                 {
                     responseType: "blob", // Set responseType in Axios config
                 }
@@ -147,11 +168,10 @@ const RekapNilaiPPKPM = ({ flash, base_url }) => {
     };
 
     useEffect(() => {
-        if (currentPage !== prevPage) {
-            fetchData(); // Only fetch if currentPage is different from prevPage
-            setPrevPage(currentPage); // Update prevPage
+        if (selectedGelombang) {
+            fetchData();
         }
-    }, [currentPage, prevPage]);
+    }, [currentPage, selectedGelombang]);
 
     const handlePageChange = (page) => {
         if (page >= 1 && page <= lastPage) {
@@ -220,6 +240,10 @@ const RekapNilaiPPKPM = ({ flash, base_url }) => {
         setNotify(false);
     };
 
+    useEffect(() => {
+        getGelombangData();
+    }, []);
+
     
 
    
@@ -229,21 +253,39 @@ const RekapNilaiPPKPM = ({ flash, base_url }) => {
             <ExportCertificateModal show={openDialog} closeable={true} onClose={onDialogClose} onConfirm={handleConfirmClick}/>
             <Head title="Nilai PPKPM" />
             <div className="flex w-full flex-col">
-                <div className="px-3">
-                    <div className="flex w-full justify-start gap-x-2 py-2">
+                <div className="px-3 bg-white border-b rounded-md flex justify-between items-center">
+                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', py: 2 }}>
+                        <FormControl sx={{ minWidth: 250 }}>
+                            <InputLabel>Gelombang</InputLabel>
+                            <Select
+                                value={selectedGelombang || ""}
+                                onChange={(e) => {
+                                    setSelectedGelombang(e.target.value);
+                                    setCurrentPage(1);
+                                }}
+                                label="Gelombang"
+                            >
+                                <MenuItem value="">
+                                    <em>-- Pilih Gelombang --</em>
+                                </MenuItem>
+                                {gelombangData.map((gelombang) => (
+                                    <MenuItem key={gelombang.id} value={gelombang.id}>
+                                        {gelombang.name}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
                         <Button
                             variant="contained"
                             disableElevation
-                            // disabled={loading}
                             sx={{ textTransform: "capitalize" }}
                             onClick={(e) => {
-                                // exportExcel();
                                 setOpenDialog(true);
                             }}
                         >
                             Export
                         </Button>
-                    </div>
+                    </Box>
                 </div>
 
                 <div className="px-3 ">
@@ -430,6 +472,12 @@ const RekapNilaiPPKPM = ({ flash, base_url }) => {
                                             >
                                                 {"No. Surat"}
                                             </th>
+                                            <th
+                                                scope="col"
+                                                className="px-4 py-3"
+                                            >
+                                                {"Nama Gelombang"}
+                                            </th>
 
                                             {/* <th
                                                 scope="col"
@@ -442,9 +490,11 @@ const RekapNilaiPPKPM = ({ flash, base_url }) => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {dataRuang?.data?.map((item, index) => (
-
-
+                                        {dataRuang?.data?.map((item, index) => {
+                                            const itemsPerPage = 50;
+                                            const rowNumber = (currentPage - 1) * itemsPerPage + index + 1;
+                                            
+                                            return (
                                             <tr
                                                 key={index}
                                                 className="border-b dark:border-gray-700 hover:bg-gray-50"
@@ -453,7 +503,7 @@ const RekapNilaiPPKPM = ({ flash, base_url }) => {
                                                     scope="row"
                                                     className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white"
                                                 >
-                                                    {item.row_index}
+                                                    {rowNumber}
                                                 </th>
                                                 <td className="px-4 py-3">
                                                     {item?.nama_mahasiswa}
@@ -512,11 +562,15 @@ const RekapNilaiPPKPM = ({ flash, base_url }) => {
                                                 <td className="px-4 py-3">
                                                     {item?.no_surat_full}
                                                 </td>
+                                                <td className="px-4 py-3">
+                                                    {item?.nama_gelombang}
+                                                </td>
                                                 
 
                                                 
                                             </tr>
-                                        ))}
+                                            );
+                                        })}
                                     </tbody>
                                     <div className="h-16"></div>
                                 </table>

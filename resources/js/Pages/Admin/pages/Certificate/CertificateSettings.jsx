@@ -27,6 +27,7 @@ const CertificateSettings = ({}) => {
     const [openPrintCertificate, setOpenPrintCertificate] = useState(false);
     const [notifMsg, setNotifMsg] = useState(null);
     const [baseNumber, setBaseNumber] = useState(null);
+    const [tangalSurat, setTanggalSurat] = useState(null);
 
     const fetchData = async () => {
         setLoading(true);
@@ -46,6 +47,7 @@ const CertificateSettings = ({}) => {
                 setBulanTahun(settingData?.bulan_tahun);
                 setOpenPrintCertificate(settingData.open_print_certificate);
                 setBaseNumber(settingData?.base_number);
+                setTanggalSurat(settingData?.tanggal_surat);
             }
         } catch (err) {
             setError(err.message || "Something went wrong.");
@@ -68,6 +70,7 @@ const CertificateSettings = ({}) => {
             formData.append("bulan_tahun", bulanTahun);
             formData.append("open_print_certificate", openPrintCertificate ? 1 : 0);
             formData.append('base_number', baseNumber);
+            formData.append('tanggal_surat', tangalSurat);
             const response = await axios.post(
                 `/api/admin/certificate/setting`,
                 formData
@@ -132,6 +135,9 @@ const CertificateSettings = ({}) => {
     const handleOpenPrintCertificate = (e) => {
         setOpenPrintCertificate(e.target.checked);
     };
+    const handleTanggalSuratChange = (e) => {
+        setTanggalSurat(e.target.value);
+    }
 
     useEffect(() => {
         fetchData();
@@ -196,6 +202,25 @@ const CertificateSettings = ({}) => {
                                     value={kodeIDC}
                                     label="Kode IDC"
                                     onChange={(e) => handleKodeIDCChange(e)}
+                                    sx={{
+                                        "& .MuiOutlinedInput-root.Mui-focused":
+                                            {
+                                                outline: "none",
+                                                boxShadow: "none",
+                                            },
+                                        "& .MuiInputBase-input:focus": {
+                                            outline: "none",
+                                            boxShadow: "none",
+                                        },
+                                    }}
+                                />
+                            </div>
+                            <div>
+                                <TextField
+                                    fullWidth
+                                    value={tangalSurat}
+                                    label="Tanggal Surat"
+                                    onChange={(e) => handleTanggalSuratChange(e)}
                                     sx={{
                                         "& .MuiOutlinedInput-root.Mui-focused":
                                             {

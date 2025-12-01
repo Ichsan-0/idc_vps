@@ -20,13 +20,14 @@ class ClassroomController extends Controller
             ->join('gelombang_tbl as g_tbl', 't_kpm.id_gelombang', '=', 'g_tbl.id')
             ->where('username_mahasiswa', Auth::user()->username)
             ->where('status', 'accepted')
-            ->first();
+            ->get();
         $classroom_ppl = LamaranPPL::join('lowongan_ppl_tbl as l_ppl', 'lamaran_ppl_tbl.id_lowongan_ppl', '=', 'l_ppl.id')
             ->join('sekolah_tbl as s_tbl', 'l_ppl.id_sekolah', '=', 's_tbl.id')
-            ->select('s_tbl.name as nama_tempat', 's_tbl.id')
+            ->join('gelombang_tbl as g_tbl', 's_tbl.id_gelombang', '=', 'g_tbl.id')
+            ->select('s_tbl.name as nama_tempat', 's_tbl.id', 'g_tbl.name as nama_gelombang')
             ->where('username_mahasiswa', Auth::user()->username)
             ->where('lamaran_ppl_tbl.status', 'accepted')
-            ->first();
+            ->get();
 
 
         return Inertia::render(
@@ -44,11 +45,12 @@ class ClassroomController extends Controller
     public function tasks($id)
     {
 
-        $data_kelas = LamaranKPM::where('username_mahasiswa', Auth::user()->username)->where('status', 'accepted')->first();
+        $data_kelas = LamaranKPM::where('username_mahasiswa', Auth::user()->username)
+            ->where('status', 'accepted')
+            ->where('id_tempat_kpm', $id)
+            ->first();
         // dd($data_kelas);
-        if ($data_kelas->id_tempat_kpm == $id) {
-
-
+        if ($data_kelas) {
             return Inertia::render('Mahasiswa/Classroom/Home', [
                 'base_url' => url('/'),
                 'id' => $id
@@ -59,10 +61,12 @@ class ClassroomController extends Controller
 
     public function detail_tugas(Request $request, $id_kelas, $id_tugas)
     {
-        $data_kelas = LamaranKPM::where('username_mahasiswa', Auth::user()->username)->where('status', 'accepted')->first();
+        $data_kelas = LamaranKPM::where('username_mahasiswa', Auth::user()->username)
+            ->where('status', 'accepted')
+            ->where('id_tempat_kpm', $id_kelas)
+            ->first();
 
-        if ($data_kelas->id_tempat_kpm == $id_kelas) {
-
+        if ($data_kelas) {
             return Inertia::render('Mahasiswa/Classroom/DetailTask', [
                 'base_url' => url('/'),
                 'data' => [

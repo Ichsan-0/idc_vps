@@ -95,7 +95,7 @@
 
 
     <!-- <td style="text-align: right;">Banda Aceh, 24 Maret 2025</td> -->
-    <p style="text-align: right;">Banda Aceh, 24 Maret 2025</p>
+    <p style="text-align: right;">Banda Aceh, {{$tanggal_surat}}</p>
 
 
 
@@ -113,7 +113,7 @@
         <tr>
             <td>Perihal</td>
             <td>:</td>
-            <td>Nilai PPKPM Semester Genap 2024/2025</td>
+            <td>Nilai PPKPM {{$nama_gelombang}}</td>
         </tr>
     </table>
 
@@ -172,7 +172,7 @@
     <p style="font-style: italic;">Wassalamu'alaikum Wr.Wb.</p>
 
     <div class="signature">
-        <p>Banda Aceh, 24 Maret 2025<br>Ketua IDC</p>
+        <p>Banda Aceh, {{$tanggal_surat}}<br>Ketua IDC</p>
         <img src="images/ttd/ttd-aiyub.png" />
         <p>Dr. Aiyub, S.Ag., M.Ag.</p>
     </div>

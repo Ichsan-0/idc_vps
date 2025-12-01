@@ -198,26 +198,30 @@ class ClassroomController extends Controller
         return Excel::download(new NilaiKPMExport($idGelombang), 'nilai kpm.xlsx');
     }
 
-    public function exportStudentsScorePPL()
+    public function exportStudentsScorePPL(Request $request)
     {
+        $idGelombang = $request->id_gelombang;
         date_default_timezone_set('Asia/Jakarta');
 
         $timestamp = Carbon::now()->format('Y-m-d_H-i-s');
         $filename = "Nilai_PPL_{$timestamp}.xlsx";
 
-        return Excel::download(new ExportNilaiPPL, $filename);
+        return Excel::download(new ExportNilaiPPL($idGelombang), $filename);
     }
 
     public function getStudentsScore(Request $request)
     {
         try {
             $search = $request->search;
+            $idGelombang = $request->query('id_gelombang');
+            
             $query = DB::table(DB::raw("(
                 SELECT 
                 ROW_NUMBER() OVER (
                 ORDER BY s_tbl.name) AS row_index,
                     us.name AS nama_mahasiswa,
                     us.username AS nim,
+                    s_tbl.id_gelombang,
                     s_tbl.name AS nama_sekolah,
                     (
                 SELECT us1.name
@@ -247,6 +251,7 @@ class ClassroomController extends Controller
                         ->orWhere('numbered_data.nama_supervisor', 'LIKE', "%$search%");
                 });
             }
+            $query->where('numbered_data.id_gelombang', $idGelombang);
             $data = $query->paginate(10);
             return response()->json([
                 'success' => false,
@@ -257,7 +262,7 @@ class ClassroomController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()
-            ], $e->getCode());
+            ], 500);
         }
     }
 }

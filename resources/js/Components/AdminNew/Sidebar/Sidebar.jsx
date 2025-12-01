@@ -605,12 +605,12 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                                                 <ul className="mt-4 mb-5.5 flex flex-col gap-2.5 pl-6">
                                                     <li>
                                                         <NavLink
-                                                            href="/admin/daftartempatppl"
+                                                            href="/admin/ppl/sekolah"
                                                             className={`group relative flex items-center gap-2.5 rounded-md px-4 font-medium duration-300 ease-in-out hover:text-white ${
                                                                 (pathname ===
-                                                                    "/admin/daftartempatppl" ||
+                                                                    "/admin/ppl/sekolah" ||
                                                                     pathname.includes(
-                                                                        "daftartempatppl"
+                                                                        "/admin/ppl/sekolah"
                                                                     )) &&
                                                                 "!text-white"
                                                             }`}
@@ -618,7 +618,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                                                             Tempat PPL
                                                         </NavLink>
                                                     </li>
-                                                    <li>
+                                                    {/* <li>
                                                         <NavLink
                                                             href="/admin/ppl/ppl-alocation"
                                                             className={`group relative flex items-center gap-2.5 rounded-md px-4 font-medium duration-300 ease-in-out hover:text-white ${
@@ -662,7 +662,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                                                         >
                                                             List Pelamar
                                                         </NavLink>
-                                                    </li>
+                                                    </li> */}
                                                 </ul>
                                             </div>
                                             {/* <!-- Dropdown Menu End --> */}

@@ -8,6 +8,7 @@ const Header = ({ sidebarOpen, setSidebarOpen, auth }) => {
     const { url, component } = usePage();
     const { pathname, search } = new URL(url, window.location.origin);
     const user = usePage().props.auth;
+    const {data} = usePage().props;
     return (
         <header className="sticky top-0 z-999 flex w-full bg-white  dark:bg-boxdark dark:drop-shadow-none flex-col">
             <div className="flex flex-grow items-center justify-between px-4 py-4 border md:px-6 2xl:px-11">
@@ -71,7 +72,7 @@ const Header = ({ sidebarOpen, setSidebarOpen, auth }) => {
                     className={`w-fit h-fit border-primary/0 border-b-2 hover:border-primary `}
                 >
                     <NavLink
-                        href={`/student/classroom/${user.data_kelas?.id_tempat_kpm}/task`}
+                        href={`/student/classroom/${data?.id_kelas}/task`}
                         className={`group relative flex h-10 items-center gap-2.5 text-[#3c4043] px-4 font-medium duration-100 ease-in-out hover:bg-black/5 border-primary ${
                             (pathname === "/mahasiswa/classroom" ||
                                 pathname.includes("task")) &&

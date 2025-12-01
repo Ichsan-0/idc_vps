@@ -564,7 +564,7 @@ const TempatKPMTable = () => {
                                           </td>
                                           <td className="px-4 py-3">
                                             <p>{row?.nama_supervisor}</p>
-                                            <p>NPP/NIDN:{row?.username_supervisor}</p>
+                                            <p>NIP:{row?.username_supervisor}</p>
                                               
                                           </td>
                                           <td className="px-4 py-3">

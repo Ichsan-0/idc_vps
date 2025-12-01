@@ -87,13 +87,21 @@ const MahasiswaKPMPerdesaTable = () => {
         setCurrentPage(1);
     };
 
+    useEffect(()=>{
+        const currentTempatKPM = tempatKPM.find((item) => item.id == x);
+        setSelectedTempatKPM(currentTempatKPM || null);
+        setFormData({...formData, id_desa:currentTempatKPM?.id});
+        console.log('test : ', currentTempatKPM);
+
+    }, [tempatKPM]);
+
     useEffect(() => {
-        const totalCount = data?.total ?? 0;
-        const totalPageCount = data?.last_page ?? 0;
+        const totalCount = daftarMahasiswa?.total ?? 0;
+        const totalPageCount = daftarMahasiswa?.last_page ?? 0;
 
         setTotalEntries(totalCount);
         setTotalPages(totalPageCount);
-    }, [data]);
+    }, [daftarMahasiswa]);
 
     const handleSave = async (e) => {
         e.preventDefault();
@@ -187,7 +195,7 @@ const MahasiswaKPMPerdesaTable = () => {
                 {
                     params: {
                         id_tempat_kpm: x,
-                        current_page: currentPage,
+                        page: currentPage,
                         entries_per_page: entriesPerPage,
                         sort_key: sortKey,
                         sort_dir: sortDir,
@@ -511,6 +519,27 @@ const MahasiswaKPMPerdesaTable = () => {
                                                         value.username,
                                                 });
                                             }}
+                                            renderOption={(
+                                                    props,
+                                                    option
+                                                ) => (
+                                                    <li
+                                                        {...props}
+                                                        key={option?.username}
+                                                    >
+                                                        <div>
+                                                            <p>
+                                                                {option?.name}
+                                                            </p>
+                                                            <p>
+                                                                NIM:{" "}
+                                                                {
+                                                                    option?.username
+                                                                }
+                                                            </p>
+                                                        </div>
+                                                    </li>
+                                                )}
                                             renderInput={(params) => (
                                                 <TextField
                                                     {...params}

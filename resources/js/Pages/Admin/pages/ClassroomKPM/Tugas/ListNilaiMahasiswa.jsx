@@ -76,7 +76,6 @@ const ListNilaiMahasiswa = ({ flash, base_url }) => {
                 const gelombang =
                     response.data?.data[response.data?.data.length - 1];
                 setSelectedGelombangData(gelombang);
-                setFormData({ ...formData, id_gelombang: gelombang.id });
             }
         } catch (error) {
             setLoading(false);

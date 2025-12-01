@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\MahasiswaKPMController;
 use App\Http\Controllers\Admin\MahasiswaPPKPMController;
 use App\Http\Controllers\Admin\MahasiswaPPLContoller;
 use App\Http\Controllers\Admin\MahsiswaController;
+use App\Http\Controllers\Admin\PPL\TempatPPLController as PPLTempatPPLController;
 use App\Http\Controllers\Admin\ProdiController;
 use App\Http\Controllers\Admin\SekolahController;
 use App\Http\Controllers\Admin\SupervisorController as AdminSupervisorController;
@@ -95,6 +96,16 @@ Route::middleware(['auth', 'admin'])->group(function () {
             Route::get('kpm-alocations', [KPMAlocation::class, 'index']);
 
         });
+        Route::prefix('ppl')->group(function(){
+            Route::get('ppl-alocation', [AlokasiPPL::class, 'list']);
+            Route::get('sekolah', [PPLTempatPPLController::class, 'index']);
+            Route::get('sekolah/detail', [PPLTempatPPLController::class, 'view']);
+
+
+
+
+        });
+
     });
     Route::get('/admin/dashboard', [DashboardController::class, 'index'])->name("admin.dashboard");
     Route::get('/admin/data/camat-keuchik', [CamatKeuchikController::class, 'list']);
@@ -149,7 +160,6 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::patch('/admin/tempatppl/update/{id}', [TempatPPLController::class, 'update'])->name('admin.tempatppl.update');
     Route::delete('/admin/tempatppl/delete/{id}', [TempatPPLController::class, 'delete'])->name('admin.tempatppl.delete');
 
-    Route::get('/admin/ppl/ppl-alocation', [AlokasiPPL::class, 'list']);
 
 
 

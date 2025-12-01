@@ -12,6 +12,13 @@ class ExportNilaiPPL implements FromCollection, WithHeadings, WithMapping
     /**
      * @return \Illuminate\Support\Collection
      */
+
+    private $idGelombang;
+
+    public function __construct($idGelombang)
+    {
+        $this->idGelombang = $idGelombang;
+    }
     public function collection()
     {
         $query = DB::table(DB::raw("(
@@ -20,6 +27,7 @@ class ExportNilaiPPL implements FromCollection, WithHeadings, WithMapping
             ORDER BY s_tbl.name) AS row_index,
                 us.name AS nama_mahasiswa,
                 us.username AS nim,
+                s_tbl.id_gelombang,
                 s_tbl.name AS nama_sekolah,
                 (
             SELECT us1.name
@@ -41,11 +49,14 @@ class ExportNilaiPPL implements FromCollection, WithHeadings, WithMapping
             WHERE l_ppl.status = 'accepted'
         ) as numbered_data"));
 
+        $query->where('numbered_data.id_gelombang', $this->idGelombang);
+        
+
         return $query->get();
     }
     public function headings(): array
     {
-        return ['No', 'Name', 'NIM', 'Sekolah', 'Nilai Supervisor', 'Nama Supervisor', 'Nilai Pamong', 'Instrument Penilaian', 'Laporan PPL'];
+        return ['No', 'Name', 'NIM', 'Sekolah', 'Nama Supervisor', 'Nilai Pamong', 'Nilai Supervisor', 'Instrument Penilaian', 'Laporan PPL'];
     }
 
     public function map($row): array

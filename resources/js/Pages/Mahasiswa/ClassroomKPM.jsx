@@ -25,66 +25,69 @@ const ClassroomKPM = ({ flash, tempat_kpm, data }) => {
             <Header />
 
             <main className="flex py-2 justify-center gap-3 flex-wrap items-center w-full px-6  lg:px-10 z-[0]">
-                {data?.classroom_kpm && (
-                    <div className=" w-full max-w-screen-lg flex flex-wrap gap-3">
-                        <div
-                            className="flex flex-col bg-white border rounded-lg w-70 cursor-pointer hover:bg-primary/5"
-                            onClick={(e) =>
-                                router.visit(
-                                    `/student/classroom/${data.classroom_kpm.id}/task`
-                                )
-                            }
-                        >
-                            <div className="w-full relative">
-                                <img
-                                    src={banner}
-                                    className="w-full relative object-cover rounded-md"
-                                ></img>
-                            </div>
-                            <div className="  flex flex-col justify-end text-textblack rounded-md">
-                                <ul className="p-4">
-                                    <li className="font-bold text-md ">
-                                        {data.classroom_kpm.nama_tempat}
-                                    </li>
-                                    <li className="text-sm">
-                                        {data.classroom_kpm.nama_gelombang}
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                )}
-                {data?.classroom_ppl && (
-                    <div className=" w-full max-w-screen-lg flex flex-wrap gap-3">
-                        <div
-                            className="flex flex-col bg-white border rounded-lg w-70 cursor-pointer hover:bg-primary/5"
-                            onClick={(e) =>
-                                router.visit(`/student/classroom-ppl/tasks`)
-                            }
-                        >
-                            <div className="w-full relative">
-                                <img
-                                    src={banner}
-                                    className="w-full relative object-cover rounded-md"
-                                ></img>
-                            </div>
-                            <div className="  flex flex-col justify-end text-textblack rounded-md">
-                                <ul className="p-4">
-                                    <li className="font-bold text-md ">
-                                        {data.classroom_ppl.nama_tempat}
-                                    </li>
-                                    <li className="text-sm">
-                                        PPKPM Ganjil 2025/2026
-                                    </li>
-                                </ul>
+                {data?.classroom_kpm &&
+                    data?.classroom_kpm.map((classroom) => (
+                        <div className=" w-full max-w-screen-lg flex flex-wrap gap-3">
+                            <div
+                                className="flex flex-col bg-white border rounded-lg w-70 cursor-pointer hover:bg-primary/5"
+                                onClick={(e) =>
+                                    router.visit(
+                                        `/student/classroom/${classroom.id}/task`
+                                    )
+                                }
+                            >
+                                <div className="w-full relative">
+                                    <img
+                                        src={banner}
+                                        className="w-full relative object-cover rounded-md"
+                                    ></img>
+                                </div>
+                                <div className="  flex flex-col justify-end text-textblack rounded-md">
+                                    <ul className="p-4">
+                                        <li className="font-bold text-md ">
+                                            {classroom.nama_tempat}
+                                        </li>
+                                        <li className="text-sm">
+                                            {classroom.nama_gelombang}
+                                        </li>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                )}
+                    ))}
+
+                {data?.classroom_ppl &&
+                    data?.classroom_ppl.map((classroom) => (
+                        <div className=" w-full max-w-screen-lg flex flex-wrap gap-3">
+                            <div
+                                className="flex flex-col bg-white border rounded-lg w-70 cursor-pointer hover:bg-primary/5"
+                                onClick={(e) =>
+                                    router.visit(`/student/classroom-ppl/tasks`)
+                                }
+                            >
+                                <div className="w-full relative">
+                                    <img
+                                        src={banner}
+                                        className="w-full relative object-cover rounded-md"
+                                    ></img>
+                                </div>
+                                <div className="  flex flex-col justify-end text-textblack rounded-md">
+                                    <ul className="p-4">
+                                        <li className="font-bold text-md ">
+                                            {classroom.nama_tempat}
+                                        </li>
+                                        <li className="text-sm">
+                                            {classroom.nama_gelombang}
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
             </main>
             <h1 className="h-95"></h1>
-            <ButtomFooter/>
-            <Navigation/>
+            <ButtomFooter />
+            <Navigation />
         </ThemeProvider>
     );
 };

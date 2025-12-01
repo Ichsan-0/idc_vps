@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Sekolah;
+use App\Models\SekolahMaster;
 use Error;
 use Exception;
 use Illuminate\Http\Request;
@@ -20,6 +21,24 @@ class SekolahController extends Controller
         return Inertia::render('Admin/pages/Data/MasterSekolah/MasterSekolah');
     }
 
+    public function getAllDataWithoutPagination(){
+        try{
+            $sekolah = SekolahMaster::select('name', 'id')->get();
+
+            return response()->json([
+                'message' =>'successfully get All data',
+                'data' => $sekolah
+            ]);
+
+        }catch(Exception $e){
+            return response()->json([
+
+                'message' => 'Internal Server Error',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function getSekolahData(Request $request)
     {
 
@@ -29,7 +48,7 @@ class SekolahController extends Controller
         $perPage = $request->query('perPage', 10);
 
         try {
-            $data = Sekolah::query();
+            $data = SekolahMaster::query();
             if ($search) {
                 $data->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%$search%");
@@ -63,7 +82,7 @@ class SekolahController extends Controller
             'village' => $request->village
         ];
         try {
-            $sekolah = Sekolah::create($data);
+            $sekolah = SekolahMaster::create($data);
             return response()->json([
                 'message' => 'Berhasil membuat sekolah baru',
                 'data' => $sekolah
@@ -79,7 +98,7 @@ class SekolahController extends Controller
     public function deleteSekolah(Request $request, $id)
     {
         try {
-            $sekolah = Sekolah::find($id);
+            $sekolah = SekolahMaster::find($id);
             $sekolah->delete();
 
             return response()->json([
@@ -102,7 +121,7 @@ class SekolahController extends Controller
     {
         try {
 
-            $data = Sekolah::find($id);
+            $data = SekolahMaster::find($id);
 
             if (!$data) throw new Error('Data tidak ditemukan', 404);
 
@@ -122,7 +141,7 @@ class SekolahController extends Controller
     {
         try {
 
-            $data = Sekolah::find($id);
+            $data = SekolahMaster::find($id);
             $validator = Validator::make($request->all(), [
                 'name' => 'required',
                 'regency' => 'required',

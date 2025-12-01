@@ -13,11 +13,13 @@ class NilaiPPKPMPerProdi implements FromCollection, WithHeadings
     */
 
     protected $id_prodi;
+    protected $id_gelombang;
     
 
-    public function __construct($id_prodi)
+    public function __construct($id_prodi, $id_gelombang)
     {
         $this->id_prodi = $id_prodi;
+        $this->id_gelombang = $id_gelombang;
     }
 
     public function collection()
@@ -36,7 +38,8 @@ class NilaiPPKPMPerProdi implements FromCollection, WithHeadings
                     'SM_PPL',
                     'nilai_ppkpm',
                     'index_nilai_ppkpm'
-                );
+                )
+                ->where('id_gelombang_tertinggi', $this->id_gelombang);
 
         if(!empty($this->id_prodi)){
             $query->where(function($subQuery){

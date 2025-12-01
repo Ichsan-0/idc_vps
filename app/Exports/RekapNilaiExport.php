@@ -12,11 +12,18 @@ class RekapNilaiExport implements FromCollection, WithHeadings
     /**
     * @return \Illuminate\Support\Collection
     */
+
+    protected $id_gelombang;
+    
+
+    public function __construct($id_gelombang)
+    {
+        $this->id_gelombang = $id_gelombang;
+    }
     public function collection()
     {
         $data = DB::table('nilai_ppkpm_view')
                 ->select(
-                    'row_index',
                     'nama_mahasiswa',
                     'nim',
                     'nama_prodi',
@@ -34,15 +41,16 @@ class RekapNilaiExport implements FromCollection, WithHeadings
                     'PK_PPL',
                     'LK_PPL',
                     'nilai_ppkpm',
-                    'index_nilai_ppkpm'
+                    'index_nilai_ppkpm',
+                    'nama_gelombang'
                 )
-                ->get();
+                ->where('id_gelombang_tertinggi', $this->id_gelombang)->get();
+           
 
         return $data;
     }
     public function headings(): array{
         $headings = [
-            'No',
             'Nama',
             'NIM',
             'Program Studi',
@@ -60,7 +68,8 @@ class RekapNilaiExport implements FromCollection, WithHeadings
             'PK PPL (75%)',
             'LK PPL (25%)',
             'NILAI PPKPM',
-            'HURUF'
+            'HURUF',
+            'nama_gelombang'
         ];
 
         return $headings;

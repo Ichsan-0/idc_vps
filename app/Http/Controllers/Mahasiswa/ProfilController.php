@@ -11,6 +11,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\File as RulesFile;
 use Inertia\Inertia;
 use ZipStream\File;
@@ -41,7 +42,7 @@ class ProfilController extends Controller
     {
         $data_mahasiswa = Mahasiswa::where('nim', Auth::user()->username)->first();
 
-        $validated = $request->validate([
+        $rules = [
             'province_code' => 'required',
             'regency_code' => 'required',
             'subdistrict_code' => 'required',
@@ -52,10 +53,29 @@ class ProfilController extends Controller
             "no_hp_wa" => 'required|regex:/^08\d{8,12}$/',
             'cluster_kegiatan' => 'required',
             'semester' => 'required',
-            'transkrip' => 'required|file|mimes:pdf|max:500',
             'jk' => 'required',
+            'alamat_asal' => 'required',
+        ];
 
-        ], [
+        if (!$data_mahasiswa->link_transkrip_nilai) {
+            $rules['link_transkrip_nilai'] = 'required|file|mimes:pdf|max:500';
+        } else {
+            $rules['link_transkrip_nilai'] = 'nullable|file|mimes:pdf|max:500';
+        }
+
+        if (!$data_mahasiswa->link_surat_pernyataan) {
+            $rules['link_surat_pernyataan'] = 'required|file|mimes:pdf|max:500';
+        } else {
+            $rules['link_surat_pernyataan'] = 'nullable|file|mimes:pdf|max:500';
+        }
+
+        if (!$data_mahasiswa->link_surat_kesiapan) {
+            $rules['link_surat_kesiapan'] = 'required|file|mimes:pdf|max:500';
+        } else {
+            $rules['link_surat_kesiapan'] = 'nullable|file|mimes:pdf|max:500';
+        }
+
+        $messages = [
             'province_code.required' => 'Provinsi wajib diisi',
             'regency_code.required' => 'Kabupaten wajib diisi',
             'subdistrict_code.required' => 'Kecamatan wajib diisi',
@@ -65,29 +85,66 @@ class ProfilController extends Controller
             'no_hp_wa.required' => 'No HP/WA wajib diisi',
             'no_hp_wa.regex' => 'No HP/WA harus dimulai dari 08 dan dengan panjang 10 s.d 14 digit',
             'cluster_kegiatan.required' => 'Cluster kegiatan wajib diisi',
-            'transkrip.required' => 'Transkrip nilai wajib diisi',
-            'transkrip.max' => 'File transkrip nilai maksimal 500kb',
+            'link_transkrip_nilai.required' => 'Transkrip nilai wajib diisi',
+            'link_transkrip_nilai.max' => 'File transkrip nilai maksimal 500kb',
+            'link_surat_pernyataan.required' => 'Surat pernyataan prodi wajib diisi',
+            'link_surat_pernyataan.max' => 'File surat pernyataan maksimal 500kb',
+            'link_surat_kesiapan.required' => 'Surat kesiapan mahasiswa wajib diisi',
+            'link_surat_kesiapan.max' => 'File surat kesiapan maksimal 500kb',
             'jk' => 'Jenis Kelamin Wajib Diisi',
+            'alamat_asal.required' => 'Alamat asal wajib diisi',
+        ];
 
-        ]);
+        $validated = $request->validate($rules, $messages);
         DB::beginTransaction();
         try {
             if ($data_mahasiswa->status === 'revisi' || $data_mahasiswa->status === null) {
 
-                if ($request->hasFile('transkrip')) {
+                if ($request->hasFile('link_transkrip_nilai')) {
 
-                    $file = $request->file('transkrip');
+                    $file = $request->file('link_transkrip_nilai');
+                    
+                    // Delete old file if exists
+                    if ($data_mahasiswa->link_transkrip_nilai && Storage::disk('public')->exists($data_mahasiswa->link_transkrip_nilai)) {
+                        Storage::disk('public')->delete($data_mahasiswa->link_transkrip_nilai);
+                    }
 
                     $custom_file_name = 'transkrip_' . Auth::user()->username . '.' . $file->getClientOriginalExtension();
                     $file_path = $file->storeAs('transkrip_nilai', $custom_file_name, 'public');
 
                     $validated['link_transkrip_nilai'] = $file_path;
-                    unset($validated['transkrip']);
-                    $validated['status'] = 'submitted';
-                    // dd($validated);
-                    $result = $data_mahasiswa->update($validated);
-                    // dd($result);
                 }
+
+                if ($request->hasFile('link_surat_pernyataan')) {
+                    $file = $request->file('link_surat_pernyataan');
+                    
+                    // Delete old file if exists
+                    if ($data_mahasiswa->link_surat_pernyataan && Storage::disk('public')->exists($data_mahasiswa->link_surat_pernyataan)) {
+                        Storage::disk('public')->delete($data_mahasiswa->link_surat_pernyataan);
+                    }
+                    
+                    $custom_file_name = 'surat_pernyataan_' . Auth::user()->username . '.' . $file->getClientOriginalExtension();
+                    $file_path = $file->storeAs('documents/surat_pernyataan', $custom_file_name, 'public');
+                    $validated['link_surat_pernyataan'] = $file_path;
+                }
+
+                if ($request->hasFile('link_surat_kesiapan')) {
+                    $file = $request->file('link_surat_kesiapan');
+                    
+                    // Delete old file if exists
+                    if ($data_mahasiswa->link_surat_kesiapan && Storage::disk('public')->exists($data_mahasiswa->link_surat_kesiapan)) {
+                        Storage::disk('public')->delete($data_mahasiswa->link_surat_kesiapan);
+                    }
+                    
+                    $custom_file_name = 'surat_kesiapan_' . Auth::user()->username . '.' . $file->getClientOriginalExtension();
+                    $file_path = $file->storeAs('documents/surat_kesiapan', $custom_file_name, 'public');
+                    $validated['link_surat_kesiapan'] = $file_path;
+                }
+
+                $validated['status'] = 'submitted';
+                // dd($validated);
+                $result = $data_mahasiswa->update($validated);
+                // dd($result);
 
                 DB::commit();
                 return redirect()->back()->with('message', ['success' => 'Profil Berhasil di Diperbaharui'])->with('status', 'success');

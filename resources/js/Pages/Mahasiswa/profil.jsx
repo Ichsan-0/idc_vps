@@ -101,37 +101,40 @@ const Profil = ({ lowongan_ppl, flash, mahasiswa, list_prodi, link_grup }) => {
     const [province, setProvince] = useState(
         mahasiswa.data_mahasiswa.province_code
             ? provinsi().find(
-                  (itm) => itm.kode === mahasiswa.data_mahasiswa.province_code
-              )
+                (itm) => itm.kode === mahasiswa.data_mahasiswa.province_code
+            )
             : null
     );
 
     const [regency, setRegency] = useState(
         mahasiswa.data_mahasiswa.regency_code
             ? kabupaten(mahasiswa.data_mahasiswa.province_code).find(
-                  (itm) => itm.kode === mahasiswa.data_mahasiswa.regency_code
-              )
+                (itm) => itm.kode === mahasiswa.data_mahasiswa.regency_code
+            )
             : null
     );
 
     const [subDistrict, setSubDistrict] = useState(
         mahasiswa.data_mahasiswa.subdistrict_code
             ? kecamatan(mahasiswa.data_mahasiswa.regency_code).find(
-                  (itm) =>
-                      itm.kode === mahasiswa.data_mahasiswa.subdistrict_code
-              )
+                (itm) =>
+                    itm.kode === mahasiswa.data_mahasiswa.subdistrict_code
+            )
             : null
     );
 
     const [village, setVillage] = useState(
         mahasiswa.data_mahasiswa.village_code
             ? desa(mahasiswa.data_mahasiswa.subdistrict_code).find(
-                  (itm) => itm.kode === mahasiswa.data_mahasiswa.village_code
-              )
+                (itm) => itm.kode === mahasiswa.data_mahasiswa.village_code
+            )
             : null
     );
     const [noHpWa, setNoHpWa] = useState(
         mahasiswa.data_mahasiswa?.no_hp_wa || null
+    );
+    const [alamatAsal, setAlamatAsal] = useState(
+        mahasiswa.data_mahasiswa?.alamat_asal || null
     );
     const [clusterKegiatan, setClusterKegiatan] = useState(
         mahasiswa.data_mahasiswa?.cluster_kegiatan || null
@@ -148,6 +151,16 @@ const Profil = ({ lowongan_ppl, flash, mahasiswa, list_prodi, link_grup }) => {
 
     const [linkTranskrip, setLinkTranskrip] = useState(
         mahasiswa.data_mahasiswa?.link_transkrip_nilai || null
+    );
+
+    const [suratPernyataan, setSuratPernyataan] = useState(null);
+    const [linkSuratPernyataan, setLinkSuratPernyataan] = useState(
+        mahasiswa.data_mahasiswa?.link_surat_pernyataan || null
+    );
+
+    const [suratKesiapan, setSuratKesiapan] = useState(null);
+    const [linkSuratKesiapan, setLinkSuratKesiapan] = useState(
+        mahasiswa.data_mahasiswa?.link_surat_kesiapan || null
     );
 
     const VisuallyHiddenInput = styled("input")({
@@ -171,10 +184,14 @@ const Profil = ({ lowongan_ppl, flash, mahasiswa, list_prodi, link_grup }) => {
         id_prodi: prodi?.id || null,
         nilai_micro_teaching: nilaiMicro,
         no_hp_wa: noHpWa,
+
         cluster_kegiatan: clusterKegiatan,
         semester: semester,
-        transkrip: transkrip,
+        link_transkrip_nilai: transkrip,
+        link_surat_pernyataan: suratPernyataan,
+        link_surat_kesiapan: suratKesiapan,
         jk: jenisKelamin,
+        alamat_asal: alamatAsal,
     });
 
     const handleJenisKelaminChange = (e) => {
@@ -235,7 +252,10 @@ const Profil = ({ lowongan_ppl, flash, mahasiswa, list_prodi, link_grup }) => {
         setNoHpWa(e.target.value);
         setData("no_hp_wa", e.target.value);
     };
-
+    const handleAlamatAsalChange = (e) => {
+        setAlamatAsal(e.target.value);
+        setData("alamat_asal", e.target.value);
+    };
     const handleClusterKegiatanChange = (e) => {
         setData("cluster_kegiatan", e.target.value);
         setClusterKegiatan(e.target.value);
@@ -249,7 +269,19 @@ const Profil = ({ lowongan_ppl, flash, mahasiswa, list_prodi, link_grup }) => {
     const handleTranskripChange = (e) => {
         const file = e.target.files[0];
         setTranskrip(e.target.files[0]);
-        setData("transkrip", file);
+        setData("link_transkrip_nilai", file);
+    };
+
+    const handleSuratPernyataanChange = (e) => {
+        const file = e.target.files[0];
+        setSuratPernyataan(file);
+        setData("link_surat_pernyataan", file);
+    };
+
+    const handleSuratKesiapanChange = (e) => {
+        const file = e.target.files[0];
+        setSuratKesiapan(file);
+        setData("link_surat_kesiapan", file);
     };
 
     const onSubmit = (e) => {
@@ -377,6 +409,21 @@ const Profil = ({ lowongan_ppl, flash, mahasiswa, list_prodi, link_grup }) => {
                                         )}
                                     </div>
                                     <div className="flex flex-col">
+                                        <TextField
+                                            id="alamat_asal"
+                                            value={alamatAsal}
+                                            label="Alamat Asal (Kampung)"
+                                            required
+                                            onChange={(e) => handleAlamatAsalChange(e)}
+                                            fullWidth
+                                        />
+                                        {errors.alamat_asal && (
+                                            <InputError
+                                                message={errors.alamat_asal}
+                                            />
+                                        )}
+                                    </div>
+                                    <div className="flex flex-col">
                                         <Autocomplete
                                             id="province"
                                             value={province}
@@ -485,8 +532,6 @@ const Profil = ({ lowongan_ppl, flash, mahasiswa, list_prodi, link_grup }) => {
                                             />
                                         )}
                                     </div>
-                                </div>
-                                <div className="flex md:mt-5 flex-col gap-y-2">
                                     <div className="flex flex-col">
                                         <Autocomplete
                                             id="prodi"
@@ -513,6 +558,8 @@ const Profil = ({ lowongan_ppl, flash, mahasiswa, list_prodi, link_grup }) => {
                                             />
                                         )}
                                     </div>
+                                </div>
+                                <div className="flex md:mt-5 flex-col gap-y-2">
                                     <div className="flex flex-col">
                                         <TextField
                                             id="ipk"
@@ -594,13 +641,22 @@ const Profil = ({ lowongan_ppl, flash, mahasiswa, list_prodi, link_grup }) => {
                                                 }
                                             >
                                                 <MenuItem value={"PPKPM"}>
-                                                    PPKPM
+                                                    PPKPM Reguler
                                                 </MenuItem>
                                                 <MenuItem value={"PPL"}>
-                                                    PPL
+                                                    PPL Reguler
                                                 </MenuItem>
                                                 <MenuItem value={"KPM"}>
-                                                    KPM
+                                                    KPM Reguler
+                                                </MenuItem>
+                                                <MenuItem value={"PPKPM_Mandiri"}>
+                                                    PPKPM Mandiri
+                                                </MenuItem>
+                                                <MenuItem value={"PPL_Mandiri"}>
+                                                    PPL Mandiri
+                                                </MenuItem>
+                                                <MenuItem value={"KPM_Mandiri"}>
+                                                    KPM Mandiri
                                                 </MenuItem>
                                             </Select>
                                         </FormControl>
@@ -662,20 +718,20 @@ const Profil = ({ lowongan_ppl, flash, mahasiswa, list_prodi, link_grup }) => {
                                         <div className="flex flex-row justify-center gap-x-2 ">
                                             <div
                                                 className="flex flex-[1.5] w-full ring-1 ring-secondary rounded-md p-3 justify-between items-center cursor-pointer"
-                                                onClick={(e) => {}}
+                                                onClick={(e) => { }}
                                             >
                                                 {/* <p>Transkrip_nilai_200205002</p> */}
-                                                {transkrip === null ? (
+                                                {transkrip === null && linkTranskrip === null ? (
                                                     <p>Tidak ada file</p>
+                                                ) : transkrip !== null ? (
+                                                    <p className="truncate">
+                                                        {transkrip?.name?.length > 30
+                                                            ? `${transkrip?.name.slice(0, 30)}...`
+                                                            : transkrip?.name}
+                                                    </p>
                                                 ) : (
                                                     <p className="truncate">
-                                                        {transkrip?.name
-                                                            ?.length > 30
-                                                            ? `${transkrip?.name.slice(
-                                                                  0,
-                                                                  30
-                                                              )}...`
-                                                            : transkrip?.name}
+                                                        File Tersedia: {linkTranskrip.split('/').pop()}
                                                     </p>
                                                 )}
 
@@ -698,7 +754,7 @@ const Profil = ({ lowongan_ppl, flash, mahasiswa, list_prodi, link_grup }) => {
                                                     <CloudUploadOutlined />
                                                 }
                                             >
-                                                Upload Transkrip Nilai
+                                                {linkTranskrip !== null ? "Ganti File Transkrip Nilai" : "Upload Transkrip Nilai"}
                                                 <VisuallyHiddenInput
                                                     type="file"
                                                     accept="application/pdf"
@@ -710,10 +766,129 @@ const Profil = ({ lowongan_ppl, flash, mahasiswa, list_prodi, link_grup }) => {
                                                     multiple
                                                 />
                                             </Button>
+
                                         </div>
-                                        {errors.transkrip && (
+                                        {errors.link_transkrip_nilai && (
                                             <InputError
-                                                message={errors.transkrip}
+                                                message={errors.link_transkrip_nilai}
+                                            />
+                                        )}
+                                    </div>
+
+                                    <div className="flex flex-col justify-center mt-2">
+                                        <div className="flex flex-row justify-center gap-x-2 ">
+                                            <div
+                                                className="flex flex-[1.5] w-full ring-1 ring-secondary rounded-md p-3 justify-between items-center cursor-pointer"
+                                                onClick={(e) => { }}
+                                            >
+                                                {suratPernyataan === null && linkSuratPernyataan === null ? (
+                                                    <p>Tidak ada file</p>
+                                                ) : suratPernyataan !== null ? (
+                                                    <p className="truncate">
+                                                        {suratPernyataan?.name?.length > 30
+                                                            ? `${suratPernyataan?.name.slice(0, 30)}...`
+                                                            : suratPernyataan?.name}
+                                                    </p>
+                                                ) : (
+                                                    <p className="truncate">
+                                                        File Tersedia: {linkSuratPernyataan.split('/').pop()}
+                                                    </p>
+                                                )}
+
+                                                <GrAttachment />
+                                            </div>
+
+                                            <Button
+                                                component="label"
+                                                role={undefined}
+                                                variant="contained"
+                                                tabIndex={-1}
+                                                sx={{
+                                                    display: "flex",
+                                                    flex: 1,
+                                                    textTransform: "capitalize",
+                                                    color: "white",
+                                                }}
+                                                startIcon={
+                                                    <CloudUploadOutlined />
+                                                }
+                                            >
+                                                {linkSuratPernyataan !== null ? "Ganti File Surat Pernyataan KA PRODI" : "Upload Surat Pernyataan KA PRODI"}
+                                                <VisuallyHiddenInput
+                                                    type="file"
+                                                    accept="application/pdf"
+                                                    onChange={(event) =>
+                                                        handleSuratPernyataanChange(
+                                                            event
+                                                        )
+                                                    }
+                                                    multiple
+                                                />
+                                            </Button>
+
+                                        </div>
+                                        {errors.link_surat_pernyataan && (
+                                            <InputError
+                                                message={errors.link_surat_pernyataan}
+                                            />
+                                        )}
+                                    </div>
+
+                                    <div className="flex flex-col justify-center mt-2">
+                                        <div className="flex flex-row justify-center gap-x-2 ">
+                                            <div
+                                                className="flex flex-[1.5] w-full ring-1 ring-secondary rounded-md p-3 justify-between items-center cursor-pointer"
+                                                onClick={(e) => { }}
+                                            >
+                                                {suratKesiapan === null && linkSuratKesiapan === null ? (
+                                                    <p>Tidak ada file</p>
+                                                ) : suratKesiapan !== null ? (
+                                                    <p className="truncate">
+                                                        {suratKesiapan?.name?.length > 30
+                                                            ? `${suratKesiapan?.name.slice(0, 30)}...`
+                                                            : suratKesiapan?.name}
+                                                    </p>
+                                                ) : (
+                                                    <p className="truncate">
+                                                        File Tersedia: {linkSuratKesiapan.split('/').pop()}
+                                                    </p>
+                                                )}
+
+                                                <GrAttachment />
+                                            </div>
+
+                                            <Button
+                                                component="label"
+                                                role={undefined}
+                                                variant="contained"
+                                                tabIndex={-1}
+                                                sx={{
+                                                    display: "flex",
+                                                    flex: 1,
+                                                    textTransform: "capitalize",
+                                                    color: "white",
+                                                }}
+                                                startIcon={
+                                                    <CloudUploadOutlined />
+                                                }
+                                            >
+                                                {linkSuratKesiapan !== null ? "Ganti File Surat Kesiapan Mahasiswa" : "Upload Surat Kesiapan Mahasiswa"}
+                                                <VisuallyHiddenInput
+                                                    type="file"
+                                                    accept="application/pdf"
+                                                    onChange={(event) =>
+                                                        handleSuratKesiapanChange(
+                                                            event
+                                                        )
+                                                    }
+                                                    multiple
+                                                />
+                                            </Button>
+
+                                        </div>
+                                        {errors.link_surat_kesiapan && (
+                                            <InputError
+                                                message={errors.link_surat_kesiapan}
                                             />
                                         )}
                                     </div>
@@ -724,9 +899,13 @@ const Profil = ({ lowongan_ppl, flash, mahasiswa, list_prodi, link_grup }) => {
                                         disabled={processing}
                                         variant="contained"
                                         onClick={(e) => onSubmit(e)}
+                                        color="primary"
+                                        size="large"
                                         sx={{
                                             textTransform: "capitalize",
                                             color: "white",
+                                            paddingX: 4,
+                                            paddingY: 1.5,
                                         }}
                                     >
                                         Simpan
@@ -738,9 +917,9 @@ const Profil = ({ lowongan_ppl, flash, mahasiswa, list_prodi, link_grup }) => {
                     <div className="h-72 w-0"></div>
                 </div>
             </main>
-            <ButtomFooter/>
-            
-            <Navigation/>
+            <ButtomFooter />
+
+            <Navigation />
         </ThemeProvider>
     );
 };

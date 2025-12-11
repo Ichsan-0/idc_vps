@@ -26,9 +26,7 @@ const Dashboard = ({ auth }) => {
     const getData = async () => {
         try {
             setLoading(true);
-            const res = await axios.get(
-                `${config.base_url}/api/admin/dashboard/data`
-            );
+            const res = await axios.get('/admin/dashboard/get-data');
             setData(res.data.data);
         } catch (error) {
             setLoading(false);

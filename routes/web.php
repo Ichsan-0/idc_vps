@@ -108,6 +108,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
     });
     Route::get('/admin/dashboard', [DashboardController::class, 'index'])->name("admin.dashboard");
+    Route::get('/admin/dashboard/get-data', [DashboardController::class, 'getData'])->name('admin.dashboard.data');
     Route::get('/admin/data/camat-keuchik', [CamatKeuchikController::class, 'list']);
     Route::get('/admin/data/kepsek-pamong', [KepsekkPamongController::class, 'list']);
     Route::get('/admin/data/kepsek-pamong/edit', [KepsekkPamongController::class, 'edit']);

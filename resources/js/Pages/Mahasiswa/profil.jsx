@@ -914,6 +914,30 @@ const Profil = ({ lowongan_ppl, flash, mahasiswa, list_prodi, link_grup }) => {
                             </div>
                         </div>
                     </section>
+                    {link_grup && (
+                        <section className="bg-white w-full rounded-md px-6 py-6 max-w-5xl mt-4 border border-l-4 border-l-green-600 shadow-sm">
+                            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                                <div className="flex flex-col gap-1">
+                                    <h3 className="text-lg font-bold text-green-700 flex items-center gap-2">
+                                        <FaWhatsapp className="text-2xl" />
+                                        Informasi Grup WhatsApp
+                                    </h3>
+                                    <p className="text-gray-600 text-sm md:text-base">
+                                        Silahkan bergabung ke grup WhatsApp untuk mendapatkan informasi terbaru dan koordinasi lebih lanjut.
+                                    </p>
+                                </div>
+                                <a
+                                    href={link_grup}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-md transition-colors duration-200 flex items-center gap-2 whitespace-nowrap shadow-md"
+                                >
+                                    <FaWhatsapp />
+                                    Gabung Grup
+                                </a>
+                            </div>
+                        </section>
+                    )}
                     <div className="h-72 w-0"></div>
                 </div>
             </main>

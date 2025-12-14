@@ -53,7 +53,9 @@ class OpratorSekolahController extends Controller
     }
     public function query(Request $request)
     {
-        $query = AmprahamPPL::where('id_sekolah', $request->id_sekolah)
+
+
+        $query = AmprahamPPL::where('ampraham_ppl_tbl.id_sekolah', $request->id_sekolah)
             ->join('sekolah_tbl as s_tbl', 'ampraham_ppl_tbl.id_sekolah', '=', 's_tbl.id')
             ->leftjoin('users as us', 'ampraham_ppl_tbl.username_mahasiswa', '=', 'us.username');
 

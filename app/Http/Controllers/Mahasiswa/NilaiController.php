@@ -31,6 +31,7 @@ class NilaiController extends Controller
                     ->where('nim', $request->nim)
                     ->first();
                 $certificate_setting = DB::table('sertifikat_tbl')
+                        ->where('id_gelombang', $data_mahasiswa->id_gelombang_tertinggi)
                         ->first();
                 if($certificate_setting === null){
                     $certificate_setting['open_print_certificate'] = 0;

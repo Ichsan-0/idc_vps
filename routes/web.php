@@ -273,6 +273,16 @@ Route::get('/certificate', function () {
     return view('certificate');
 });
 
+Route::get('/view-certificate/teacher', function(){
+    return view('teacher_certificate', [
+        'name' => 'John Doe',
+        'certificate_number' => '2250/Un.08/FTK/KP.08.8/02/2025',
+        'jabatan' => 'Guru Pamong',
+        'tanggal_surat' => "27 Februari 20205",
+        'nama_gelombang' => "Semester Genap Tahun Akademik 2024/2025",
+        'periode_ppl' => "13 Januari s.d 12 Maret 2025"
+    ]);
+});
 
 
 Route::middleware('auth')->group(function () {

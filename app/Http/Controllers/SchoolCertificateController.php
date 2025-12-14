@@ -16,30 +16,37 @@ class SchoolCertificateController extends Controller
             // $data = AmprahamPPL::Select('name', 'id')->find($request->id);
             $data = DB::table('ampraham_ppl_tbl')->where('id', $request->id)->first();
             // $data = AmprahamPPL::find($request->id);
+            $sampleData = [
+                'name' => 'John Doe',
+                'certificate_number' => '2250/Un.08/FTK/KP.08.8/02/2025',
+                'jabatan' => 'Guru Pamong',
+                'tanggal_surat' => "27 Februari 20205",
+                'nama_gelombang' => "Semester Genap Tahun Akademik 2024/2025",
+                'periode_ppl' => "13 Januari s.d 12 Maret 2025"
+            ];
+            foreach ($sampleData as $key => $value) {
+                $data->$key = $value;
+            }
 
-            if($data){
-                if($data->jabatan == "Guru Pamong"){
+            if ($data) {
+                if ($data->jabatan == "Guru Pamong") {
                     $customPaper = array(0, 0, 862.01, 620.51);
                     $pdf = Pdf::loadView('teacher_certificate', (array)$data)->setPaper($customPaper);
                     // return response()->json((array)$data);
                     return $pdf->download('Sertifikat_' . $data->name . '.pdf');
-
-                }else{
+                } else {
                     $customPaper = array(0, 0, 862.01, 620.51);
                     $pdf = Pdf::loadView('teacher_kepsek', (array)$data)->setPaper($customPaper);
                     // return response()->json((array)$data);
                     return $pdf->download('Sertifikat_' . $data->name . '.pdf');
                 }
-                
-            }else{
+            } else {
                 throw new Exception('Data tidak ditemukan');
             }
-
-            
         } catch (Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);
         }
-        
+
         // return view('teacher_certificate');
     }
 }

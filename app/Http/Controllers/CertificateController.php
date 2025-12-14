@@ -125,8 +125,10 @@ class CertificateController extends Controller
                 } else {
                     $data_mhs->update(['kode' => $base_number]);
                 }
+                
 
                 $data = array_merge((array)$data_mahasiswa, (array)$data_certificate_setting);
+                return response()->json($data);
 
                 // return response()->json($kode);
                 $pdf = Pdf::loadView('certificate', $data);

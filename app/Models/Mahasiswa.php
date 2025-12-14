@@ -24,6 +24,8 @@ class Mahasiswa extends Model
         'ipk',
         'nilai_micro_teaching',
         'link_transkrip_nilai',
+        'link_surat_pernyataan',
+        'link_surat_kesiapan',
         'semester',
         'cluster_kegiatan',
         'valid_data',
@@ -43,6 +45,7 @@ class Mahasiswa extends Model
         'status',
         'keterangan',
         'jk',
+        'alamat_asal',
     ];
 
     protected $table = 'mahasiswa_tbl';

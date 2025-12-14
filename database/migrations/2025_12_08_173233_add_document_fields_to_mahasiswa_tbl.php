@@ -15,6 +15,13 @@ return new class extends Migration
             $table->string('link_surat_pernyataan')->nullable()->after('link_transkrip_nilai');
             $table->string('link_surat_kesiapan')->nullable()->after('link_surat_pernyataan');
             $table->string('alamat_asal')->nullable()->after('link_surat_kesiapan');
+            $table->unsignedBigInteger('id_gelombang')->nullable()->after('alamat_asal'); // Diubah menjadi nullable
+
+            $table->foreign('id_gelombang')
+                  ->references('id')
+                  ->on('gelombang_tbl')
+                  ->onDelete('set null')
+                  ->onUpdate('cascade');
         });
     }
 
@@ -24,7 +31,16 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('mahasiswa_tbl', function (Blueprint $table) {
-            $table->dropColumn(['link_surat_pernyataan', 'link_surat_kesiapan']);
+            // Hapus foreign key constraint terlebih dahulu
+            $table->dropForeign(['id_gelombang']);
+            
+            // Hapus kolom-kolom yang ditambahkan
+            $table->dropColumn([
+                'link_surat_pernyataan', 
+                'link_surat_kesiapan', 
+                'alamat_asal',
+                'id_gelombang'
+            ]);
         });
     }
 };

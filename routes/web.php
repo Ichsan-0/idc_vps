@@ -101,10 +101,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
             Route::get('sekolah', [PPLTempatPPLController::class, 'index']);
             Route::get('sekolah/detail', [PPLTempatPPLController::class, 'view']);
 
-
-
-
         });
+
+       
 
     });
     Route::get('/admin/dashboard', [DashboardController::class, 'index'])->name("admin.dashboard");
@@ -182,6 +181,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::patch('/admin/updatenilai/{id}', [MahasiswaPPLContoller::class, 'updatenilai']);
     Route::get('admin/mahasiswa/edit/{nim}', [MahsiswaController::class, 'edit'])->name('admin.mahasiswa.edit');
     Route::get('/admin/users/student', [MahsiswaController::class, 'index'])->name("admin.daftarmahasiswa");
+    Route::get('/admin/users/student/detail', [MahsiswaController::class, 'getMahasiswaByEmailPage']);
     Route::post('/admin/importmahasiswa', [MahsiswaController::class, 'importmahasiswa'])->name("admin.importmahasiswa");
 
     Route::get('/admin/addmahasiswa', [MahsiswaController::class, 'add'])->name("admin.addmahasiswa");
@@ -236,7 +236,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/supervisor/dashboard', [SupervisorController::class, 'index'])->name("supervisor.dashboard");
 });
 
-Route::middleware(['auth', 'user'])->group(function () {
+Route::middleware(['auth', 'user', 'verified'])->group(function () {
     // Route::get('/', [HomeControler::class, 'index'])->name("frontpage")->middleware(['profil', 'open_kpm']);
     Route::get('/kpm-vacancies', [HomeControler::class, 'index'])->name("frontpage")->middleware(['profil', 'open_kpm']);
     Route::get('/ppl-vacancies', [LowonganPPL::class, 'all'])->name('lownganppl')->middleware(['profil', 'open_ppl']);

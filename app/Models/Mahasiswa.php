@@ -27,6 +27,7 @@ class Mahasiswa extends Model
         'link_surat_pernyataan',
         'link_surat_kesiapan',
         'semester',
+        'subdistrict_code_now',
         'cluster_kegiatan',
         'valid_data',
         'lulus_mk_micro',
@@ -46,6 +47,7 @@ class Mahasiswa extends Model
         'keterangan',
         'jk',
         'alamat_asal',
+        'id_gelombang'
     ];
 
     protected $table = 'mahasiswa_tbl';

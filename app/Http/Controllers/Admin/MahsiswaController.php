@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\StudentExport;
 use App\Http\Controllers\Controller;
 use App\Imports\MahasiswaImport;
 use App\Models\LowonganPPL;
 use App\Models\Mahasiswa;
 use App\Models\Prodi;
+use App\Models\TempatKPM;
 use App\Models\User;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -28,18 +31,38 @@ class MahsiswaController extends Controller
         return Inertia::render('Admin/pages/Pengguna/Mahasiswa/StudentList', ['daftarmahasiswa' => $daftarmahasiswa]);
     }
 
-    public function followup(Request $request, $id)
+    public function updateStatus(Request $request, $id)
     {
-        $mahasiswa = Mahasiswa::where('nim', $id)->first();
-        $data = [
-            'status' => $request->status,
-            'keterangan' => $request->keterangan
-        ];
-        $result = $mahasiswa->update($data);
-        if ($result) {
-            return redirect('/admin/daftarmahasiswa')->with('message', ['success' => 'Data berhasil Diperbaharui']);
-        } else {
-            return redirect('/admin/daftarmahasiswa')->with('message', ['error' => 'Gagal Memperbaharui Data']);
+
+
+        try {
+            $mahasiswa = Mahasiswa::where('nim', $id)->first();
+            $data = [
+                'status' => $request->status,
+                'keterangan' => $request->keterangan
+            ];
+            if (!$mahasiswa) {
+                return response()->json([
+                    'satus' => 'Gagal mengupdate status mahasiswa',
+                    'code' => 404,
+                    'message' => 'Mahasiswa tidak ditemukan'
+                ], 404);
+            }
+
+            $result = $mahasiswa->update($data);
+
+
+            return response()->json([
+                'satus' => 'Berhasil mengupdate status mahasiswa',
+                'code' => 200,
+                'data' => $result
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'satus' => 'Gagal mengupdate status',
+                'code' => $e->getCode(),
+                'message' => $e->getMessage()
+            ], 500);
         }
     }
 
@@ -99,5 +122,146 @@ class MahsiswaController extends Controller
         $mahasiswa = User::where('username', $id)->with(['dataMahasiswa', 'dataMahasiswa.prodi'])->first();
 
         return Inertia::render('Admin/pages/Pengguna/Mahasiswa/DetailMahasiswa', ['mahasiswa' => $mahasiswa, 'base_url' => url('/')]);
+    }
+
+    public function getMahasiswaByUsername(Request $request)
+    {
+        // return response()->json('test');
+        $username = $request->query('x');
+        $query = User::query();
+
+        try {
+            $query
+                ->select(
+                    'users.name',
+                    'users.username as nim',
+                    'users.email',
+                    'ptbl.name as nama_prodi',
+                    'mhs.jk as gender',
+                    'mhs.cluster_kegiatan',
+                    'mhs.nilai_micro_teaching',
+                    'gtbl.name as nama_gelombang',
+                    'mhs.status',
+                    'mhs.no_hp_wa',
+                    'mhs.province_code as provinsi_asal',
+                    'mhs.regency_code as kabupaten_asal',
+                    'mhs.subdistrict_code as kecamatan_asal',
+                    'mhs.village_code as desa_asal',
+                    'mhs.province_code_now as provinsi_sekarang',
+                    'mhs.regency_code_now as kabupaten_sekarang',
+                    'mhs.subdistrict_code_now as kecamatan_sekarang',
+                    'mhs.village_code_now as desa_sekarang',
+                    'mhs.ipk',
+                    'mhs.nilai_micro_teaching',
+                    'mhs.link_transkrip_nilai',
+                    'mhs.link_surat_pernyataan',
+                    'mhs.link_surat_kesiapan',
+                    'mhs.semester',
+                    'mhs.cluster_kegiatan',
+                    'mhs.keterangan'
+
+
+                )
+                ->join('mahasiswa_tbl as mhs', 'users.username', '=', 'mhs.nim')
+                ->leftJoin('prodi_tbl as ptbl', 'mhs.id_prodi', '=', 'ptbl.id')
+                ->leftJoin('gelombang_tbl as gtbl', 'mhs.id_gelombang', '=', 'gtbl.id');
+
+
+
+            if ($username) {
+                $query->where('users.username', $username);
+            }
+
+            $data = $query->first();
+
+            return response()->json([
+                'message' => 'Successfully get data',
+                'data' => $data,
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'Failed when getting data',
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    public function getMahasiswaByEmailPage(Request $request)
+    {
+        $username = $request->query('x');
+        return Inertia::render('Admin/pages/Pengguna/Mahasiswa/StudentsDetail', ['id' => $username, 'base_url' => url('/')]);
+    }
+
+    public function listMahasiswa(Request $request)
+    {
+        // $query = TempatKPM::query();
+        $query = User::query();
+        $search = $request->query('search');
+        $sortBy = $request->query('sortBy', 'created_at');
+        $sortOrder = $request->query('sortOrder', 'desc');
+        $perPage = $request->query('perPage', 10);
+        $idGelombang = $request->query('idGelombang');
+        $status = $request->query('status');
+        $data = [];
+
+
+        try {
+            $query
+                ->select(
+                    'users.name',
+                    'users.username as nim',
+                    'users.email',
+                    'ptbl.name as nama_prodi',
+                    'mhs.jk as gender',
+                    'mhs.cluster_kegiatan',
+                    'mhs.nilai_micro_teaching',
+                    'gtbl.name as nama_gelombang',
+                    'mhs.status',
+
+                )
+                ->join('mahasiswa_tbl as mhs', 'users.username', '=', 'mhs.nim')
+                ->leftJoin('prodi_tbl as ptbl', 'mhs.id_prodi', '=', 'ptbl.id')
+                ->leftJoin('gelombang_tbl as gtbl', 'mhs.id_gelombang', '=', 'gtbl.id');
+
+
+
+            if ($idGelombang) {
+                $query->where('mhs.id_gelombang', $idGelombang);
+            }
+            $query->orderBy('mhs.status', 'DESC');
+            if ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('users.name', 'like', "%$search%")
+                        ->orWhere('users.username', 'like', "%$search%")
+                        ->orWhere('users.email', 'like', "%$search%");
+                });
+            }
+            if($status !== null || !empty($status)){
+                $query->where('mhs.status', $status);
+
+            }
+
+            $data = $query->paginate($perPage);
+
+
+
+            return response()->json([
+                'message' => 'Successfully get all data',
+                'data' => $data,
+                'gelombang' => $idGelombang
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'Failed when getting data',
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+
+    public function exportData(Request $request)
+    {
+        $idGelombang = $request->query('idGelombang');
+        return Excel::download(new StudentExport($idGelombang), 'Mahasiswa PPKPM.xlsx');
     }
 }

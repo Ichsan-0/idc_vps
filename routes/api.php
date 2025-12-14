@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\DesaMasterController;
 use App\Http\Controllers\Admin\KepsekkPamongController;
 use App\Http\Controllers\Admin\KPMAlocation;
 use App\Http\Controllers\Admin\LowonganPPLController;
+use App\Http\Controllers\Admin\MahsiswaController;
 use App\Http\Controllers\Admin\PPL\LowonganPPLController as PPLLowonganPPLController;
 use App\Http\Controllers\Admin\PPL\PelamarPPLController;
 use App\Http\Controllers\Admin\PPL\TempatPPLController as PPLTempatPPLController;
@@ -35,6 +36,7 @@ use App\Http\Controllers\CertificateController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LamaranKPMController;
 use App\Http\Controllers\Mahasiswa\ClassroomPPLController as MahasiswaClassroomPPLController;
+use App\Http\Controllers\Mahasiswa\MahasiswaController;
 use App\Http\Controllers\Mahasiswa\NilaiController;
 use App\Http\Controllers\MahasiswaKPM;
 use App\Http\Controllers\SchoolCertificateController;
@@ -158,6 +160,19 @@ Route::middleware(['auth:sanctum', 'role:admin'])
                         Route::get('/detail', [PelamarPPLController::class, 'getPelamarPPLById']);
                     });
                 });
+            });
+
+            Route::prefix('users')->group(function(){
+                Route::prefix('student')->group(function(){
+                    Route::get('/list', [MahsiswaController::class, 'listMahasiswa']);
+                    Route::get('/detail', [MahsiswaController::class, 'getMahasiswaByUsername']);
+                    Route::post('/status/{id}', [MahsiswaController::class, 'updateStatus']);
+                    Route::post('/export', [MahsiswaController::class, 'exportData']);
+
+
+
+                });
+
             });
         });
     });

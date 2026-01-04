@@ -82,29 +82,31 @@ Route::middleware(['auth', 'admin'])->group(function () {
         Route::prefix('data')->group(function () {
             Route::get('master-sekolah', [SekolahController::class, 'listSekolah']);
             Route::get('master-sekolah/{id}', [SekolahController::class, 'viewSekolah']);
+            Route::get('/settings', [SettingController::class, 'index'])->name('admin.settings');
+
 
             Route::get('master-desa', [DesaMasterController::class, 'index']);
             Route::get('master-desa/{id}', [DesaMasterController::class, 'detail']);
-
-
-
         });
 
-        Route::prefix('kpm')->group(function(){
+        Route::prefix('kpm')->group(function () {
             Route::get('tempatkpm', [TempatKPM::class, 'home']);
             Route::get('tempatkpm/detail', [TempatKPM::class, 'viewTempatKPM']);
             Route::get('kpm-alocations', [KPMAlocation::class, 'index']);
-
         });
-        Route::prefix('ppl')->group(function(){
+
+        Route::prefix('ppl')->group(function () {
             Route::get('ppl-alocation', [AlokasiPPL::class, 'list']);
             Route::get('sekolah', [PPLTempatPPLController::class, 'index']);
             Route::get('sekolah/detail', [PPLTempatPPLController::class, 'view']);
-
         });
 
-       
+        Route::prefix('users')->group(function () {
+            Route::get('/admin/list', [AdminController::class, 'index'])->name('admin.daftaradmin');
 
+            Route::get('admin-kecamatan/list', [AdminKecamatanController::class, 'index']);
+            Route::get('admin-sekolah/list', [AdminSekolahController::class, 'index']);
+        });
     });
     Route::get('/admin/dashboard', [DashboardController::class, 'index'])->name("admin.dashboard");
     Route::get('/admin/dashboard/get-data', [DashboardController::class, 'getData'])->name('admin.dashboard.data');
@@ -132,7 +134,6 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::delete('/admin/prodi/{id}', [ProdiController::class, 'delete'])->name("admin.prodi.delete");
 
 
-    Route::get('/admin/daftaradmin', [AdminController::class, 'index'])->name('admin.daftaradmin');
     Route::get('/admin/add', [AdminController::class, 'add'])->name('admin.add');
     Route::post('/admin/save', [AdminController::class, 'save'])->name('admin.save');
     Route::delete('/admin/delete/{email}', [AdminController::class, 'delete'])->name('admin.delete');
@@ -203,7 +204,6 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
 
     // Route::post('/admin/importdataprodi', [ProdiController::class, 'importprodi'])->name("admin.importdataprodi");
-    Route::get('/admin/settings', [SettingController::class, 'index'])->name('admin.settings');
     Route::post('/admin/settings/update', [SettingController::class, 'update'])->name('admin.settings.update');
 
 
@@ -244,11 +244,11 @@ Route::middleware(['auth', 'user', 'verified'])->group(function () {
     Route::get('/classroom', [StudentClassroomController::class, 'home']);
 
     Route::get('/kpm-vacancies/detail/{id}', [LowonganKPM::class, 'index'])->name("lowongankpm.detail")->middleware(['profil']);
-    Route::post('/lowongankpm/lamar', [LowonganKPM::class, 'lamar'])->name('lowongankpm.lamar')->middleware(['profil']);
+    Route::post('/lowongankpm/lamar', [LowonganKPM::class, 'lamar'])->name('lowongankpm.lamar')->middleware(['profil', 'open_kpm']);
     Route::get('/my-proposal', [RiwayatLamaran::class, 'index'])->name('riwayat')->middleware(['profil']);
     Route::get('/lowonganppl', [LowonganPPL::class, 'all'])->name('lownganppl')->middleware(['profil', 'open_ppl']);
     Route::get('/ppl-vacancies/detail/{id}', [LowonganPPL::class, 'detail'])->name('lownganppl.detail')->middleware(['profil']);
-    Route::post('/lowonganppl/lamar', [LowonganPPL::class, 'lamar'])->name('lownganppl.lamar')->middleware(['profil']);
+    Route::post('/lowonganppl/lamar', [LowonganPPL::class, 'lamar'])->name('lownganppl.lamar')->middleware(['profil', 'open_ppl']);
     Route::get('/profil', [MahasiswaProfilController::class, 'index'])->name("profil");
     Route::get('/grade', [NilaiController::class, 'index'])->name("nilai")->middleware(['profil']);
     Route::post('/profil/save', [MahasiswaProfilController::class, 'save'])->name('profil.save')->middleware(['save_profil']);
@@ -274,7 +274,7 @@ Route::get('/certificate', function () {
     return view('certificate');
 });
 
-Route::get('/view-certificate/teacher', function(){
+Route::get('/view-certificate/teacher', function () {
     return view('teacher_certificate', [
         'name' => 'John Doe',
         'certificate_number' => '2250/Un.08/FTK/KP.08.8/02/2025',

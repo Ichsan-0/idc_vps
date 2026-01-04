@@ -6,19 +6,25 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        //
+        Schema::table('ampraham_ppl_tbl', function (Blueprint $table) {
+            $table->unsignedBigInteger('id_gelombang')
+                  ->nullable()
+                  ->after('id_sekolah');
+
+            $table->foreign('id_gelombang')
+                  ->references('id')
+                  ->on('gelombang_tbl')
+                  ->onDelete('cascade');
+        });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        //
+        Schema::table('ampraham_ppl_tbl', function (Blueprint $table) {
+            $table->dropForeign(['id_gelombang']);
+            $table->dropColumn('id_gelombang');
+        });
     }
 };

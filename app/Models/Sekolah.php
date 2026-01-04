@@ -17,4 +17,8 @@ class Sekolah extends Model
     {
         return $this->hasOne(User::class, 'username', 'username_supervisor');
     }
+    public function master()
+    {
+        return $this->belongsTo(SekolahMaster::class, 'id_sekolah', 'id');
+    }
 }

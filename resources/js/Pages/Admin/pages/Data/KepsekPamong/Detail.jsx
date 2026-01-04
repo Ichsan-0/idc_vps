@@ -1,24 +1,30 @@
 import React from "react";
-
-import Sidebar from "@/Components/admin/Sidebar/Sidebar";
-import Header from "@/Components/admin/Header/Header";
-import { Head, Link, router } from "@inertiajs/react";
 import {
     Alert,
     AlertTitle,
     Breadcrumbs,
     Button,
+    Card,
+    CardContent,
     FormControl,
+    Grid,
     InputLabel,
     MenuItem,
     Select,
     TextField,
+    Typography,
+    Paper,
+    Box,
+    Stack,
+    Divider,
+    IconButton
 } from "@mui/material";
-import { NavigateNext } from "@mui/icons-material";
+import { NavigateNext, Download, Description, Save } from "@mui/icons-material";
 import { useState } from "react";
 import axios from "axios";
 import { ThreeDot } from "react-loading-indicators";
 import AdminLayout from "@/Layouts/Admin/AdminLayout";
+import { Head, Link, router } from "@inertiajs/react";
 
 const Detail = ({ data, base_url }) => {
     const [keterangan, setKeterangan] = useState(data?.keterangan);
@@ -38,7 +44,6 @@ const Detail = ({ data, base_url }) => {
                 `${base_url}/api/admin/data/kepsek-pamong/update-status/${data?.id}`,
                 formData
             );
-            console.log(response);
             if (response?.data?.status === "success") {
                 router.visit("/admin/data/kepsek-pamong");
             }
@@ -50,296 +55,282 @@ const Detail = ({ data, base_url }) => {
     };
 
     const downloadCertificate = async () => {
-            try {
-                setLoading(true);
-                const response = await axios.post(
-                    "/api/certificate/teacher/download",
-                    {
-                        id:data?.id,
-                    },
-                    {
-                        responseType: "blob",
-                    }
-                );
-    
-                const blob = new Blob([response.data], {
-                    type: "application/pdf",
-                });
-    
-                const downloadUrl = window.URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = downloadUrl;
-                let filename = "";
-    
-                const contentDisposition = response.headers["content-disposition"];
-        
-    
-                if (contentDisposition) {
-                    const match = contentDisposition.match(/filename="?([^"]+)"?/);
-                    if (match) {
-                        filename = match[1];
-                    }
+        try {
+            setLoading(true);
+            const response = await axios.post(
+                "/api/certificate/teacher/download",
+                {
+                    id: data?.id,
+                },
+                {
+                    responseType: "blob",
                 }
-    
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                window.URL.revokeObjectURL(downloadUrl);
-            } catch (err) {
-                setLoading(false);
-            } finally {
-                setLoading(false);
+            );
+
+            const blob = new Blob([response.data], {
+                type: "application/pdf",
+            });
+
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = downloadUrl;
+            let filename = "";
+
+            const contentDisposition = response.headers["content-disposition"];
+            if (contentDisposition) {
+                const match = contentDisposition.match(/filename="?([^"]+)"?/);
+                if (match) {
+                    filename = match[1];
+                }
             }
-        };
+
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(downloadUrl);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fieldGroups = [
+        {
+            title: "Informasi Pribadi",
+            fields: [
+                { label: "Nama", value: data?.name },
+                { label: "Nama di Buku Rekening", value: data?.nama_di_buku_rekening },
+                { label: "Pangkat & Golongan", value: data?.pangkat_dan_golongan },
+                { label: "NIP", value: data?.nip },
+                { label: "Jabatan", value: data?.jabatan },
+            ]
+        },
+        {
+            title: "Informasi Sekolah & Keuangan",
+            fields: [
+                { label: "Nama Sekolah", value: data?.nama_sekolah },
+                { label: "Nama Bank", value: data?.nama_bank },
+                { label: "No Rekening", value: data?.no_rekening },
+                { label: "No NPWP", value: data?.no_npwp },
+            ]
+        }
+    ];
 
     return (
         <AdminLayout>
-            <Head title={`${data?.name || "Kepsek & Pamong"}`} />
+            <Head title={`Detail - ${data?.name || "Kepsek & Pamong"}`} />
 
-            <div className="flex w-full flex-col">
-                <div className="space"></div>
+            <Box sx={{ position: "relative" }}>
                 {loading && (
-                    <div className="absolute z-10 w-full h-full flex items-center justify-center bg-white/70">
+                    <Box
+                        sx={{
+                            position: "fixed",
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            backgroundColor: "rgba(255, 255, 255, 0.8)",
+                            zIndex: 9999,
+                        }}
+                    >
                         <ThreeDot color="#4F61E3" size="medium" />
-                    </div>
+                    </Box>
                 )}
 
-                <div className="px-3 ">
-                    <section className="flex flex-col gap-y-3">
-                        <Breadcrumbs
-                            label="breadcrumbs"
-                            separator={<NavigateNext />}
-                        >
-                            <Link href="/admin/data/kepsek-pamong">
-                                Kepsek Pamong
-                            </Link>
+                <Box sx={{ p: 3 }}>
+                    {/* Breadcrumb */}
+                    <Box sx={{ mb: 3 }}>
+                        <Breadcrumbs separator={<NavigateNext fontSize="small" />}>
                             <Link
-                                href="/operator-sekolah/kepsek-pamong"
-                                className="text-primary"
+                                href="/admin/data/kepsek-pamong"
+                                style={{ textDecoration: "none", color: "inherit" }}
                             >
-                                Detail
+                                <Typography color="textSecondary">Kepsek Pamong</Typography>
                             </Link>
+                            <Typography color="textPrimary" fontWeight="medium">
+                                Detail
+                            </Typography>
+                            <Typography color="textPrimary" fontWeight="medium">
+                                {data?.name}
+                            </Typography>
                         </Breadcrumbs>
-                        <div className="p-5 bg-white border ">
-                            {error && (
-                                <Alert severity="error">
-                                    <AlertTitle>Error</AlertTitle>
-                                    {error}
-                                </Alert>
-                            )}
-                            <table className="table-auto">
-                                <tbody>
-                                    <tr>
-                                        <td className="pr-3 text-right align-top font-semibold">
-                                            Nama
-                                        </td>
-                                        <td className="mr-4 text-left align-top">
-                                            {data?.name}
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td className="pr-3 text-right align-top font-semibold">
-                                            Nama di Buku Rekening
-                                        </td>
-                                        <td className="mr-4 text-left align-top">
-                                            {data?.nama_di_buku_rekening}
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td className="pr-3 text-right align-top font-semibold">
-                                            Pangkat & Golongan
-                                        </td>
-                                        <td className="mr-4 text-left align-top">
-                                            {data?.pangkat_dan_golongan}
-                                        </td>
-                                    </tr>
+                    </Box>
 
-                                    <tr>
-                                        <td className="pr-3 text-right align-top font-semibold">
-                                            NIP
-                                        </td>
-                                        <td className="mr-4 text-left align-top">
-                                            {data?.nip}
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td className="pr-3 text-right align-top font-semibold">
-                                            Jabatan
-                                        </td>
-                                        <td className="mr-4 text-left align-top">
-                                            {data?.jabatan}
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td className="pr-3 text-right align-top font-semibold">
-                                            Nama Sekolah
-                                        </td>
-                                        <td className="mr-4 text-left align-top">
-                                            {data?.nama_sekolah}
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td className="pr-3 text-right align-top font-semibold">
-                                            Nama Bank
-                                        </td>
-                                        <td className="mr-4 text-left align-top">
-                                            {data?.nama_bank}
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td className="pr-3 text-right align-top font-semibold">
-                                            No Rekening
-                                        </td>
-                                        <td className="mr-4 text-left align-top">
-                                            {data?.no_rekening}
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td className="pr-3 text-right align-top font-semibold">
-                                            No NPWP
-                                        </td>
-                                        <td className="mr-4 text-left align-top">
-                                            {data?.no_npwp}
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td className="pr-3 text-right align-top font-semibold">
-                                            Sertifikat
-                                        </td>
-                                        <td className="mr-4 text-left align-top py-2">
+                    {/* Page Title */}
+                    <Box sx={{ mb: 4 }}>
+                        <Typography variant="h5" fontWeight="bold">
+                            Detail Kepala Sekolah / Pamong
+                        </Typography>
+                        <Typography variant="body2" color="textSecondary">
+                            Informasi lengkap dan pengelolaan data
+                        </Typography>
+                    </Box>
+
+                    {/* Error Alert */}
+                    {error && (
+                        <Alert severity="error" sx={{ mb: 3 }}>
+                            <AlertTitle>Error</AlertTitle>
+                            {error}
+                        </Alert>
+                    )}
+
+                    <Grid container spacing={3}>
+                        {/* Left Column - Data Display */}
+                        <Grid item xs={12} md={8}>
+                            <Card elevation={1}>
+                                <CardContent>
+                                    <Box sx={{ mb: 3 }}>
+                                        <Typography variant="h6" fontWeight="bold" gutterBottom>
+                                            Data Individu
+                                        </Typography>
+                                        <Divider sx={{ mb: 3 }} />
+                                    </Box>
+
+                                    {fieldGroups.map((group, groupIndex) => (
+                                        <Box key={groupIndex} sx={{ mb: 4 }}>
+                                            <Typography variant="subtitle1" fontWeight="bold" color="primary" gutterBottom>
+                                                {group.title}
+                                            </Typography>
+                                            <Grid container spacing={2}>
+                                                {group.fields.map((field, index) => (
+                                                    <Grid item xs={12} sm={6} key={index}>
+                                                        <Box sx={{ mb: 2 }}>
+                                                            <Typography variant="caption" color="textSecondary" display="block">
+                                                                {field.label}
+                                                            </Typography>
+                                                            <Typography variant="body1" fontWeight="medium">
+                                                                {field.value || "-"}
+                                                            </Typography>
+                                                        </Box>
+                                                    </Grid>
+                                                ))}
+                                            </Grid>
+                                        </Box>
+                                    ))}
+
+                                    {/* Dokumen Section */}
+                                    <Box sx={{ mt: 4 }}>
+                                        <Typography variant="subtitle1" fontWeight="bold" color="primary" gutterBottom>
+                                            Dokumen & Sertifikat
+                                        </Typography>
+                                        <Divider sx={{ mb: 2 }} />
+                                        <Stack direction="row" spacing={2}>
                                             <Button
-                                                onClick={downloadCertificate}
-                                                size="small"
-                                                sx={{
-                                                    textTransform: "capitalize",
-                                                }}
+                                                variant="outlined"
+                                                startIcon={<Description />}
+                                                href={`${base_url}/storage/${data?.link_document?.replace("public/", "")}`}
+                                                target="_blank"
+                                                sx={{ textTransform: "capitalize" }}
+                                            >
+                                                Lihat Dokumen
+                                            </Button>
+                                            {/* <Button
                                                 variant="contained"
-                                                disableElevation
-                                                color="primary"
+                                                startIcon={<Download />}
+                                                onClick={downloadCertificate}
+                                                sx={{ textTransform: "capitalize" }}
                                             >
                                                 Cetak Sertifikat
-                                            </Button>
-                                        </td>
-                                    </tr>
+                                            </Button> */}
+                                        </Stack>
+                                    </Box>
+                                </CardContent>
+                            </Card>
+                        </Grid>
 
-                                    <tr>
-                                        <td className="pr-3 text-right align-top font-semibold">
-                                            Dokumen
-                                        </td>
-                                        <td className="mr-4 text-left align-top">
-                                            <a
-                                                target="_blank"
-                                                href={`${base_url}/storage/${data?.link_document.replace(
-                                                    "public/",
-                                                    ""
-                                                )}`}
-                                                className="px-2 bg-primary text-white py-1 rounded-md"
-                                            >
-                                                dokumen
-                                            </a>
-                                        </td>
-                                    </tr>
+                        {/* Right Column - Action Panel */}
+                        <Grid item xs={12} md={4}>
+                            <Card elevation={1}>
+                                <CardContent>
+                                    <Typography variant="h6" fontWeight="bold" gutterBottom>
+                                        Verifikasi & Status
+                                    </Typography>
+                                    <Divider sx={{ mb: 3 }} />
 
-                                    <tr className="pt-3">
-                                        <td className="pr-3 text-right align-top font-semibold">
-                                            Status
-                                        </td>
-                                        <td className="mr-4 text-left align-top pt-6">
-                                            <FormControl
-                                                fullWidth
-                                                sx={{ width: "300px" }}
+                                    <Stack spacing={3}>
+                                        <FormControl fullWidth>
+                                            <InputLabel id="status-label">Status</InputLabel>
+                                            <Select
+                                                labelId="status-label"
+                                                value={status}
+                                                label="Status"
+                                                onChange={(e) => setStatus(e.target.value)}
+                                                size="small"
                                             >
-                                                <InputLabel id="status">
-                                                    Status
-                                                </InputLabel>
-                                                <Select
-                                                    labelId="status"
-                                                    id="bank-name"
-                                                    value={status}
-                                                    label="Status"
-                                                    onChange={(e) =>
-                                                        setStatus(
-                                                            e.target.value
-                                                        )
-                                                    }
-                                                >
-                                                    <MenuItem
-                                                        value={"di-review"}
-                                                    >
-                                                        Direview
-                                                    </MenuItem>
-                                                    <MenuItem
-                                                        value={"diterima"}
-                                                    >
-                                                        Diterima
-                                                    </MenuItem>
-                                                    <MenuItem value={"ditolak"}>
-                                                        Ditolak
-                                                    </MenuItem>
-                                                </Select>
-                                            </FormControl>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td className="pr-3 text-right align-top font-semibold">
-                                            Keterangan
-                                        </td>
-                                        <td className="mr-4 text-left align-top pt-3">
-                                            <TextField
-                                                fullWidth
-                                                value={keterangan}
-                                                multiline
-                                                rows={3}
-                                                label="Keterangan"
-                                                onChange={(e) =>
-                                                    setKeterangan(
-                                                        e.target.value
-                                                    )
-                                                }
-                                                sx={{
-                                                    "& .MuiOutlinedInput-root.Mui-focused":
-                                                        {
-                                                            outline: "none",
-                                                            boxShadow: "none",
-                                                        },
-                                                    "& .MuiInputBase-input:focus":
-                                                        {
-                                                            outline: "none",
-                                                            boxShadow: "none",
-                                                        },
-                                                }}
-                                            />
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td className="pr-3 text-right align-top font-semibold"></td>
-                                        <td className="mr-4 text-left align-top pt-3">
-                                            <div>
-                                                <Button
-                                                    sx={{
-                                                        textTransform:
-                                                            "capitalize",
-                                                    }}
-                                                    variant="contained"
-                                                    disableElevation
-                                                    disabled={loading}
-                                                    onClick={() =>
-                                                        updateStatus()
-                                                    }
-                                                >
-                                                    Simpan
-                                                </Button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </section>
-                </div>
-                <div className="h-46"></div>
-            </div>
+                                                <MenuItem value={"di-review"}>Direview</MenuItem>
+                                                <MenuItem value={"diterima"}>Diterima</MenuItem>
+                                                <MenuItem value={"ditolak"}>Ditolak</MenuItem>
+                                            </Select>
+                                        </FormControl>
+
+                                        <TextField
+                                            fullWidth
+                                            label="Keterangan"
+                                            multiline
+                                            rows={4}
+                                            value={keterangan}
+                                            onChange={(e) => setKeterangan(e.target.value)}
+                                            size="small"
+                                        />
+
+                                        <Button
+                                            variant="contained"
+                                            startIcon={<Save />}
+                                            onClick={updateStatus}
+                                            disabled={loading}
+                                            sx={{
+                                                textTransform: "capitalize",
+                                                py: 1.5,
+                                                fontWeight: "bold"
+                                            }}
+                                            fullWidth
+                                        >
+                                            Simpan Perubahan
+                                        </Button>
+                                    </Stack>
+
+                                    {/* Current Status Badge */}
+                                    <Paper
+                                        elevation={0}
+                                        sx={{
+                                            mt: 4,
+                                            p: 2,
+                                            bgcolor: status === "diterima" ? "success.light" :
+                                                    status === "ditolak" ? "error.light" :
+                                                    "warning.light",
+                                            borderRadius: 1
+                                        }}
+                                    >
+                                        <Typography variant="caption" display="block" color="textSecondary">
+                                            Status Saat Ini
+                                        </Typography>
+                                        <Typography variant="body1" fontWeight="bold">
+                                            {status === "diterima" ? "Diterima" :
+                                             status === "ditolak" ? "Ditolak" :
+                                             "Dalam Review"}
+                                        </Typography>
+                                    </Paper>
+                                </CardContent>
+                            </Card>
+
+                            {/* Back Button */}
+                            <Button
+                                variant="outlined"
+                                fullWidth
+                                sx={{ mt: 2 }}
+                                onClick={() => router.visit("/admin/data/kepsek-pamong")}
+                            >
+                                Kembali ke Daftar
+                            </Button>
+                        </Grid>
+                    </Grid>
+                </Box>
+            </Box>
         </AdminLayout>
     );
 };

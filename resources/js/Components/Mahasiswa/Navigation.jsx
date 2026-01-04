@@ -20,24 +20,24 @@ const Navigation = () => {
     const { pathname } = new URL(url, window.location.origin);
 
     const navigationItems = [
-        // {
-        //     id: "Lowongan KPM",
-        //     icon: MapPinHouse,
-        //     label: "Lowongan KPM",
-        //     path: "/kpm-vacancies",
-        // },
-        // {
-        //     id: "Lowngan PPL",
-        //     icon: School,
-        //     label: "Lowngan PPL",
-        //     path: "/ppl-vacancies",
-        // },
-        // {
-        //     id: "Lamaranku",
-        //     icon: Files,
-        //     label: "Lamaranku",
-        //     path: "/my-proposal",
-        // },
+        {
+            id: "Lowongan KPM",
+            icon: MapPinHouse,
+            label: "Lowongan KPM",
+            path: "/kpm-vacancies",
+        },
+        {
+            id: "Lowngan PPL",
+            icon: School,
+            label: "Lowngan PPL",
+            path: "/ppl-vacancies",
+        },
+        {
+            id: "Lamaranku",
+            icon: Files,
+            label: "Lamaranku",
+            path: "/my-proposal",
+        },
         {
             id: "Classroom",
             icon: SquareLibrary,
@@ -46,6 +46,7 @@ const Navigation = () => {
         },
         { id: "Nilai", icon: Shield, label: "Nilai", path: "/grade" },
         { id: "Profile", icon: User, label: "Profile", path: "/profil" },
+        
     ];
 
     return (
@@ -83,7 +84,7 @@ const Navigation = () => {
             {/* Mobile Navigation - Bottom */}
             <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
                 <div className="flex justify-around items-center py-2">
-                    {navigationItems.slice(0, 5).map((item) => {
+                    {navigationItems.slice(0, 6).map((item) => {
                         const IconComponent = item.icon;
                         return (
                             <button

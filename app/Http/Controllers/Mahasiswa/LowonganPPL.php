@@ -18,54 +18,68 @@ class LowonganPPL extends Controller
 {
     public function detail(Request $request, $id)
     {
+        $lowonganPPL = ModelsLowonganPPL::with(['sekolah.master', 'prodi'])
+            ->findOrFail($id);
 
-        $tempat_ppl = ModelsLowonganPPL::where('id', $id)->with(['sekolah', 'prodi'])->withCount('accepted_pelamar')->first();
+        // Mencari prodi berdasarkan ID lamaran PPL
+        $prodi = DB::table('lamaran_ppl_tbl as lp')
+            ->join('lowongan_ppl_tbl as l', 'lp.id_lowongan_ppl', '=', 'l.id')
+            ->join('prodi_tbl as p', 'l.id_prodi', '=', 'p.id')
+            ->select('p.id', 'p.name')
+            ->where('l.id', $id)
+            ->first();
 
+        // Query manual untuk statistik
+        $stats = DB::table('lamaran_ppl_tbl')
+            ->selectRaw('COUNT(*) as total_pelamar')
+            ->selectRaw('SUM(CASE WHEN status = "accepted" THEN 1 ELSE 0 END) as accepted_pelamar_count')
+            ->where('id_lowongan_ppl', $id)
+            ->first();
 
-        $pelamar = LamaranPPL::join('users as us', 'lamaran_ppl_tbl.username_mahasiswa', '=', 'us.username')
-            ->join('mahasiswa_tbl as dt', 'us.username', '=', 'dt.nim')
-            ->join('prodi_tbl as pr', 'dt.id_prodi', '=', 'pr.id')
-            ->join('lowongan_ppl_tbl as lw_ppl', 'lamaran_ppl_tbl.id_lowongan_ppl', '=', 'lw_ppl.id') // Corrected here
-            ->where('lw_ppl.id_sekolah', $tempat_ppl->id_sekolah)
-            // ->where('lamaran_ppl_tbl.id_lowongan_ppl', $id) // Add this condition to filter by $id
-            ->where('lamaran_ppl_tbl.status', 'accepted')
-            ->select('us.name as nama_mahasiswa', 'us.username as nim', 'pr.name as nama_prodi', 'dt.jk as jk')
-            ->get();
+        $genderStats = DB::table('lamaran_ppl_tbl as lp')
+            ->join('mahasiswa_tbl as m', 'lp.username_mahasiswa', '=', 'm.nim')
+            ->selectRaw('SUM(CASE WHEN m.jk = "L" AND lp.status = "accepted" THEN 1 ELSE 0 END) as jumlah_pria')
+            ->selectRaw('SUM(CASE WHEN m.jk = "P" AND lp.status = "accepted" THEN 1 ELSE 0 END) as jumlah_wanita')
+            ->where('lp.id_lowongan_ppl', $id)
+            ->first();
 
-        // dd($tempat_ppl->sekolah->id);
+        // Pelamar yang diterima
+        $pelamar = LamaranPPL::with(['data_user.prodi', 'user'])
+            ->where('id_lowongan_ppl', $id)
+            ->where('status', 'accepted')
+            ->get()
+            ->map(function ($lamaran) {
+                return [
+                    'nama_mahasiswa' => $lamaran->user->name ?? $lamaran->data_user->nama ?? 'N/A',
+                    'nim' => $lamaran->username_mahasiswa,
+                    'nama_prodi' => $lamaran->data_user->prodi->name ?? 'N/A',
+                    'jk' => $lamaran->data_user->jk ?? 'N/A',
+                ];
+            });
 
-        // $pelamar = DB::table('lowongan_ppl_tbl')
-        //     ->join('lamaran_ppl_tbl as lm_ppl', 'lowongan_ppl_tbl.id', '=', 'lm_ppl.id_lowongan_ppl')
-        //     // ->where('lm_ppl.status', 'accepted')
-        //     ->where('lowongan_ppl_tbl.id_sekolah', $tempat_ppl->sekolah->id)
-        //     ->all();
+        return Inertia::render('Mahasiswa/DetailLowonganPPL', [
+            'lowongan_ppl' => [
+                'id' => $lowonganPPL->id,
+                'prodi' => $prodi,
+                'name' => $lowonganPPL->name,
+                'description' => $lowonganPPL->description,
+                'quota' => $lowonganPPL->quota,
+                'sekolah' => $lowonganPPL->sekolah ? [
+                    'nama_sekolah' => $lowonganPPL->sekolah->master->name ?? $lowonganPPL->sekolah->name,
+                    'regency' => $lowonganPPL->sekolah->master->regency ?? $lowonganPPL->sekolah->regency,
+                    'sub_district' => $lowonganPPL->sekolah->master->sub_district ?? $lowonganPPL->sekolah->sub_district,
+                    'village' => $lowonganPPL->sekolah->master->village ?? $lowonganPPL->sekolah->village,
+                    'address' => $lowonganPPL->sekolah->master->address ?? $lowonganPPL->sekolah->address,
+                    'username_supervisor' => $lowonganPPL->sekolah->username_supervisor ?? null,
+                ] : null,
+                'total_pelamar' => $stats->total_pelamar ?? 0,
+                'accepted_pelamar_count' => $stats->accepted_pelamar_count ?? 0,
+                'jumlah_pria' => $genderStats->jumlah_pria ?? 0,
+                'jumlah_wanita' => $genderStats->jumlah_wanita ?? 0,
+            ],
 
-        // $pelamar = ModelsLowonganPPL::join('lamaran_ppl_tbl as lm_ppl', 'lowongan_ppl_tbl.id', '=', 'lm_ppl.id_lowongan_ppl')
-        //     // ->where('lm_ppl.status', 'accepted')
-        //     ->where('lowongan_ppl_tbl.id_sekolah', $tempat_ppl->sekolah->id)
-        //     ->get();
-
-
-        // $pelamar = ModelsLowonganPPL::where('id_sekolah', $tempat_ppl->sekolah->id)
-        //     ->get();
-        // dd($pelamar);
-
-        // $pelamar = LamaranPPL::join('users as us', 'lamaran_ppl_tbl.username_mahasiswa', '=', 'us.username')
-        //     ->join('mahasiswa_tbl as dt', 'us.username', '=', 'dt.nim')
-        //     ->join('prodi_tbl as pr', 'dt.id_prodi', '=', 'pr.id')
-        //     ->join('lowongan_ppl_tbl as lw_ppl', 'lamaran_ppl_tbl.id_lowongan_ppl', '=', 'lw_ppl.id') // Corrected here
-        //     ->where('lw_ppl.id_sekolah', $tempat_ppl->id_sekolah)
-        //     // ->where('lamaran_ppl_tbl.id_lowongan_ppl', $id) // Add this condition to filter by $id
-        //     ->where('lamaran_ppl_tbl.status', 'accepted')
-        //     ->select('us.name as nama_mahasiswa', 'us.username as nim', 'pr.name as nama_prodi', 'dt.jk as jk')
-        //     ->get();
-
-        // dd($pelamar);
-
-
-
-        // $tempat_ppl = ModelsLowonganPPL::where('id', $id)->with(['sekolah', 'prodi'])->first();
-        return Inertia::render('Mahasiswa/DetailLowonganPPL', ['tempat_ppl' => $tempat_ppl, 'pelamar' => $pelamar]);
+            'pelamar' => $pelamar,
+        ]);
     }
 
     public function all()
@@ -90,22 +104,20 @@ class LowonganPPL extends Controller
         $data = [
             'username_mahasiswa' => Auth::user()->username,
             'id_lowongan_ppl' => $request->id,
-            'status' => 'submitted',
+            'status' => 'accepted',
         ];
 
         if (count($totallamaran) < $lowongan->quota) {
             if ($eksisting_lamaran) {
-                return redirect('/riwayat')->with('message', ['error' => 'Kamu Sudah Melamar Ke Lowongan ini']);
+                return redirect('/my-proposal')->with('message', ['error' => 'Kamu Sudah Melamar Ke Lowongan ini']);
+            } else if ($lamaran_accepted) {
+                return redirect('/my-proposal')->with('message', ['error' => 'Kamu sudah diterima di lowongan lain']);
             } else {
                 LamaranPPL::create($data);
-                return redirect('/riwayat')->with('message', ['success' => 'Lamaran Berhasil Dikirim']);
+                return redirect('/my-proposal')->with('message', ['success' => 'Lamaran Berhasil Dikirim']);
             }
-        } else if ($lamaran_accepted) {
-            return redirect('/riwayat')->with('message', ['error' => 'Kamu sudah diterima di lowongan lain']);
         } else {
             return redirect()->back()->with('message', ['error' => 'Sudah Penuh']);
         }
-
-        dd($request);
     }
 }

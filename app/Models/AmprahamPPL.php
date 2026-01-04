@@ -24,6 +24,7 @@ class AmprahamPPL extends Model
         'jabatan',
         'nama_bank',
         'status',
-        'keterangan'
+        'keterangan',
+        'id_gelombang'
     ];
 }

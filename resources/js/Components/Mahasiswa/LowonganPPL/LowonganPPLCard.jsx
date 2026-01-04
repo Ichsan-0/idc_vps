@@ -41,7 +41,7 @@ const LowonganPPLCard = ({ppl, index, locationDetails}) => {
                         onClick={(e) => {
                             e.preventDefault();
 
-                            router.visit(`/lowonganppl/detail/${ppl.id}`);
+                            router.visit(`/ppl-vacancies/detail/${ppl.id_ppl}`);
                         }}
                         sx={{
                             color: "white",

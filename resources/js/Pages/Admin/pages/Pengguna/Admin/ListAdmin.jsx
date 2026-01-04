@@ -13,6 +13,7 @@ import { TiEdit } from "react-icons/ti";
 import Modal from "@/Components/Modal";
 import { useEffect } from "react";
 import { useState } from "react";
+import AdminLayout from "@/Layouts/Admin/AdminLayout";
 
 const ListAdmin = ({ daftaradmin, flash }) => {
     const [openDialog, setOpenDialog] = useState(false);
@@ -124,35 +125,36 @@ const ListAdmin = ({ daftaradmin, flash }) => {
     };
     // console.log(tempat_ppl);
     return (
-        <section className="main flex">
-            <div className="sidebarWrapper flex">
-                <Sidebar tabId={4} />
-            </div>
-            <div className="flex w-full ml-72 flex-col">
-                <Header></Header>
-                <div className="space"></div>
-                <div className="px-3">
-                    <div className="flex w-full  py-2">
-                        <Button
-                            variant="contained"
-                            onClick={(e) => {
-                                e.preventDefault();
-                                router.visit("/admin/add");
-                            }}
-                        >
-                            Tambah
-                        </Button>
+        <AdminLayout>
+            <section className="main flex">
+                <div className="flex w-full flex-col">
+                    <div className="space"></div>
+                    <div className="px-3">
+                        <div className="flex w-full  py-2">
+                            <Button
+                                variant="contained"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    router.visit("/admin/add");
+                                }}
+                            >
+                                Tambah
+                            </Button>
+                        </div>
+                        <MUIDataTable
+                            title={"Daftar Admin"}
+                            data={daftaradmin}
+                            columns={columns}
+                            options={options}
+                        />
                     </div>
-                    <MUIDataTable
-                        title={"Daftar Admin"}
-                        data={daftaradmin}
-                        columns={columns}
-                        options={options}
-                    />
                 </div>
-            </div>
-            <Modal show={openDialog} closeable={true} onClose={onDialogClose}>
-                {/* <div className="p-3">
+                <Modal
+                    show={openDialog}
+                    closeable={true}
+                    onClose={onDialogClose}
+                >
+                    {/* <div className="p-3">
                     <ul className=" flex flex-col">
                         <li className="text-md font-bold">
                             Yakin ingin menghapus
@@ -176,26 +178,27 @@ const ListAdmin = ({ daftaradmin, flash }) => {
                         </li>
                     </ul>
                 </div> */}
-            </Modal>
-            <Snackbar
-                open={notify}
-                anchorOrigin={{
-                    vertical: "top",
-                    horizontal: "right",
-                }}
-                autoHideDuration={2000}
-                onClose={handleCloseNotify}
-            >
-                <Alert
+                </Modal>
+                <Snackbar
+                    open={notify}
+                    anchorOrigin={{
+                        vertical: "top",
+                        horizontal: "right",
+                    }}
+                    autoHideDuration={2000}
                     onClose={handleCloseNotify}
-                    severity={notifyStatus}
-                    variant="filled"
-                    sx={{ width: "100%" }}
                 >
-                    {flash.message && flash.message[notifyStatus]}
-                </Alert>
-            </Snackbar>
-        </section>
+                    <Alert
+                        onClose={handleCloseNotify}
+                        severity={notifyStatus}
+                        variant="filled"
+                        sx={{ width: "100%" }}
+                    >
+                        {flash.message && flash.message[notifyStatus]}
+                    </Alert>
+                </Snackbar>
+            </section>
+        </AdminLayout>
     );
 };
 

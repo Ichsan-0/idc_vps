@@ -261,7 +261,7 @@ class MahsiswaController extends Controller
 
     public function exportData(Request $request)
     {
-        $idGelombang = $request->query('idGelombang');
+        $idGelombang = $request->input('idGelombang');
         return Excel::download(new StudentExport($idGelombang), 'Mahasiswa PPKPM.xlsx');
     }
 }

@@ -1,326 +1,96 @@
-import React from "react";
+import SertifikatMahasiswaTable from '@/Components/AdminNew/Tables/Sertifikat/SertifikatMahasiswaTable';
+import SertifikatSekolahTable from '@/Components/AdminNew/Tables/Sertifikat/SertifikatSekolahTable';
+import PageBreadcrumb from '@/Components/PageBreadcrumb';
+import AdminLayout from '@/Layouts/Admin/AdminLayout';
+import React from 'react';
 
-import { Head } from "@inertiajs/react";
-import {
-    Alert,
-    Button,
-    FormControlLabel,
-    Snackbar,
-    Switch,
-    TextField,
-} from "@mui/material";
-import { useState } from "react";
-import { useEffect } from "react";
+const CertificateSettings = () => {
+  return (
+    <AdminLayout>
+      <div className="flex flex-col gap-6 p-6">
+        {/* Page Header with Breadcrumb */}
+        <div className="flex flex-col gap-3">
+          <PageBreadcrumb 
+            items={[
+              { label: 'Dashboard', href: '/admin/dashboard' },
+              { label: 'Pengaturan', href: '/admin/settings' },
+              { label: 'Sertifikat', href: '#', active: true }
+            ]}
+          />
+          <h1 className="text-2xl font-bold text-gray-800">Pengaturan Sertifikat</h1>
+          <p className="text-gray-600">Kelola template dan pengaturan sertifikat untuk sekolah dan mahasiswa</p>
+        </div>
 
-import AdminLayout from "@/Layouts/Admin/AdminLayout";
-import { ThreeDot } from "react-loading-indicators";
-
-const CertificateSettings = ({}) => {
-    const [notify, setNotify] = useState(false);
-    const [notifyStatus, setNotifyStatus] = useState("default");
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-    const [kodeUniv, setKodeUniv] = useState(null);
-    const [kodeIDC, setKodeIDC] = useState(null);
-    const [kodeJenisSurat, setKodeJenisSurat] = useState(null);
-    const [bulanTahun, setBulanTahun] = useState(null);
-    const [openPrintCertificate, setOpenPrintCertificate] = useState(false);
-    const [notifMsg, setNotifMsg] = useState(null);
-    const [baseNumber, setBaseNumber] = useState(null);
-    const [tangalSurat, setTanggalSurat] = useState(null);
-
-    const fetchData = async () => {
-        setLoading(true);
-        setError(null);
-
-        try {
-            const response = await axios.get(
-                `/api/admin/certificate/setting`,
-                {}
-            );
-            console.log("certificate setting: ", response);
-            const settingData = response.data?.data?.settings;
-            if (settingData) {
-                setKodeUniv(settingData?.kode_universitas);
-                setKodeIDC(settingData?.kode_idc);
-                setKodeJenisSurat(settingData?.kode_jenis_surat);
-                setBulanTahun(settingData?.bulan_tahun);
-                setOpenPrintCertificate(settingData.open_print_certificate);
-                setBaseNumber(settingData?.base_number);
-                setTanggalSurat(settingData?.tanggal_surat);
-            }
-        } catch (err) {
-            setError(err.message || "Something went wrong.");
-            console.log("error : ", err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const saveSettings = async () => {
-        setLoading(true);
-        setError(null);
-        setNotifMsg(null);
-
-        try {
-            const formData = new FormData();
-            formData.append("kode_universitas", kodeUniv);
-            formData.append("kode_idc", kodeIDC);
-            formData.append("kode_jenis_surat", kodeJenisSurat);
-            formData.append("bulan_tahun", bulanTahun);
-            formData.append("open_print_certificate", openPrintCertificate ? 1 : 0);
-            formData.append('base_number', baseNumber);
-            formData.append('tanggal_surat', tangalSurat);
-            const response = await axios.post(
-                `/api/admin/certificate/setting`,
-                formData
-            );
-        } catch (err) {
-            setError(err.message || "Something went wrong.");
-            setNotifMsg(err.message);
-            setNotifyStatus("error");
-        } finally {
-            setLoading(false);
-            fetchData();
-            setNotifMsg("Berhasil menyimpan setting");
-            setNotifyStatus("success");
-        }
-    };
-
-    const onDialogClose = () => {
-        setOpenDialog(false);
-        setIdObjToDelete(null);
-    };
-
-    const handleConfirmClick = (e) => {
-        console.log(e);
-        exportExcel(e);
-
-        onDialogClose();
-    };
-
-    useEffect(() => {
-        if (notifMsg) {
-            setNotify(true);
-        }
-        setNotify(true);
-    }, [notifMsg]);
-
-    const handleCloseNotify = (event, reason) => {
-        if (reason === "clickaway") {
-            return;
-        }
-        setNotify(false);
-    };
-
-    const handleBaseNumberChange = (e) => {
-        setBaseNumber(e.target.value);
-    };
-
-    const handleKodeUnivChange = (e) => {
-        setKodeUniv(e.target.value);
-    };
-
-    const handleKodeIDCChange = (e) => {
-        setKodeIDC(e.target.value);
-    };
-    const handleKodeJenisSuratChange = (e) => {
-        setKodeJenisSurat(e.target.value);
-    };
-
-    const handleMonthYearChange = (e) => {
-        setBulanTahun(e.target.value);
-    };
-
-    const handleOpenPrintCertificate = (e) => {
-        setOpenPrintCertificate(e.target.checked);
-    };
-    const handleTanggalSuratChange = (e) => {
-        setTanggalSurat(e.target.value);
-    }
-
-    useEffect(() => {
-        fetchData();
-    }, []);
-
-    return (
-        <AdminLayout className="main flex">
-            <Head title="Nilai PPL" />
-            <div className="flex w-full flex-col">
-                <div className="px-3"></div>
-                {loading && (
-                    <div className="absolute z-10 w-full h-full flex items-center justify-center bg-white/70">
-                        <ThreeDot color="#4F61E3" size="medium" />
-                    </div>
-                )}
-
-                <div className="flex flex-col px-3 gap-y-3">
-                    {error && <Alert severity="error">{error}</Alert>}
-                    <div className="flex flex-col bg-white">
-                        <div className="grid grid-cols-1 md:grid-cols-2 w-full rounded-md  gap-3 p-5">
-                            <div>
-                                <TextField
-                                    fullWidth
-                                    value={baseNumber}
-                                    label="Base Number"
-                                    onChange={(e) => handleBaseNumberChange(e)}
-                                    sx={{
-                                        "& .MuiOutlinedInput-root.Mui-focused":
-                                            {
-                                                outline: "none",
-                                                boxShadow: "none",
-                                            },
-                                        "& .MuiInputBase-input:focus": {
-                                            outline: "none",
-                                            boxShadow: "none",
-                                        },
-                                    }}
-                                />
-                            </div>
-                            <div>
-                                <TextField
-                                    fullWidth
-                                    value={kodeUniv}
-                                    label="Kode Universitas"
-                                    onChange={(e) => handleKodeUnivChange(e)}
-                                    sx={{
-                                        "& .MuiOutlinedInput-root.Mui-focused":
-                                            {
-                                                outline: "none",
-                                                boxShadow: "none",
-                                            },
-                                        "& .MuiInputBase-input:focus": {
-                                            outline: "none",
-                                            boxShadow: "none",
-                                        },
-                                    }}
-                                />
-                            </div>
-                            <div>
-                                <TextField
-                                    fullWidth
-                                    value={kodeIDC}
-                                    label="Kode IDC"
-                                    onChange={(e) => handleKodeIDCChange(e)}
-                                    sx={{
-                                        "& .MuiOutlinedInput-root.Mui-focused":
-                                            {
-                                                outline: "none",
-                                                boxShadow: "none",
-                                            },
-                                        "& .MuiInputBase-input:focus": {
-                                            outline: "none",
-                                            boxShadow: "none",
-                                        },
-                                    }}
-                                />
-                            </div>
-                            <div>
-                                <TextField
-                                    fullWidth
-                                    value={tangalSurat}
-                                    label="Tanggal Surat"
-                                    onChange={(e) => handleTanggalSuratChange(e)}
-                                    sx={{
-                                        "& .MuiOutlinedInput-root.Mui-focused":
-                                            {
-                                                outline: "none",
-                                                boxShadow: "none",
-                                            },
-                                        "& .MuiInputBase-input:focus": {
-                                            outline: "none",
-                                            boxShadow: "none",
-                                        },
-                                    }}
-                                />
-                            </div>
-                            <div>
-                                <TextField
-                                    fullWidth
-                                    value={kodeJenisSurat}
-                                    label="Kode Jenis Surat"
-                                    onChange={(e) =>
-                                        handleKodeJenisSuratChange(e)
-                                    }
-                                    sx={{
-                                        "& .MuiOutlinedInput-root.Mui-focused":
-                                            {
-                                                outline: "none",
-                                                boxShadow: "none",
-                                            },
-                                        "& .MuiInputBase-input:focus": {
-                                            outline: "none",
-                                            boxShadow: "none",
-                                        },
-                                    }}
-                                />
-                            </div>
-                            <div>
-                                <TextField
-                                    fullWidth
-                                    value={bulanTahun}
-                                    label="Bulan & Tahun"
-                                    onChange={(e) => handleMonthYearChange(e)}
-                                    sx={{
-                                        "& .MuiOutlinedInput-root.Mui-focused":
-                                            {
-                                                outline: "none",
-                                                boxShadow: "none",
-                                            },
-                                        "& .MuiInputBase-input:focus": {
-                                            outline: "none",
-                                            boxShadow: "none",
-                                        },
-                                    }}
-                                />
-                            </div>
-                            <div>
-                                <FormControlLabel
-                                    control={
-                                        <Switch
-                                            checked={openPrintCertificate}
-                                            onChange={(e) =>
-                                                handleOpenPrintCertificate(e)
-                                            }
-                                        />
-                                    }
-                                    label="Buka Cetak Sertifikat"
-                                />
-                            </div>
-                        </div>
-                        <div className="p-3">
-                            <Button
-                                sx={{ textTransform: "capitalize" }}
-                                disableElevation
-                                onClick={() => saveSettings()}
-                                variant="contained"
-                            >
-                                Simpan
-                            </Button>
-                        </div>
-                    </div>
-                </div>
+        {/* Sertifikat Sekolah Section */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+          <div className="p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-800">Sertifikat Sekolah</h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  Kelola template sertifikat untuk kepala sekolah dan guru pamong
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  {typeof window !== 'undefined' ? 
+                    (localStorage.getItem('sertifikat_sekolah_count') || '0') : '0'} 
+                  Template
+                </span>
+              </div>
             </div>
-            <Snackbar
-                open={notify}
-                anchorOrigin={{
-                    vertical: "top",
-                    horizontal: "right",
-                }}
-                autoHideDuration={2000}
-                onClose={handleCloseNotify}
-            >
-                <Alert
-                    onClose={handleCloseNotify}
-                    severity={notifyStatus}
-                    variant="filled"
-                    sx={{ width: "100%" }}
-                >
-                    {notifMsg && notifMsg}
-                </Alert>
-            </Snackbar>
-        </AdminLayout>
-    );
+          </div>
+          <div className="p-1">
+            <SertifikatSekolahTable />
+          </div>
+        </div>
+
+        {/* Sertifikat Mahasiswa Section */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+          <div className="p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-800">Sertifikat Mahasiswa</h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  Kelola template sertifikat untuk mahasiswa PPL/KPM
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  {typeof window !== 'undefined' ? 
+                    (localStorage.getItem('sertifikat_mahasiswa_count') || '0') : '0'} 
+                  Template
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="p-1">
+            <SertifikatMahasiswaTable />
+          </div>
+        </div>
+
+        {/* Info Panel */}
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0">
+              <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="font-medium text-blue-800 mb-1">Informasi Penting</h3>
+              <ul className="text-sm text-blue-700 space-y-1">
+                <li>• Template sertifikat aktif akan digunakan untuk pencetakan</li>
+                <li>• Hanya satu template yang dapat aktif per periode</li>
+                <li>• Pastikan format nomor sertifikat sesuai dengan standar</li>
+                <li>• Template dapat dihubungkan dengan gelombang tertentu</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </AdminLayout>
+  );
 };
 
 export default CertificateSettings;

@@ -16,6 +16,8 @@ use App\Http\Controllers\Admin\PPL\TempatPPLController as PPLTempatPPLController
 use App\Http\Controllers\Admin\PplAlocationController;
 use App\Http\Controllers\Admin\ProdiController;
 use App\Http\Controllers\Admin\SekolahController;
+use App\Http\Controllers\Admin\SertifikatMahasiswaController;
+use App\Http\Controllers\Admin\SertifikatSekolahController;
 use App\Http\Controllers\LowonganKPMApiController;
 use App\Http\Controllers\LowonganKPMController;
 use App\Http\Controllers\LowonganPPLApiController;
@@ -160,6 +162,25 @@ Route::middleware(['auth:sanctum', 'role:admin'])
                         Route::get('/detail', [PelamarPPLController::class, 'getPelamarPPLById']);
                     });
                 });
+            });
+            Route::prefix('school-certificate')->group(function(){
+                Route::get('/setting', [SertifikatSekolahController::class, 'index']);
+                Route::post('/togleactive/{id}', [SertifikatSekolahController::class, 'togglePrintStatus']);
+                Route::delete('/setting/{id}', [SertifikatSekolahController::class, 'destroy']);
+                Route::post('/setting', [SertifikatSekolahController::class, 'store']);
+                Route::post('/setting/update/{id}', [SertifikatSekolahController::class, 'update']);
+
+
+            });
+
+            Route::prefix('student-certificate')->group(function(){
+                Route::get('/setting', [SertifikatMahasiswaController::class, 'index']);
+                Route::post('/togleactive/{id}', [SertifikatMahasiswaController::class, 'togglePrintStatus']);
+                Route::delete('/setting/{id}', [SertifikatMahasiswaController::class, 'destroy']);
+                Route::post('/setting', [SertifikatMahasiswaController::class, 'store']);
+                Route::post('/setting/update/{id}', [SertifikatMahasiswaController::class, 'update']);
+
+
             });
 
             Route::prefix('users')->group(function(){

@@ -14,12 +14,14 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\File as RulesFile;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use ZipStream\File;
 
 class ProfilController extends Controller
 {
-    public function default(){
+    public function default()
+    {
         return redirect('/profil');
     }
     public function index()
@@ -50,9 +52,9 @@ class ProfilController extends Controller
         'subdistrict_code' => 'required',
         'village_code' => 'required',
         'province_code_now' => 'required',
-        'regency_code_now'=>'required',
-        'subdistrict_code_now' =>'required',
-        'village_code_now' =>'required',
+        'regency_code_now' => 'required',
+        'subdistrict_code_now' => 'required',
+        'village_code_now' => 'required',
         'ipk' => 'required|numeric',
         'id_prodi' => 'required',
         'nilai_micro_teaching' => 'required',
@@ -63,22 +65,17 @@ class ProfilController extends Controller
         'alamat_asal' => 'required',
     ];
 
+    // Hanya validasi file jika status revisi/null dan belum ada file
     if (!$data_mahasiswa->link_transkrip_nilai) {
         $rules['link_transkrip_nilai'] = 'required|file|mimes:pdf|max:500';
-    } else {
-        $rules['link_transkrip_nilai'] = 'nullable|file|mimes:pdf|max:500';
     }
 
     if (!$data_mahasiswa->link_surat_pernyataan) {
         $rules['link_surat_pernyataan'] = 'required|file|mimes:pdf|max:500';
-    } else {
-        $rules['link_surat_pernyataan'] = 'nullable|file|mimes:pdf|max:500';
     }
 
     if (!$data_mahasiswa->link_surat_kesiapan) {
         $rules['link_surat_kesiapan'] = 'required|file|mimes:pdf|max:500';
-    } else {
-        $rules['link_surat_kesiapan'] = 'nullable|file|mimes:pdf|max:500';
     }
 
     $messages = [
@@ -113,11 +110,34 @@ class ProfilController extends Controller
 
     // Validasi
     $validated = $request->validate($rules, $messages);
-    
+
     DB::beginTransaction();
     try {
         if ($data_mahasiswa->status === 'revisi' || $data_mahasiswa->status === null) {
+            // Persiapkan data untuk update
+            $updateData = [
+                'province_code' => $validated['province_code'],
+                'regency_code' => $validated['regency_code'],
+                'subdistrict_code' => $validated['subdistrict_code'],
+                'village_code' => $validated['village_code'],
+                'province_code_now' => $validated['province_code_now'],
+                'regency_code_now' => $validated['regency_code_now'],
+                'subdistrict_code_now' => $validated['subdistrict_code_now'],
+                'village_code_now' => $validated['village_code_now'],
+                'ipk' => $validated['ipk'],
+                'id_prodi' => $validated['id_prodi'],
+                'nilai_micro_teaching' => $validated['nilai_micro_teaching'],
+                'no_hp_wa' => $validated['no_hp_wa'],
+                'cluster_kegiatan' => $validated['cluster_kegiatan'],
+                'semester' => $validated['semester'],
+                'jk' => $validated['jk'],
+                'alamat_asal' => $validated['alamat_asal'],
+                'status' => 'submitted',
+                'id_gelombang' => $latestGelombang->id,
+                'updated_at' => now(),
+            ];
 
+            // Handle file upload untuk transkrip nilai
             if ($request->hasFile('link_transkrip_nilai')) {
                 $file = $request->file('link_transkrip_nilai');
                 
@@ -125,13 +145,16 @@ class ProfilController extends Controller
                 if ($data_mahasiswa->link_transkrip_nilai && Storage::disk('public')->exists($data_mahasiswa->link_transkrip_nilai)) {
                     Storage::disk('public')->delete($data_mahasiswa->link_transkrip_nilai);
                 }
-
-                $custom_file_name = 'transkrip_' . Auth::user()->username . '.' . $file->getClientOriginalExtension();
+                
+                $custom_file_name = 'transkrip_' . Auth::user()->username . '_' . time() . '.' . $file->getClientOriginalExtension();
                 $file_path = $file->storeAs('transkrip_nilai', $custom_file_name, 'public');
-
-                $validated['link_transkrip_nilai'] = $file_path;
+                $updateData['link_transkrip_nilai'] = $file_path;
+            } else {
+                // Jika tidak upload file baru, pertahankan file lama
+                $updateData['link_transkrip_nilai'] = $data_mahasiswa->link_transkrip_nilai;
             }
 
+            // Handle file upload untuk surat pernyataan
             if ($request->hasFile('link_surat_pernyataan')) {
                 $file = $request->file('link_surat_pernyataan');
                 
@@ -140,11 +163,15 @@ class ProfilController extends Controller
                     Storage::disk('public')->delete($data_mahasiswa->link_surat_pernyataan);
                 }
                 
-                $custom_file_name = 'surat_pernyataan_' . Auth::user()->username . '.' . $file->getClientOriginalExtension();
+                $custom_file_name = 'surat_pernyataan_' . Auth::user()->username . '_' . time() . '.' . $file->getClientOriginalExtension();
                 $file_path = $file->storeAs('documents/surat_pernyataan', $custom_file_name, 'public');
-                $validated['link_surat_pernyataan'] = $file_path;
+                $updateData['link_surat_pernyataan'] = $file_path;
+            } else {
+                // Jika tidak upload file baru, pertahankan file lama
+                $updateData['link_surat_pernyataan'] = $data_mahasiswa->link_surat_pernyataan;
             }
 
+            // Handle file upload untuk surat kesiapan
             if ($request->hasFile('link_surat_kesiapan')) {
                 $file = $request->file('link_surat_kesiapan');
                 
@@ -153,34 +180,44 @@ class ProfilController extends Controller
                     Storage::disk('public')->delete($data_mahasiswa->link_surat_kesiapan);
                 }
                 
-                $custom_file_name = 'surat_kesiapan_' . Auth::user()->username . '.' . $file->getClientOriginalExtension();
+                $custom_file_name = 'surat_kesiapan_' . Auth::user()->username . '_' . time() . '.' . $file->getClientOriginalExtension();
                 $file_path = $file->storeAs('documents/surat_kesiapan', $custom_file_name, 'public');
-                $validated['link_surat_kesiapan'] = $file_path;
+                $updateData['link_surat_kesiapan'] = $file_path;
+            } else {
+                // Jika tidak upload file baru, pertahankan file lama
+                $updateData['link_surat_kesiapan'] = $data_mahasiswa->link_surat_kesiapan;
             }
 
-            $validated['status'] = 'submitted';
-            $validated['id_gelombang'] = $latestGelombang->id;
-            
-            $result = $data_mahasiswa->update($validated);
+            // Update data mahasiswa
+            $result = $data_mahasiswa->update($updateData);
 
             DB::commit();
+            
+   
+            
             return redirect()->back()->with('message', ['success' => 'Profil Berhasil diperbaharui!']);
             
         } elseif ($data_mahasiswa->status === 'accepted') {
             DB::rollBack();
             return redirect()->back()->with('message', ['error' => 'Pendaftaranmu sudah disetujui, tidak dapat mengubah data.']);
-
+            
         } elseif ($data_mahasiswa->status === 'submitted') {
             DB::rollBack();
             return redirect()->back()->with('message', ['error' => 'Data kamu sedang di-review, tidak dapat mengubah data.']);
-
+            
         } elseif ($data_mahasiswa->status === 'rejected') {
             DB::rollBack();
             return redirect()->back()->with('message', ['error' => 'Biodatamu ditolak, silakan daftar di gelombang selanjutnya.']);
         }
         
+    } catch (ValidationException $e) {
+        DB::rollBack();
+        throw $e;
+        
     } catch (Exception $e) {
         DB::rollBack();
+   
+        
         return redirect()->back()->with('message', ['error' => 'Terjadi kesalahan: ' . $e->getMessage()]);
     }
 }

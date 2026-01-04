@@ -95,16 +95,34 @@ class OperatorKecamatanController extends Controller
 
         if ($request->has('search_key') && !empty($request->search_key)) {
             $query->where(function ($subQuery) use ($request) {
-                $subQuery->where('ampraham_kpm_tbl.name', 'like', '%' . $request->search_key . '%');
-                // ->orWhere('s_tbl.name', 'like', '%' . $request->search_key . '%');
-                // ->orWhere('booking_tbl.student_nim', 'like', '%' . $request->search_key . '%');
+                $subQuery->where('name', 'like', '%' . $request->search_key . '%')
+                    ->orWhere('nama_di_buku_rekening', 'like', '%' . $request->search_key . '%')
+                    ->orWhere('nip', 'like', '%' . $request->search_key . '%')
+                    ->orWhere('kecamatan', 'like', '%' . $request->search_key . '%')
+                    ->orWhere('desa', 'like', '%' . $request->search_key . '%');
             });
         }
-        $query->selectRaw(
-            'ROW_NUMBER() OVER (ORDER BY ampraham_kpm_tbl.id) AS row_index,
-               ampraham_kpm_tbl.*'
-        );
 
+        $query->selectRaw('
+        ROW_NUMBER() OVER (ORDER BY id) AS row_index,
+        id,
+        name,
+        nama_di_buku_rekening,
+        nip,
+        pangkat_dan_golongan,
+        jabatan,
+        kecamatan,
+        desa,
+        nama_bank,
+        no_rekening,
+        no_npwp,
+        link_document,
+        status,
+        keterangan,
+        created_at,
+        updated_at,
+        id_kecamatan
+    ');
         $data = $query->paginate(10);
 
         return response()->json($data);

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Gelombang;
 use App\Models\TempatKPM;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -11,6 +12,8 @@ class LowonganKPMApiController extends Controller
     public function index(Request $request)
     {
         $query = TempatKPM::query();
+        $latestGelombang = Gelombang::latest()->first();
+
 
         if ($request->has('regency') && !empty($request->regency)) {
             $query->where('regency', $request->regency);
@@ -23,10 +26,20 @@ class LowonganKPMApiController extends Controller
         }
 
         $data = $query->select(
-            'tempat_kpm_tbl.*',
+            'tempat_kpm_tbl.id',
+            'md.name',
+            'md.sub_district',
+            'md.regency',
+            'md.village',
+            'tempat_kpm_tbl.id_desa',
+            'tempat_kpm_tbl.qouta',
             DB::raw("(SELECT COUNT(*) FROM lamaran_kpm_tbl AS l_kpm WHERE l_kpm.status = 'accepted' AND l_kpm.id_tempat_kpm = tempat_kpm_tbl.id) AS terisi")
 
-        )->paginate(20);
+        )
+        ->join('master_desa_tbl as md', 'tempat_kpm_tbl.id_desa', '=', 'md.id')
+        ->where('tempat_kpm_tbl.id_gelombang', $latestGelombang->id)
+        
+        ->paginate(20);
 
         return response()->json($data);
     }

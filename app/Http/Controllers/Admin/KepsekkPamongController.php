@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Middleware\User;
 use App\Models\AmprahamPPL;
 use App\Models\LamaranPPL;
+use App\Models\Sekolah;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Exception;
 use Illuminate\Http\Request;
@@ -45,18 +46,28 @@ class KepsekkPamongController extends Controller
     public function mahasiswa(Request $request)
     {
         $data = [];
+        $gelombang = $request->idGelombang;
+        $sekolah = Sekolah::where('id_sekolah', $request->id_sekolah)
+            ->where('id_gelombang', $gelombang)
+            ->first();
+
+        
+
         try {
-            $data_mahasiswa = LamaranPPL::join('lowongan_ppl_tbl as l_ppl', 'lamaran_ppl_tbl.id_lowongan_ppl', 'l_ppl.id')
+            $data_mahasiswa = LamaranPPL::join('lowongan_ppl_tbl as l_ppl', 'lamaran_ppl_tbl.id_lowongan_ppl', '=', 'l_ppl.id')
                 ->join('users as us', 'lamaran_ppl_tbl.username_mahasiswa', '=', 'us.username')
-                ->where('status', 'accepted')
-                ->where('l_ppl.id_sekolah', $request->id_sekolah)
-                ->select(
-                    'us.name',
-                    'us.username'
-                )
+                ->where('lamaran_ppl_tbl.status', 'accepted')
+                ->where('l_ppl.id_sekolah', $sekolah->id);
+
+    
+
+            $data_mahasiswa = $data_mahasiswa->select(
+                'us.name',
+                'us.username'
+            )
                 ->get();
-                
-            $data['status'] = 'error';
+
+            $data['status'] = 'success';
             $data['data'] = $data_mahasiswa;
             return response()->json($data);
         } catch (Exception $err) {
@@ -75,13 +86,13 @@ class KepsekkPamongController extends Controller
         return Inertia::render('Admin/pages/Data/KepsekPamong/Detail', ['data' => $data, 'base_url' => url('/')]);
     }
 
-    public function edit (Request $request){
+    public function edit(Request $request)
+    {
         $data = AmprahamPPL::find($request->id);
-       
+
         return Inertia::render('Admin/pages/Data/KepsekPamong/EditKepsekPamong', [
             'data' => $data
         ]);
-
     }
     public function export()
     {
@@ -93,8 +104,16 @@ class KepsekkPamongController extends Controller
     }
     public function query(Request $request)
     {
-        $query = AmprahamPPL::join('sekolah_tbl as s_tbl', 'ampraham_ppl_tbl.id_sekolah', '=', 's_tbl.id')
-            ->leftjoin('users as us', 'ampraham_ppl_tbl.username_mahasiswa', '=', 'us.username');
+        $gelombang = $request->id_gelombang;
+     
+
+
+        $query = AmprahamPPL::join('sekolah_tbl as s_tbl', 'ampraham_ppl_tbl.id_sekolah', '=', 's_tbl.id_sekolah')
+            ->leftjoin('users as us', 'ampraham_ppl_tbl.username_mahasiswa', '=', 'us.username')
+            ->where('ampraham_ppl_tbl.id_gelombang', $gelombang)
+            ->join('gelombang_tbl as g_tbl', 'ampraham_ppl_tbl.id_gelombang', '=', 'g_tbl.id');
+   
+
 
         if ($request->has('search_key') && !empty($request->search_key)) {
             $query->where(function ($subQuery) use ($request) {
@@ -105,12 +124,14 @@ class KepsekkPamongController extends Controller
                 // ->orWhere('booking_tbl.student_nim', 'like', '%' . $request->search_key . '%');
             });
         }
+   
         $query->selectRaw(
             'ROW_NUMBER() OVER (ORDER BY ampraham_ppl_tbl.status ASC, ampraham_ppl_tbl.id ASC) AS row_index,
                ampraham_ppl_tbl.*, 
                 s_tbl.name as nama_sekolah,
                 us.name as nama_mahasiswa,
-                us.username as nim'
+                us.username as nim,
+                g_tbl.name as nama_gelombang'
         );
 
         $data = $query->paginate(10);
@@ -145,52 +166,44 @@ class KepsekkPamongController extends Controller
         }
     }
 
-    public function downloadCertificate(Request $request) {
+    public function downloadCertificate(Request $request)
+    {
         $data = [];
         $pdf = Pdf::loadView('certificate', $data);
         return $pdf->download('certificate_PPKPM.pdf');
-
-
     }
 
-    public function update(Request $request){
+    public function update(Request $request)
+    {
 
-        try{
+        try {
             $data = [
                 'id' => $request->id,
                 'no_rekening' => $request->no_rekening,
                 'no_npwp' => $request->no_npwp,
                 'name' => $request->name,
                 'nip' => $request->nip,
-                'nama_bank' =>$request->nama_bank,
-                'nama_di_buku_rekening' =>$request->nama_di_buku_rekening,
+                'nama_bank' => $request->nama_bank,
+                'nama_di_buku_rekening' => $request->nama_di_buku_rekening,
                 'pangkat_dan_golongan' => $request->pangkat_dan_golongan,
                 'username_mahasiswa' => $request->username_mahasiswa,
                 'id_sekolah' => $request->id_sekolah,
-                'jabatan'=> $request->jabatan
+                'jabatan' => $request->jabatan
             ];
-    
+
             $ampraham = AmprahamPPL::find($request->id);
-            if($ampraham == null){
-                throw new Exception('Data tidak ditemukan',404);
+            if ($ampraham == null) {
+                throw new Exception('Data tidak ditemukan', 404);
             }
 
             $ampraham->update($data);
-    
-            return response()->json(['success'=> true, 'message'=>'Data Berhasil disimpan']);
 
-        }catch(Exception $e){
+            return response()->json(['success' => true, 'message' => 'Data Berhasil disimpan']);
+        } catch (Exception $e) {
             return response()->json([
-                'success'=> false,
+                'success' => false,
                 'message' => $e->getMessage(),
             ], $e->getCode());
-
         }
-        
     }
-
-
-
 }
-
-

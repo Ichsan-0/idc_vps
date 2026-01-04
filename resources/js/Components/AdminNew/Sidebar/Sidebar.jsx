@@ -298,10 +298,10 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                                                     </li>
                                                     <li>
                                                         <NavLink
-                                                            href="/admin/settings"
+                                                            href="/admin/data/settings"
                                                             className={`group relative flex items-center gap-2.5 rounded-md px-4 font-medium duration-300 ease-in-out hover:text-white ${
                                                                 (pathname ===
-                                                                    "/admin/settings" ||
+                                                                    "/admin/data/settings" ||
                                                                     pathname.includes(
                                                                         "settings"
                                                                     )) &&
@@ -923,12 +923,12 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                                                 <ul className="mt-4 mb-5.5 flex flex-col gap-2.5 pl-6">
                                                     <li>
                                                         <NavLink
-                                                            href="/admin/daftaradmin"
+                                                            href="/admin/users/admin/list"
                                                             className={`group relative flex items-center gap-2.5 rounded-md px-4 font-medium duration-300 ease-in-out hover:text-white ${
                                                                 (pathname ===
-                                                                    "/admin/daftaradminl" ||
+                                                                    "/admin/users/admin/list" ||
                                                                     pathname.includes(
-                                                                        "/admin/daftaradmin"
+                                                                        "/admin/users/admin/list"
                                                                     )) &&
                                                                 "!text-white"
                                                             }`}
@@ -968,12 +968,12 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                                                     </li>
                                                     <li>
                                                         <NavLink
-                                                            href="/admin/admin-sekolah/list"
+                                                            href="/admin/users/admin-sekolah/list"
                                                             className={`group relative flex items-center gap-2.5 rounded-md px-4 font-medium duration-300 ease-in-out hover:text-white ${
                                                                 (pathname ===
-                                                                    "/admin/admin-sekolah/list" ||
+                                                                    "/admin/users/admin-sekolah/list" ||
                                                                     pathname.includes(
-                                                                        "/admin/admin-sekolah/list"
+                                                                        "/admin/users/admin-sekolah/list"
                                                                     )) &&
                                                                 "!text-white"
                                                             }`}
@@ -983,12 +983,12 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                                                     </li>
                                                     <li>
                                                         <NavLink
-                                                            href="/admin/admin-kecamatan/list"
+                                                            href="/admin/users/admin-kecamatan/list"
                                                             className={`group relative flex items-center gap-2.5 rounded-md px-4 font-medium duration-300 ease-in-out hover:text-white ${
                                                                 (pathname ===
-                                                                    "/admin/admin-kecamatan/list" ||
+                                                                    "/admin/users/admin-kecamatan/list" ||
                                                                     pathname.includes(
-                                                                        "/admin/admin-kecamatan/list"
+                                                                        "/admin/users/admin-kecamatan/list"
                                                                     )) &&
                                                                 "!text-white"
                                                             }`}

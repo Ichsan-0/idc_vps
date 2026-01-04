@@ -8,7 +8,9 @@ use App\Http\Middleware\User;
 use App\Models\AdminSekolah;
 use App\Models\AmprahamPPL;
 use App\Models\Sekolah;
+use App\Models\SekolahMaster;
 use App\Models\User as ModelsUser;
+use Error;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -28,8 +30,17 @@ class AdminSekolahController extends Controller
     public function kepsek_pamong_save(Request $request)
     {
 
+        $idGelombang = $request->id_gelombang;
+        $sekolah = Sekolah::where('id_sekolah', $request->id_sekolah)
+            ->where('id_gelombang', $idGelombang)
+            ->first();
+
+
         DB::beginTransaction();
         try {
+            if (!$sekolah) {
+                throw new Error('Sekolah tidak ditemukan', 404);
+            }
             if ($request->hasFile('dokumen')) {
                 $file = $request->file('dokumen');
                 $path = $file->store('public/pdf');
@@ -41,10 +52,11 @@ class AdminSekolahController extends Controller
                     'no_rekening' => $request->no_rekening,
                     'no_npwp' => $request->no_npwp,
                     'id_sekolah' => $request->id_sekolah,
-                    'pangkat_dan_golongan' => $request->pangkat_dan_golongan,
+                    'pangkat_dan_golongan' => $request->pangkat_golongan,
                     'nama_bank' => $request->nama_bank,
                     'nama_di_buku_rekening' => $request->nama_di_buku_rekening,
-                    'link_document' => $path
+                    'link_document' => $path,
+                    'id_gelombang' => $idGelombang
                 ];
 
                 AmprahamPPL::create($data);
@@ -70,42 +82,66 @@ class AdminSekolahController extends Controller
 
     public function generate(Request $request)
     {
-
         $data = [];
 
         DB::beginTransaction();
         try {
-            $sekolah =  Sekolah::all();
+            $sekolah = SekolahMaster::all();
+            $createdCount = 0;
+            $skippedCount = 0;
 
             foreach ($sekolah as $dt) {
+                $username = strtolower(str_replace(' ', '', $dt->name));
+                $email = $username . '@gmail.com';
 
+                // Cek apakah username atau email sudah ada
+                $existingUser = ModelsUser::where('username', $username)
+                    ->orWhere('email', $email)
+                    ->first();
 
+                // Cek apakah sudah ada AdminSekolah dengan id_sekolah ini
+                $existingAdmin = AdminSekolah::where('id_sekolah', $dt->id)->first();
+
+                // Jika user atau admin sudah ada, skip
+                if ($existingUser || $existingAdmin) {
+                    $skippedCount++;
+                    continue;
+                }
+
+                // Buat user baru
                 ModelsUser::factory()->create([
-                    'username' => strtolower(str_replace(' ', '', $dt->name)),
+                    'username' => $username,
                     'name' => $dt->name,
-                    'email' => strtolower(str_replace(' ', '', $dt->name)) . '@gmail.com',
+                    'email' => $email,
                     'role' => 'opt-sekolah',
                     'password' => Hash::make('ppkpm2025'),
                 ]);
 
+                // Buat admin sekolah
                 AdminSekolah::create([
-                    'email' => strtolower(str_replace(' ', '', $dt->name)) . '@gmail.com',
+                    'email' => $email,
                     'id_sekolah' => $dt->id
                 ]);
+
+                $createdCount++;
             }
+
             $data['status'] = 'ok';
-            $data['message'] = 'Berhasil membuat  data operator sekolah';
+            $data['message'] = 'Berhasil membuat data operator sekolah';
+            $data['created'] = $createdCount;
+            $data['skipped'] = $skippedCount;
+            $data['total'] = $sekolah->count();
 
             DB::commit();
             return response()->json($data);
         } catch (Exception $e) {
             DB::rollBack();
-            $data['status'] = $e->getCode();
+            $data['status'] = 'error';
+            $data['code'] = $e->getCode();
             $data['message'] = $e->getMessage();
             return response()->json($data);
         }
     }
-
     public function export()
     {
         return Excel::download(new OperatorProdiExport, 'Kredentials_Admin_sekolah.xlsx');

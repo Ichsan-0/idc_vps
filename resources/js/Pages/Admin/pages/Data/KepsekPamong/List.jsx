@@ -1,19 +1,23 @@
 import React from "react";
-
-import Sidebar from "@/Components/admin/Sidebar/Sidebar";
-import Header from "@/Components/admin/Header/Header";
-import MUIDataTable from "mui-datatables";
 import { Head, Link, router } from "@inertiajs/react";
-import { Alert, Button, Chip, Snackbar } from "@mui/material";
-import { MdDelete, MdOpenInNew } from "react-icons/md";
-import { GrFormView } from "react-icons/gr";
-import { TiEdit } from "react-icons/ti";
-import Modal from "@/Components/Modal";
+import { 
+    Alert, 
+    Button, 
+    Chip, 
+    Snackbar,
+    Autocomplete,
+    TextField,
+    Box,
+    Paper,
+    Typography
+} from "@mui/material";
 import { useState } from "react";
 import { useEffect } from "react";
 import { useRef } from "react";
 import { ThreeDot } from "react-loading-indicators";
 import AdminLayout from "@/Layouts/Admin/AdminLayout";
+import axios from "axios";
+import { config } from "@/config/config";
 
 const List = ({ daftarprodi, flash, message, base_url }) => {
     const [openDialog, setOpenDialog] = useState(false);
@@ -23,6 +27,8 @@ const List = ({ daftarprodi, flash, message, base_url }) => {
     const [dropdownOpen, setDropdownOpen] = useState(null);
     const dropdownRef = useRef(null);
     const [loading, setLoading] = useState(false);
+    const [exportLoading, setExportLoading] = useState(false);
+    const [loadingGelombang, setLoadingGelombang] = useState(false);
     const [dataRuang, setDataRuang] = useState([]);
     const [error, setError] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
@@ -30,6 +36,8 @@ const List = ({ daftarprodi, flash, message, base_url }) => {
     const [searchKey, setSearchKey] = useState("");
     const [visiblePages, setVisiblePages] = useState([]);
     const [prevPage, setPrevPage] = useState(null);
+    const [gelombangData, setGelombangData] = useState([]);
+    const [selectedGelombang, setSelectedGelombang] = useState(null);
 
     const getVisiblePages = (page, dataRuang) => {
         let totalPages = Math.ceil(dataRuang.total / dataRuang?.data?.length);
@@ -64,9 +72,17 @@ const List = ({ daftarprodi, flash, message, base_url }) => {
         setError(null);
 
         try {
+            const params = {
+                page: currentPage,
+                search_key: searchKey,
+                id_gelombang: selectedGelombang?.id || null
+            };
+
             const response = await axios.get(
-                `${base_url}/api/admin/data/kepsek-pamong/query?page=${currentPage}&search_key=${searchKey}`
+                `${base_url}/api/admin/data/kepsek-pamong/query`,
+                { params }
             );
+            
             setDataRuang(response.data);
             setCurrentPage(response.data.current_page);
             setLastPage(response.data.last_page);
@@ -78,16 +94,46 @@ const List = ({ daftarprodi, flash, message, base_url }) => {
             setLoading(false);
         }
     };
+
+    const getGelombang = async () => {
+        setLoadingGelombang(true);
+        try {
+            const res = await axios.get(`${config.base_url}/api/gelombang`);
+            const gelombangList = res.data?.data || [];
+            setGelombangData(gelombangList);
+            
+            // Otomatis pilih gelombang terbaru
+            if (gelombangList.length > 0) {
+                const sortedGelombang = [...gelombangList].sort((a, b) => {
+                    if (a.created_at && b.created_at) {
+                        return new Date(b.created_at) - new Date(a.created_at);
+                    }
+                    return b.id - a.id;
+                });
+                
+                const latestGelombang = sortedGelombang[0];
+                setSelectedGelombang(latestGelombang);
+            }
+        } catch (error) {
+            console.error("Error fetching gelombang:", error);
+        } finally {
+            setLoadingGelombang(false);
+        }
+    };
+
     const exportExcel = async () => {
-        setLoading(true);
+        setExportLoading(true);
         setError(null);
 
         try {
             const response = await axios.post(
                 `${base_url}/api/admin/data/kepsek-pamong/export`,
-                {}, // Pass the request body here
                 {
-                    responseType: "blob", // Set responseType in Axios config
+                    id_gelombang: selectedGelombang?.id || null,
+                    search_key: searchKey
+                },
+                {
+                    responseType: "blob",
                 }
             );
 
@@ -100,7 +146,14 @@ const List = ({ daftarprodi, flash, message, base_url }) => {
             a.href = downloadUrl;
 
             const contentDisposition = response.headers["content-disposition"];
+            
+            // Buat nama file berdasarkan gelombang
             let filename = "pamong_kepsek.xlsx";
+            if (selectedGelombang) {
+                const gelombangName = selectedGelombang.name.replace(/\s+/g, '_');
+                filename = `pamong_kepsek_${gelombangName}.xlsx`;
+            }
+
             if (contentDisposition) {
                 const match = contentDisposition.match(/filename="(.+)"/);
                 if (match && match[1]) {
@@ -113,7 +166,6 @@ const List = ({ daftarprodi, flash, message, base_url }) => {
             a.click();
             document.body.removeChild(a);
             window.URL.revokeObjectURL(downloadUrl);
-            console.log(response);
         } catch (err) {
             setError(err.response?.data?.message || "Something went wrong.");
             if (err.response && err.response.data) {
@@ -121,7 +173,7 @@ const List = ({ daftarprodi, flash, message, base_url }) => {
                 console.error("Error response text:", errorText);
             }
         } finally {
-            setLoading(false);
+            setExportLoading(false);
         }
     };
 
@@ -134,7 +186,6 @@ const List = ({ daftarprodi, flash, message, base_url }) => {
                 `${base_url}/api/admin/data/kepsek-pamong/delete/${id}`
             );
             fetchData();
-            console.log(response);
         } catch (err) {
             setError(err.response?.data?.message || "Something went wrong.");
         } finally {
@@ -143,9 +194,22 @@ const List = ({ daftarprodi, flash, message, base_url }) => {
     };
 
     useEffect(() => {
+        // Inisialisasi gelombang saat pertama load
+        getGelombang();
+    }, []);
+
+    useEffect(() => {
+        if (selectedGelombang) {
+            // Reset ke halaman 1 ketika filter berubah
+            setCurrentPage(1);
+            fetchData();
+        }
+    }, [selectedGelombang]);
+
+    useEffect(() => {
         if (currentPage !== prevPage || message !== null) {
-            fetchData(); // Only fetch if currentPage is different from prevPage
-            setPrevPage(currentPage); // Update prevPage
+            fetchData();
+            setPrevPage(currentPage);
         }
     }, [currentPage, prevPage]);
 
@@ -159,7 +223,6 @@ const List = ({ daftarprodi, flash, message, base_url }) => {
         setDropdownOpen((prevOpen) => (prevOpen === id ? null : id));
     };
 
-    // Handle clicks outside the dropdown
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (
@@ -183,29 +246,11 @@ const List = ({ daftarprodi, flash, message, base_url }) => {
 
     const handleConfirmClick = (e) => {
         e.preventDefault();
-        // router.post(
-        //     `/admin/supervisor/${idObjToDelete}`,
-        //     { _method: "delete" },
-        //     { preserveScroll: true }
-        // );
         onDialogClose();
     };
 
     useEffect(() => {
         if (flash.message) {
-            console.log("notify");
-            if (flash.message.success) {
-                setNotifyStatus("success");
-            } else {
-                setNotifyStatus("error");
-            }
-        }
-        setNotify(true);
-    }, [flash.message]);
-
-    useEffect(() => {
-        if (flash.message) {
-            console.log("notify");
             if (flash.message.success) {
                 setNotifyStatus("success");
             } else {
@@ -222,198 +267,257 @@ const List = ({ daftarprodi, flash, message, base_url }) => {
         setNotify(false);
     };
 
+    const handleSearch = () => {
+        setCurrentPage(1);
+        fetchData();
+    };
+
+    const handleKeyPress = (e) => {
+        if (e.key === 'Enter') {
+            handleSearch();
+        }
+    };
+
     return (
         <AdminLayout className="main flex">
             <Head title="Kepsek & Pamong" />
 
             <div className="flex w-full flex-col">
-                <div className="px-3">
+                <div className="px-3 py-4">
+                    {/* Filter Section */}
+                    <Box sx={{ mb: 3 }}>
+                        <Paper
+                            elevation={0}
+                            variant="outlined"
+                            sx={{
+                                p: 3,
+                                borderRadius: 2,
+                            }}
+                        >
+                            <Typography
+                                variant="h6"
+                                gutterBottom
+                                sx={{ 
+                                    fontWeight: 600,
+                                    mb: 2,
+                                    color: "text.primary"
+                                }}
+                            >
+                                Filter Data
+                            </Typography>
+                            
+                            <Box sx={{ 
+                                display: "flex", 
+                                flexDirection: { xs: "column", md: "row" },
+                                gap: 2,
+                                alignItems: "flex-start"
+                            }}>
+                                {/* Gelombang Filter */}
+                                <Box sx={{ flex: 1, minWidth: { md: 300 } }}>
+                                    <Autocomplete
+                                        loading={loadingGelombang}
+                                        options={gelombangData}
+                                        value={selectedGelombang}
+                                        onChange={(event, newValue) => {
+                                            setSelectedGelombang(newValue);
+                                        }}
+                                        getOptionLabel={(option) => option.name || "Pilih Gelombang"}
+                                        renderInput={(params) => (
+                                            <TextField
+                                                {...params}
+                                                label="Gelombang"
+                                                size="small"
+                                                sx={{
+                                                "& .MuiOutlinedInput-root.Mui-focused":
+                                                    {
+                                                        outline: "none",
+                                                        boxShadow: "none",
+                                                    },
+                                                "& .MuiInputBase-input:focus": {
+                                                    outline: "none",
+                                                    boxShadow: "none",
+                                                },
+                                            }}
+                                            />
+                                        )}
+                                        renderOption={(props, option) => (
+                                            <li {...props} key={option.id}>
+                                                <div>
+                                                    <Typography variant="body1">
+                                                        {option.name}
+                                                    </Typography>
+                                                    {option.description && (
+                                                        <Typography 
+                                                            variant="caption" 
+                                                            color="text.secondary"
+                                                        >
+                                                            {option.description}
+                                                        </Typography>
+                                                    )}
+                                                </div>
+                                            </li>
+                                        )}
+                                    />
+                                </Box>
+
+                                {/* Search Input */}
+                                <Box sx={{ 
+                                    flex: 1, 
+                                    display: "flex",
+                                    gap: 1,
+                                    width: "100%"
+                                }}>
+                                    <TextField
+                                        placeholder="Search by name, NIM, or school..."
+                                        value={searchKey}
+                                        onChange={(e) => setSearchKey(e.target.value)}
+                                        onKeyPress={handleKeyPress}
+                                        size="small"
+                                        sx={{ flex: 1 }}
+                                        InputProps={{
+                                            sx:{
+                                                "& .MuiOutlinedInput-root.Mui-focused":
+                                                    {
+                                                        outline: "none",
+                                                        boxShadow: "none",
+                                                    },
+                                                "& .MuiInputBase-input:focus": {
+                                                    outline: "none",
+                                                    boxShadow: "none",
+                                                },
+                                            }
+                                        }}
+                                    />
+                                    <Button
+                                        variant="contained"
+                                        onClick={handleSearch}
+                                        sx={{ 
+                                            textTransform: "none",
+                                            minWidth: 100
+                                        }}
+                                    >
+                                        Search
+                                    </Button>
+                                </Box>
+                            </Box>
+
+                            {/* Selected Filter Info */}
+                            {selectedGelombang && (
+                                <Box sx={{ mt: 2 }}>
+                                    <Chip
+                                        label={`Gelombang: ${selectedGelombang.name}`}
+                                        color="primary"
+                                        variant="outlined"
+                                        size="small"
+                                        onDelete={() => setSelectedGelombang(null)}
+                                    />
+                                </Box>
+                            )}
+                        </Paper>
+                    </Box>
+
+                    {/* Action Buttons */}
                     <div className="flex w-full justify-start gap-x-2 py-2">
                         <Button
                             variant="contained"
                             disableElevation
-                            disabled={loading}
+                            disabled={exportLoading}
                             sx={{ textTransform: "capitalize" }}
-                            onClick={(e) => {
-                                e.preventDefault();
-                                exportExcel();
-                            }}
+                            onClick={exportExcel}
                         >
-                            Export
+                            {exportLoading ? "Exporting..." : "Export Excel"}
                         </Button>
                     </div>
-                </div>
 
-                <div className="px-3 ">
-                    <p>{error}</p>
-                    <div className="flex w-full  gap-x-3 py-2">
-                        <div className="bg-white dark:bg-gray-800 w-full relative shadow-md sm:rounded-lg overflow-hidden">
-                            <div className="flex flex-col md:flex-row items-center justify-between space-y-3 md:space-y-0 md:space-x-4 p-4">
-                                <div className="flex items-center w-full">
-                                    <label
-                                        for="simple-search"
-                                        className="sr-only"
-                                    >
-                                        Search
-                                    </label>
-                                    <div className="relative w-full">
-                                        <input
-                                            type="text"
-                                            onChange={(e) => {
-                                                setSearchKey(e.target.value);
-                                            }}
-                                            id="simple-search"
-                                            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-5 p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                            placeholder="Search"
-                                            required
-                                        />
-                                    </div>
-                                    <button
-                                        onClick={() => {
-                                            setCurrentPage(1);
-                                            fetchData();
-                                        }}
-                                        className="p-2.5 ms-2 text-sm font-medium text-white bg-blue-700 rounded-lg border border-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-                                    >
-                                        <svg
-                                            className="w-4 h-4"
-                                            aria-hidden="true"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            fill="none"
-                                            viewBox="0 0 20 20"
-                                        >
-                                            <path
-                                                stroke="currentColor"
-                                                stroke-linecap="round"
-                                                stroke-linejoin="round"
-                                                stroke-width="2"
-                                                d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
-                                            />
-                                        </svg>
-                                        <span className="sr-only">Search</span>
-                                    </button>
+                    {/* Data Table */}
+                    <div className="bg-white dark:bg-gray-800 p-3 relative shadow-md sm:rounded-lg overflow-hidden">
+                        {/* Table Header Info */}
+                        <Box sx={{ 
+                            p: 2, 
+                            borderBottom: 1, 
+                            borderColor: "divider",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center"
+                        }}>
+                            <Typography variant="subtitle1" fontWeight={600}>
+                                Daftar Kepala Sekolah & Guru Pamong
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                                Total: {dataRuang.total || 0} data
+                            </Typography>
+                        </Box>
+
+                        <div className="relative overflow-x-auto min-h-50">
+                            {loading && (
+                                <div className="absolute z-10 w-full h-full flex items-center justify-center bg-white/70">
+                                    <ThreeDot color="#4F61E3" size="medium" />
                                 </div>
-                            </div>
-                            <div className="relative pl-4  overflow-x-auto min-h-50">
-                                {loading && (
-                                    <div className="absolute z-10 w-full h-full flex items-center justify-center bg-white/70">
-                                        <ThreeDot
-                                            color="#4F61E3"
-                                            size="medium"
-                                        />
-                                    </div>
-                                )}
+                            )}
 
-                                <table className="w-full relative text-sm text-left text-gray-500 dark:text-gray-400 ">
-                                    <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                                        <tr>
-                                            <th
-                                                scope="col"
-                                                className="px-4 py-3"
-                                            >
-                                                No
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                className="px-4 py-3"
-                                            >
-                                                Nama Mahasiswa
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                className="px-4 py-3"
-                                            >
-                                                NIM Mahasiswa
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                className="px-4 py-3"
-                                            >
-                                                Name
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                className="px-4 py-3"
-                                            >
-                                                Nama Di Buku Rekening
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                className="px-4 py-3"
-                                            >
-                                                NIP
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                className="px-4 py-3"
-                                            >
-                                                Pangkat & Golongan
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                className="px-4 py-3"
-                                            >
-                                                Jabatan
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                className="px-4 py-3"
-                                            >
-                                                Nama Sekolah
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                className="px-4 py-3"
-                                            >
-                                                Nama Bank
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                className="px-4 py-3"
-                                            >
-                                                No Rekening
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                className="px-4 py-3"
-                                            >
-                                                No NPWP
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                className="px-4 py-3"
-                                            >
-                                                Status
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                className="px-4 py-3"
-                                            >
-                                                Keterangan
-                                            </th>
-
-                                            <th
-                                                scope="col"
-                                                className="px-4 py-3"
-                                            >
-                                                <span className="sr-only">
-                                                    Actions
-                                                </span>
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {dataRuang?.data?.map((item, index) => (
+                            <table className="w-full relative text-sm text-left text-gray-500 dark:text-gray-400">
+                                <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                                    <tr>
+                                        <th scope="col" className="px-4 py-3">
+                                            No
+                                        </th>
+                                        <th scope="col" className="px-4 py-3">
+                                            Nama Mahasiswa
+                                        </th>
+                                        <th scope="col" className="px-4 py-3">
+                                            NIM Mahasiswa
+                                        </th>
+                                        <th scope="col" className="px-4 py-3">
+                                            Name
+                                        </th>
+                                        <th scope="col" className="px-4 py-3">
+                                            Nama Di Buku Rekening
+                                        </th>
+                                        <th scope="col" className="px-4 py-3">
+                                            NIP
+                                        </th>
+                                        <th scope="col" className="px-4 py-3">
+                                            Pangkat & Golongan
+                                        </th>
+                                        <th scope="col" className="px-4 py-3">
+                                            Jabatan
+                                        </th>
+                                        <th scope="col" className="px-4 py-3">
+                                            Nama Sekolah
+                                        </th>
+                                        <th scope="col" className="px-4 py-3">
+                                            Nama Bank
+                                        </th>
+                                        <th scope="col" className="px-4 py-3">
+                                            No Rekening
+                                        </th>
+                                        <th scope="col" className="px-4 py-3">
+                                            No NPWP
+                                        </th>
+                                        <th scope="col" className="px-4 py-3">
+                                            Status
+                                        </th>
+                                        <th scope="col" className="px-4 py-3">
+                                            Keterangan
+                                        </th>
+                                         <th scope="col" className="px-4 py-3">
+                                            Gelombang
+                                        </th>
+                                        <th scope="col" className="px-4 py-3">
+                                            <span className="sr-only">Actions</span>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {dataRuang?.data?.length > 0 ? (
+                                        dataRuang.data.map((item, index) => (
                                             <tr
                                                 key={index}
-                                                className="border-b dark:border-gray-700"
+                                                className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
                                             >
-                                                <th
-                                                    scope="row"
-                                                    className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white"
-                                                >
+                                                <td className="px-4 py-3">
                                                     {item.row_index}
-                                                </th>
+                                                </td>
                                                 <td className="px-4 py-3">
                                                     {item?.nama_mahasiswa}
                                                 </td>
@@ -424,9 +528,7 @@ const List = ({ daftarprodi, flash, message, base_url }) => {
                                                     {item?.name}
                                                 </td>
                                                 <td className="px-4 py-3">
-                                                    {
-                                                        item?.nama_di_buku_rekening
-                                                    }
+                                                    {item?.nama_di_buku_rekening}
                                                 </td>
                                                 <td className="px-4 py-3">
                                                     {item?.nip}
@@ -435,7 +537,16 @@ const List = ({ daftarprodi, flash, message, base_url }) => {
                                                     {item?.pangkat_dan_golongan}
                                                 </td>
                                                 <td className="px-4 py-3">
-                                                    {item?.jabatan}
+                                                    <Chip
+                                                        label={item?.jabatan}
+                                                        size="small"
+                                                        color={
+                                                            item?.jabatan === "kepsek" 
+                                                                ? "primary" 
+                                                                : "secondary"
+                                                        }
+                                                        variant="outlined"
+                                                    />
                                                 </td>
                                                 <td className="px-4 py-3">
                                                     {item?.nama_sekolah}
@@ -450,38 +561,45 @@ const List = ({ daftarprodi, flash, message, base_url }) => {
                                                     {item?.no_npwp}
                                                 </td>
                                                 <td className="px-4 py-3">
-                                                    {item?.status ===
-                                                        "diterima" && (
+                                                    {item?.status === "diterima" && (
                                                         <Chip
-                                                            label={item?.status}
+                                                            label="Diterima"
                                                             color="success"
+                                                            size="small"
                                                         />
                                                     )}
-                                                    {item?.status ===
-                                                        "ditolak" && (
+                                                    {item?.status === "ditolak" && (
                                                         <Chip
-                                                            label={item?.status}
+                                                            label="Ditolak"
                                                             color="error"
+                                                            size="small"
                                                         />
                                                     )}
-                                                    {item?.status ===
-                                                        "di-review" && (
+                                                    {item?.status === "di-review" && (
                                                         <Chip
-                                                            label={item?.status}
+                                                            label="Di-review"
                                                             color="warning"
+                                                            size="small"
+                                                        />
+                                                    )}
+                                                    {!item?.status && (
+                                                        <Chip
+                                                            label="Belum diverifikasi"
+                                                            color="default"
+                                                            size="small"
                                                         />
                                                     )}
                                                 </td>
                                                 <td className="px-4 py-3">
-                                                    {item?.keterangan}
+                                                    {item?.keterangan || "-"}
                                                 </td>
-
+                                                <td className="px-4 py-3">
+                                                    {item?.nama_gelombang || "-"}
+                                                </td>
                                                 <td className="px-4 py-3 flex items-center justify-end">
                                                     <button
                                                         onClick={() =>
-                                                            toggleDropdown(
-                                                                index
-                                                            )
+                                                            toggleDropdown(index)
                                                         }
                                                         className="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100"
                                                         type="button"
@@ -508,16 +626,14 @@ const List = ({ daftarprodi, flash, message, base_url }) => {
                                                                             router.get(
                                                                                 `/admin/data/kepsek-pamong/detail/${item.id}`
                                                                             );
-                                                                            setDropdownOpen(
-                                                                                null
-                                                                            );
+                                                                            setDropdownOpen(null);
                                                                         }}
                                                                         className="cursor-pointer block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
                                                                     >
-                                                                        Show
+                                                                        Detail
                                                                     </a>
                                                                 </li>
-                                                                <li>
+                                                                {/* <li>
                                                                     <a
                                                                         onClick={() => {
                                                                             router.get(
@@ -526,26 +642,19 @@ const List = ({ daftarprodi, flash, message, base_url }) => {
                                                                                     'id':item?.id
                                                                                 }
                                                                             );
-                                                                            setDropdownOpen(
-                                                                                null
-                                                                            );
+                                                                            setDropdownOpen(null);
                                                                         }}
                                                                         className="cursor-pointer block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
                                                                     >
                                                                         Edit
                                                                     </a>
-                                                                </li>
+                                                                </li> */}
                                                             </ul>
                                                             <div className="py-1">
                                                                 <a
                                                                     onClick={() => {
-                                                                        deleteRecords(
-                                                                            item.id
-                                                                        );
-
-                                                                        setDropdownOpen(
-                                                                            null
-                                                                        );
+                                                                        deleteRecords(item.id);
+                                                                        setDropdownOpen(null);
                                                                     }}
                                                                     className="cursor-pointer block py-2 px-4 text-sm text-red-600 bg-red-400/10 hover:bg-red-500/20 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white"
                                                                 >
@@ -556,11 +665,22 @@ const List = ({ daftarprodi, flash, message, base_url }) => {
                                                     )}
                                                 </td>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                    <div className="h-16"></div>
-                                </table>
-                            </div>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="15" className="px-4 py-8 text-center">
+                                                <Typography variant="body1" color="text.secondary">
+                                                    {loading ? "Loading..." : "Tidak ada data ditemukan"}
+                                                </Typography>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Pagination */}
+                        {dataRuang?.data?.length > 0 && (
                             <nav
                                 className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-3 md:space-y-0 p-4"
                                 aria-label="Table navigation"
@@ -568,32 +688,26 @@ const List = ({ daftarprodi, flash, message, base_url }) => {
                                 <span className="flex gap-x-2 text-sm font-normal text-gray-500 dark:text-gray-400">
                                     Showing
                                     <span className="font-semibold text-gray-900 dark:text-white">
-                                        {`${
-                                            dataRuang.to -
-                                            dataRuang?.data?.length +
-                                            1
-                                        }-${dataRuang.to}`}
+                                        {`${dataRuang.from || 0}-${dataRuang.to || 0}`}
                                     </span>
                                     of
                                     <span className="font-semibold text-gray-900 dark:text-white">
-                                        {dataRuang.total}
+                                        {dataRuang.total || 0}
                                     </span>
                                 </span>
 
                                 <ul className="inline-flex items-stretch -space-x-px">
                                     <li>
-                                        <a
-                                            onClick={() =>
-                                                handlePageChange(
-                                                    currentPage - 1
-                                                )
-                                            }
+                                        <button
+                                            onClick={() => handlePageChange(currentPage - 1)}
                                             disabled={currentPage === 1}
-                                            className="flex items-center cursor-pointer justify-center h-full py-1.5 px-3 ml-0 text-gray-500 bg-white rounded-l-lg border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
+                                            className={`flex items-center justify-center h-full py-1.5 px-3 ml-0 rounded-l-lg border ${
+                                                currentPage === 1
+                                                    ? "text-gray-400 bg-gray-100 border-gray-300 cursor-not-allowed"
+                                                    : "text-gray-500 bg-white border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
+                                            }`}
                                         >
-                                            <span className="sr-only">
-                                                Previous
-                                            </span>
+                                            <span className="sr-only">Previous</span>
                                             <svg
                                                 className="w-5 h-5"
                                                 aria-hidden="true"
@@ -602,18 +716,19 @@ const List = ({ daftarprodi, flash, message, base_url }) => {
                                                 xmlns="http://www.w3.org/2000/svg"
                                             >
                                                 <path
-                                                    fill-rule="evenodd"
+                                                    fillRule="evenodd"
                                                     d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-                                                    clip-rule="evenodd"
+                                                    clipRule="evenodd"
                                                 />
                                             </svg>
-                                        </a>
+                                        </button>
                                     </li>
                                     {visiblePages.map((item, index) =>
                                         item === "..." ? (
                                             <li key={index + 1}>
                                                 <button
-                                                    className={`flex items-center justify-center py-2 px-3 border leading-tight text-gray-500 bg-white border-gray-300 hover:bg-gray-100 hover:text-gray-700`}
+                                                    className="flex items-center justify-center py-2 px-3 border leading-tight text-gray-500 bg-white border-gray-300 hover:bg-gray-100 hover:text-gray-700"
+                                                    disabled
                                                 >
                                                     {item}
                                                 </button>
@@ -626,29 +741,24 @@ const List = ({ daftarprodi, flash, message, base_url }) => {
                                                             ? "text-blue-600 bg-blue-50 border-blue-300"
                                                             : "text-gray-500 bg-white border-gray-300 hover:bg-gray-100 hover:text-gray-700"
                                                     }`}
-                                                    onClick={() =>
-                                                        handlePageChange(item)
-                                                    }
+                                                    onClick={() => handlePageChange(item)}
                                                 >
                                                     {item}
                                                 </button>
                                             </li>
                                         )
                                     )}
-
                                     <li>
-                                        <a
-                                            onClick={() =>
-                                                handlePageChange(
-                                                    currentPage + 1
-                                                )
-                                            }
+                                        <button
+                                            onClick={() => handlePageChange(currentPage + 1)}
                                             disabled={currentPage === lastPage}
-                                            className="flex items-center justify-center h-full py-1.5 px-3 leading-tight text-gray-500 bg-white rounded-r-lg border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
+                                            className={`flex items-center justify-center h-full py-1.5 px-3 leading-tight rounded-r-lg border ${
+                                                currentPage === lastPage
+                                                    ? "text-gray-400 bg-gray-100 border-gray-300 cursor-not-allowed"
+                                                    : "text-gray-500 bg-white border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
+                                            }`}
                                         >
-                                            <span className="sr-only">
-                                                Next
-                                            </span>
+                                            <span className="sr-only">Next</span>
                                             <svg
                                                 className="w-5 h-5"
                                                 aria-hidden="true"
@@ -657,19 +767,20 @@ const List = ({ daftarprodi, flash, message, base_url }) => {
                                                 xmlns="http://www.w3.org/2000/svg"
                                             >
                                                 <path
-                                                    fill-rule="evenodd"
+                                                    fillRule="evenodd"
                                                     d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                                                    clip-rule="evenodd"
+                                                    clipRule="evenodd"
                                                 />
                                             </svg>
-                                        </a>
+                                        </button>
                                     </li>
                                 </ul>
                             </nav>
-                        </div>
+                        )}
                     </div>
                 </div>
             </div>
+
             <Snackbar
                 open={notify}
                 anchorOrigin={{

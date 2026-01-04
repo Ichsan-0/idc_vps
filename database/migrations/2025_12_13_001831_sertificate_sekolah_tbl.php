@@ -15,6 +15,7 @@ return new class extends Migration
             $table->string('periode_ppl')->nullable();
             $table->boolean('open_print_certificate')->default(false);
             $table->unsignedBigInteger('id_gelombang')->nullable();
+            $table->timestamps();
             $table->foreign('id_gelombang')->references('id')->on('gelombang_tbl')->onDelete('set null');
         });
     }

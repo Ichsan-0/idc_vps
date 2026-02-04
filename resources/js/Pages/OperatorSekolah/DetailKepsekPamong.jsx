@@ -364,7 +364,7 @@ function DetailKepsekPamong({ data, base_url }) {
                                                 fontWeight: 500
                                             }}
                                         >
-                                            No NPWP
+                                            NIK
                                         </Typography>
                                         <Typography
                                             variant="body1"

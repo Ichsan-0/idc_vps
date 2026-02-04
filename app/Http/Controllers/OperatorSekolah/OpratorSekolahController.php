@@ -38,8 +38,9 @@ class OpratorSekolahController extends Controller
 
     public function kepsek_pamong_detail($id)
     {
-        $data = AmprahamPPL::join('sekolah_tbl as s_tbl', 'ampraham_ppl_tbl.id_sekolah', '=', 's_tbl.id')
-            ->select('s_tbl.name as nama_sekolah', 'ampraham_ppl_tbl.*')
+        $data = AmprahamPPL::join('sekolah_tbl as s_tbl', 'ampraham_ppl_tbl.id_sekolah', '=', 's_tbl.id_sekolah')
+            ->join('sekolah_master as sm', 's_tbl.id_sekolah', '=', 'sm.id')
+            ->select('sm.name as nama_sekolah', 'ampraham_ppl_tbl.*')
             ->where('ampraham_ppl_tbl.id', $id)
             ->first();
         return Inertia::render('OperatorSekolah/DetailKepsekPamong', ['data' => $data, 'base_url' => url('/')]);
@@ -66,7 +67,8 @@ class OpratorSekolahController extends Controller
             ->first();
             
         $query = AmprahamPPL::where('ampraham_ppl_tbl.id_sekolah', $request->id_sekolah)
-            ->join('sekolah_tbl as s_tbl', 'ampraham_ppl_tbl.id_sekolah', '=', 's_tbl.id')
+            ->join('sekolah_tbl as s_tbl', 'ampraham_ppl_tbl.id_sekolah', '=', 's_tbl.id_sekolah')
+            ->join('sekolah_master as sm', 's_tbl.id_sekolah', '=', 'sm.id')
             ->leftjoin('users as us', 'ampraham_ppl_tbl.username_mahasiswa', '=', 'us.username')
             ->leftjoin('mahasiswa_tbl as mtbl', 'us.username', '=', 'mtbl.nim')
             ->where('ampraham_ppl_tbl.id_gelombang', $gelombang);
@@ -85,7 +87,7 @@ class OpratorSekolahController extends Controller
         $query->selectRaw(
             'ROW_NUMBER() OVER (ORDER BY ampraham_ppl_tbl.id) AS row_index,
            ampraham_ppl_tbl.*,
-            s_tbl.name as nama_sekolah,
+            sm.name as nama_sekolah,
             us.name as nama_mahasiswa,
             us.username as nim,
             mtbl.id_gelombang'

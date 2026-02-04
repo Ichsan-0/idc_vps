@@ -11,12 +11,20 @@ use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 
 class KepsekPamongExport implements FromCollection, WithHeadings, WithMapping, WithColumnFormatting
 {
+    
+    protected $idGelombang;
+    public function __construct($idGelombang)
+    {
+        $this->idGelombang = $idGelombang;
+    }
+    
     public function collection()
     {
         return DB::table('ampraham_ppl_tbl as ppl')
 
             ->join('sekolah_tbl as s_tbl', 'ppl.id_sekolah', '=', 's_tbl.id')
             ->leftjoin('users as us', 'ppl.username_mahasiswa', '=', 'us.username')
+            ->join('gelombang_tbl as g_tbl', 'ppl.id_gelombang', '=', 'g_tbl.id')
             ->selectRaw(
                 'ROW_NUMBER() OVER (ORDER BY ppl.id) AS row_index,
                 us.name as nama_mahasiswa,
@@ -32,8 +40,11 @@ class KepsekPamongExport implements FromCollection, WithHeadings, WithMapping, W
                 ppl.nama_bank,
                 ppl.no_rekening,
                 ppl.no_npwp,
-                ppl.status'
+                ppl.status,
+                g_tbl.name as gelombang_name'
+                
             )
+            ->where('ppl.id_gelombang', $this->idGelombang)
             ->get();
     }
 
@@ -52,7 +63,8 @@ class KepsekPamongExport implements FromCollection, WithHeadings, WithMapping, W
             'Nama Bank',
             'No. Rekening',
             'No. NPWP',
-            'Status'
+            'Status',
+            'Gelombang'
         ];
     }
 
@@ -71,7 +83,8 @@ class KepsekPamongExport implements FromCollection, WithHeadings, WithMapping, W
             $row->nama_bank,
             "'" . $row->no_rekening, // Ensure no_rekening is treated as text
             "'" . $row->no_npwp, // Ensure no_npwp is treated as text
-            $row->status
+            $row->status,
+            $row->gelombang_name
         ];
     }
 

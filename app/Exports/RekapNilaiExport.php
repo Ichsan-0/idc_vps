@@ -26,6 +26,7 @@ class RekapNilaiExport implements FromCollection, WithHeadings
                 ->select(
                     'nama_mahasiswa',
                     'nim',
+                    'no_hp',
                     'nama_prodi',
                     'cluster_kegiatan',
                     'nama_tempat_kpm',
@@ -53,6 +54,7 @@ class RekapNilaiExport implements FromCollection, WithHeadings
         $headings = [
             'Nama',
             'NIM',
+            'No Hp',
             'Program Studi',
             'Cluster Kegiatan',
             'Tempat KPM',

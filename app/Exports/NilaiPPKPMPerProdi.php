@@ -27,9 +27,9 @@ class NilaiPPKPMPerProdi implements FromCollection, WithHeadings
         $data = [];
         $query = DB::table('nilai_ppkpm_view')
                 ->select(
-                    'row_index',
                     'nama_mahasiswa',
                     'nim',
+                    'no_hp',
                     'nama_prodi',
                     'cluster_kegiatan',
                     'nama_tempat_kpm',
@@ -55,9 +55,9 @@ class NilaiPPKPMPerProdi implements FromCollection, WithHeadings
     }
     public function headings(): array{
         $headings = [
-            'No',
             'Nama',
             'NIM',
+            'No Hp',
             'Program Studi',
             'Cluster Kegiatan',
             'Tempat KPM',

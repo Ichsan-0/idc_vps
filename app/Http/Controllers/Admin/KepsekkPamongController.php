@@ -79,8 +79,9 @@ class KepsekkPamongController extends Controller
 
     public function detail($id)
     {
-        $data = AmprahamPPL::join('sekolah_tbl as s_tbl', 'ampraham_ppl_tbl.id_sekolah', '=', 's_tbl.id')
-            ->select('s_tbl.name as nama_sekolah', 'ampraham_ppl_tbl.*')
+        $data = AmprahamPPL::join('sekolah_tbl as s_tbl', 'ampraham_ppl_tbl.id_sekolah', '=', 's_tbl.id_sekolah')
+            ->join('sekolah_master as sm', 's_tbl.id_sekolah', '=', 'sm.id')
+            ->select('sm.name as nama_sekolah', 'ampraham_ppl_tbl.*')
             ->where('ampraham_ppl_tbl.id', $id)
             ->first();
         return Inertia::render('Admin/pages/Data/KepsekPamong/Detail', ['data' => $data, 'base_url' => url('/')]);
@@ -94,9 +95,10 @@ class KepsekkPamongController extends Controller
             'data' => $data
         ]);
     }
-    public function export()
+    public function export(Request $request)
     {
-        return Excel::download(new KepsekPamongExport, 'data_kepsek_pamong.xlsx');
+        $idGelombang = $request->id_gelombang;
+        return Excel::download(new KepsekPamongExport($idGelombang), 'data_kepsek_pamong.xlsx');
     }
     public function list()
     {

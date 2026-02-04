@@ -373,6 +373,12 @@ const RekapNilaiPPKPM = ({ flash, base_url }) => {
                                                 scope="col"
                                                 className="px-4 py-3"
                                             >
+                                                No Hp
+                                            </th>
+                                            <th
+                                                scope="col"
+                                                className="px-4 py-3"
+                                            >
                                                 Program Studi
                                             </th>
                                             <th
@@ -510,6 +516,9 @@ const RekapNilaiPPKPM = ({ flash, base_url }) => {
                                                 </td>
                                                 <td className="px-4 py-3">
                                                     {item?.nim}
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    {item?.no_hp}
                                                 </td>
                                                 <td className="px-4 py-3">
                                                     {item?.nama_prodi}

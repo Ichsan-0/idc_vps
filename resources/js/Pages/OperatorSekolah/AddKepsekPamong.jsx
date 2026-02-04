@@ -95,7 +95,7 @@ const AddKepsekPamong = ({ base_url, data_opt, idGelombang, nama_gelombang }) =>
 
     // Validasi No NPWP
     const validateNoNPWP = (value) => {
-        if (!value) return "No NPWP wajib diisi";
+        if (!value) return "NIK wajib diisi";
         const regex = /^\d{15,16}$/;
         if (!value.match(regex)) {
             return "Berupa angka 15 atau 16 digit";
@@ -538,7 +538,7 @@ const AddKepsekPamong = ({ base_url, data_opt, idGelombang, nama_gelombang }) =>
                         <Grid item xs={12} md={6}>
                             <TextField
                                 fullWidth
-                                label="No NPWP"
+                                label="NIK"
                                 value={formData.no_npwp}
                                 onChange={(e) => handleChange('no_npwp', e.target.value)}
                                 error={!!errors.no_npwp}

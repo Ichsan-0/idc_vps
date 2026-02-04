@@ -470,7 +470,7 @@ const PamongKepsek = ({
                                         No Rekening
                                     </th>
                                     <th scope="col" className="px-4 py-3">
-                                        No NPWP
+                                        NIK
                                     </th>
                                     <th scope="col" className="px-4 py-3">
                                         Status

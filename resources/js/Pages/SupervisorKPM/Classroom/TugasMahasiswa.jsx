@@ -213,13 +213,14 @@ const TugasMahasiswa = ({ base_url, data, auth }) => {
                                     ></Viewer>
                                 </Worker>
                             </div>
-                        )) ||
-                        (currentMahasiswa?.tugas?.tipe === "Link Video" && (
-                            <div className="flex w-full pl-14 pr-7">
-                                <YouTubeEmbed />
-                            </div>
-                        )) ||
-                        (currentMahasiswa?.tugas?.tipe === "Link" && (
+                        )) //||
+                        // (currentMahasiswa?.tugas?.tipe === "Link Video" && (
+                        //     <div className="flex w-full pl-14 pr-7">
+                        //         <YouTubeEmbed />
+                        //     </div>
+                        // )) ||
+                        ||
+                        ((currentMahasiswa?.tugas?.tipe === "Link" || currentMahasiswa?.tugas?.tipe === "Link Video") && (
                             <div className="flex flex-col mt-9 gap-3 w-full ml-16 mr-7">
                                 <p className="text-gray-600 font-normal">
                                     Klik link tombol dibawah ini untuk melihat
@@ -278,8 +279,10 @@ const TugasMahasiswa = ({ base_url, data, auth }) => {
                         data={data}
                         students={studentSubmissionData}
                         selectedStudent={currentMahasiswa}
-                        onStudentSelect={(student) =>
+                        onStudentSelect={(student) =>{
                             setCurrentMahasiswa(student)
+                            
+                        }
                         }
                     />
                 </aside>

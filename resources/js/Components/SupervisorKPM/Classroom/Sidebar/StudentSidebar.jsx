@@ -13,16 +13,29 @@ const StudentSidebar = ({ students, selectedStudent, onStudentSelect, data }) =>
                             Petunjuk Tugas
                         </Link>
                     </div>
-                    {students.map((student) => (
-                        <div
-                            key={student.id}
-                            onClick={() => onStudentSelect?.(student)}
-                            className={`flex items-center space-x-3 p-3 rounded-lg transition-colors cursor-pointer ${
-                                selectedStudent?.id === student.id
-                                    ? "bg-blue-50 border border-blue-200"
-                                    : "hover:bg-gray-50"
-                            }`}
-                        >
+                    {students.map((student) => {
+                        // choose a stable identifier; some payloads may not include an `id`
+                        const key = student.username_mahasiswa 
+                        const isSelected =
+                            (selectedStudent &&
+                                ((selectedStudent.id && student.id && selectedStudent.id === student.id) ||
+                                    (selectedStudent.username_mahasiswa &&
+                                        selectedStudent.username_mahasiswa === student.username_mahasiswa))) ||
+                            false;
+
+                        return (
+                            <div
+                                key={key}
+                                onClick={() => {
+                                    console.log("StudentSidebar click", student);
+                                    onStudentSelect?.(student);
+                                }}
+                                className={`flex items-center space-x-3 p-3 rounded-lg transition-colors cursor-pointer ${
+                                    isSelected
+                                        ? "bg-blue-50 border border-blue-200"
+                                        : "hover:bg-gray-50"
+                                }`}
+                            >
                             <div className="w-10 h-10 bg-gradient-to-br from-green-600 to-yellow-200 rounded-full flex items-center justify-center text-white text-sm font-medium">
                                 {getInitials(student?.mahasiswa?.name)}
                             </div>
@@ -38,7 +51,7 @@ const StudentSidebar = ({ students, selectedStudent, onStudentSelect, data }) =>
                                 {student.score}
                             </div>
                         </div>
-                    ))}
+                    )})}
                 </div>
             </div>
         </div>

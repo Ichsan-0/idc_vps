@@ -466,7 +466,7 @@ const DetailTask = ({ base_url, data, auth }) => {
                                             )}
                                         </div>
                                     )}
-                                    {taskData?.tipe === "Link" && (
+                                    {(taskData?.tipe === "Link Video" || taskData?.tipe === "Link") && (
                                         <div className="flex flex-col gap-y-2">
                                             {submissionData?.link && (
                                                 <a

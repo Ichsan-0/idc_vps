@@ -442,11 +442,20 @@ const ListNilaiMahasiswa = ({ flash, base_url }) => {
                                                 <td className="px-4 py-3">
                                                     {item?.nama_supervisor}
                                                 </td>
-                                                {item?.tasks?.map((item) => (
-                                                    <td className="px-4 py-3">
-                                                        {item?.score}
-                                                    </td>
-                                                ))}
+                                                {/* display score cells in the same order as the headers by matching id_tugas */}
+                                                {headerTugas.map((header) => {
+                                                    const task = item?.tasks?.find(
+                                                        (t) => t.id_tugas === header.id_tugas
+                                                    );
+                                                    return (
+                                                        <td
+                                                            key={header.id_tugas}
+                                                            className="px-4 py-3"
+                                                        >
+                                                            {task?.score ?? "-"}
+                                                        </td>
+                                                    );
+                                                })}
 
                                                 {/* <td className="px-4 py-3 flex items-center justify-end">
                                                     <button

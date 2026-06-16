@@ -299,3 +299,8 @@ Route::get('/certificate/teacher/download', [SchoolCertificateController::class,
 Route::post('/certificate/teacher/download', [SchoolCertificateController::class, 'viewCertificate']);
 
 Route::post('/admin/data/kepsek-pamong/edit', [KepsekkPamongController::class, 'update']);
+
+Route::middleware(['auth:sanctum', 'admin_api'])->group(function() {
+    Route::get('/admin/users/student/list', [MahsiswaController::class, 'listMahasiswa']);
+    Route::post('/admin/users/student/export', [MahsiswaController::class, 'exportData']);
+});

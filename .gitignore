@@ -18,3 +18,6 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+docker-compose.yml
+nilai_ppkpm_view.sql
+u393604037_idc.sql

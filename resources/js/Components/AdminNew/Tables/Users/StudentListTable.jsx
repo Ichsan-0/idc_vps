@@ -167,13 +167,20 @@ const StudentListTable = () => {
                         sortOrder: (sortDir ?? "asc").toUpperCase(),
                         search: searchKey,
                         idGelombang: selectedGelombangData?.id,
-                        status: statusFilter || undefined, // Tambah parameter status
+                        status: statusFilter || undefined,
                     },
                 }
             );
-            setData(response.data.data);
+            console.log("API Response:", response.data);
+            if (response.data?.data) {
+                setData(response.data.data);
+            } else {
+                setData({ data: [], total: 0, last_page: 1, current_page: 1 });
+            }
         } catch (error) {
-            setLoading(false);
+            console.error("API Error:", error.response?.data || error.message);
+            setData({ data: [], total: 0, last_page: 1, current_page: 1 });
+            setValidationError(error.response?.data?.message || "Failed to fetch student data");
         } finally {
             setLoading(false);
         }
@@ -349,7 +356,7 @@ const StudentListTable = () => {
             { length: entriesPerPage },
             (_, idx) => (
                 <tr key={`skeleton-${idx}`}>
-                    {Array.from({ length: 5 }).map((_, colIdx) => (
+                    {Array.from({ length: 11 }).map((_, colIdx) => (
                         <td key={colIdx} className="px-4 py-3">
                             <div className="h-4 w-full bg-gray-200 animate-pulse rounded"></div>
                         </td>
@@ -368,6 +375,11 @@ const StudentListTable = () => {
     
     return (
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white ">
+            {validationError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-t-lg">
+                    {validationError}
+                </div>
+            )}
             <div className="navigation-1 flex flex-col ">
                 <div className="p-5">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -525,7 +537,8 @@ const StudentListTable = () => {
                         <tbody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
                             {loading
                                 ? renderSkeletonRows()
-                                : data?.data?.map((row, idx) => (
+                                : (data?.data && data?.data?.length > 0) ? (
+                                    data?.data?.map((row, idx) => (
                                       <tr key={row.id + "-" + idx}>
                                           <td className="px-4 py-3">
                                               {(currentPage - 1) *
@@ -588,7 +601,15 @@ const StudentListTable = () => {
                                               </div>
                                           </td>
                                       </tr>
-                                  ))}
+                                    ))
+                                  ) : (
+                                    <tr>
+                                        <td colSpan="11" className="px-4 py-8 text-center text-gray-500">
+                                            No data available. Please check your filters or try again.
+                                        </td>
+                                    </tr>
+                                  )
+                            }
                         </tbody>
                     </table>
                 </div>

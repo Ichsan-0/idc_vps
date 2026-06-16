@@ -10,5 +10,11 @@ use Inertia\Inertia;
 
 class MahasiswaController extends Controller
 {
-    
+    public function listMahasiswa()
+    {
+        $mahasiswa = User::where('role', 'mahasiswa')->get();
+        return Inertia::render('Mahasiswa/ListMahasiswa', [
+            'mahasiswa' => $mahasiswa
+        ]);
+    }
 }

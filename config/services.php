@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'sevima' => [
+        'base_url' => env('SEVIMA_BASE_URL', 'https://api.sevimaplatform.com/siakadcloud/v1'),
+        'app_key' => env('SEVIMA_APP_KEY'),
+        'app_secret' => env('SEVIMA_APP_SECRET'),
+    ],
+
 ];

@@ -117,7 +117,7 @@ class RegistrasiPPKPMController extends Controller
                 'email'    => $request->email,
                 'username' => $verifiedData['nim'],   // NIM sebagai username
                 'password' => Hash::make($request->password),
-                'role'     => 'mahasiswa',
+                'role'     => 'user',
             ]);
 
             event(new Registered($user));
@@ -155,45 +155,44 @@ class RegistrasiPPKPMController extends Controller
             if ($jk === 'L') $jk = 'Pria';
             if ($jk === 'P') $jk = 'Wanita';
 
-            // =============================================
-            // 3. Simpan ke tabel MAHASISWA_TBL
-            // =============================================
-            Mahasiswa::create([
-                // Identitas
-                'nim'                  => $verifiedData['nim'],
-                'id_prodi'             => $request->id_prodi,
-                'jk'                   => $jk,
-                'no_hp_wa'             => $request->hp,
+            Mahasiswa::updateOrCreate(
+                ['nim' => $verifiedData['nim']],
+                [
+                    // Identitas
+                    'id_prodi'             => $request->id_prodi,
+                    'jk'                   => $jk,
+                    'no_hp_wa'             => $request->hp,
 
-                // Akademik
-                'semester'             => $request->semester,
-                'ipk'                  => $request->ipk,
-                'nilai_micro_teaching' => $request->nilai_micro_teaching ?? null,
-                'cluster_kegiatan'     => $request->cluster_kegiatan,
+                    // Akademik
+                    'semester'             => $request->semester,
+                    'ipk'                  => $request->ipk,
+                    'nilai_micro_teaching' => $request->nilai_micro_teaching ?? null,
+                    'cluster_kegiatan'     => $request->cluster_kegiatan,
 
-                // Alamat Asal
-                'alamat_asal'          => $request->alamat_asal,
-                'province_code'        => $request->province_code,
-                'regency_code'         => $request->regency_code,
-                'subdistrict_code'     => $request->subdistrict_code,
-                'village_code'         => $request->village_code,
+                    // Alamat Asal
+                    'alamat_asal'          => $request->alamat_asal,
+                    'province_code'        => $request->province_code,
+                    'regency_code'         => $request->regency_code,
+                    'subdistrict_code'     => $request->subdistrict_code,
+                    'village_code'         => $request->village_code,
 
-                // Alamat Sekarang
-                'alamat_sekarang'      => $request->alamat_sekarang ?? null,
-                'province_code_now'    => $request->province_code_now ?? null,
-                'regency_code_now'     => $request->regency_code_now ?? null,
-                'subdistrict_code_now' => $request->subdistrict_code_now ?? null,
-                'village_code_now'     => $request->village_code_now ?? null,
+                    // Alamat Sekarang
+                    'alamat_sekarang'      => $request->alamat_sekarang ?? null,
+                    'province_code_now'    => $request->province_code_now ?? null,
+                    'regency_code_now'     => $request->regency_code_now ?? null,
+                    'subdistrict_code_now' => $request->subdistrict_code_now ?? null,
+                    'village_code_now'     => $request->village_code_now ?? null,
 
-                // Gelombang & Status
-                'id_gelombang'         => $latestGelombang ? $latestGelombang->id : null,
-                'status'               => 'submitted',
+                    // Gelombang & Status
+                    'id_gelombang'         => $latestGelombang ? $latestGelombang->id : null,
+                    'status'               => 'submitted',
 
-                // Dokumen
-                'link_transkrip_nilai'  => $paths['link_transkrip_nilai'] ?? null,
-                'link_surat_pernyataan' => $paths['link_surat_pernyataan'] ?? null,
-                'link_surat_kesiapan'   => $paths['link_surat_kesiapan'] ?? null,
-            ]);
+                    // Dokumen
+                    'link_transkrip_nilai'  => $paths['link_transkrip_nilai'] ?? null,
+                    'link_surat_pernyataan' => $paths['link_surat_pernyataan'] ?? null,
+                    'link_surat_kesiapan'   => $paths['link_surat_kesiapan'] ?? null,
+                ]
+            );
 
             // =============================================
             // 4. Buat API Token untuk mahasiswa

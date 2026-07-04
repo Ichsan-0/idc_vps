@@ -53,6 +53,7 @@ import {
     VisibilityOff,
 } from "@mui/icons-material";
 import ButtomFooter from "@/Components/frontpage/ButtomFooter";
+import Navigation from "@/Components/Mahasiswa/Navigation";
 
 function CustomTabPanel(props) {
     const { children, value, index, ...other } = props;
@@ -896,6 +897,7 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
             </Modal>
 
             <ButtomFooter />
+            <Navigation />
         </ThemeProvider>
     );
 }

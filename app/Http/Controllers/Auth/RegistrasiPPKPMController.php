@@ -57,7 +57,7 @@ class RegistrasiPPKPMController extends Controller
 
             // Data Pribadi
             'hp'           => 'required|string|max:20',
-            'jk'           => 'required|string|in:L,P',
+            'jk'           => 'required|string|in:L,P,Pria,Wanita',
             'id_prodi'     => 'required|exists:prodi_tbl,id',
             'semester'     => 'required|numeric|min:1|max:14',
             'ipk'          => 'required|numeric|min:0|max:4',
@@ -87,6 +87,10 @@ class RegistrasiPPKPMController extends Controller
         ], [
             'email.unique'              => 'Email ini sudah terdaftar. Gunakan email lain atau login.',
             'id_prodi.exists'           => 'Program studi tidak ditemukan.',
+            'province_code.required'    => 'Provinsi asal wajib diisi.',
+            'regency_code.required'     => 'Kabupaten asal wajib diisi.',
+            'subdistrict_code.required' => 'Kecamatan asal wajib diisi.',
+            'village_code.required'     => 'Desa asal wajib diisi.',
             'link_surat_pernyataan.required' => 'Surat Pernyataan Ka Prodi wajib diunggah.',
             'link_surat_kesiapan.required'   => 'Surat Kesiapan Mahasiswa wajib diunggah.',
             'link_surat_pernyataan.max'      => 'Ukuran Surat Pernyataan maksimal 500KB.',
@@ -117,14 +121,32 @@ class RegistrasiPPKPMController extends Controller
             // 2. Handle Upload File ke storage/app/public
             // =============================================
             $paths = [];
-            foreach (['link_transkrip_nilai', 'link_surat_pernyataan', 'link_surat_kesiapan'] as $field) {
-                if ($request->hasFile($field)) {
-                    $file   = $request->file($field);
-                    $folder = str_replace('link_', '', $field);  // contoh: transkrip_nilai
-                    $filename = $folder . '_' . $verifiedData['nim'] . '_' . time() . '.' . $file->getClientOriginalExtension();
-                    $paths[$field] = $file->storeAs($folder, $filename, 'public');
-                }
+            
+            // Simpan transkrip ke folder transkrip_nilai
+            if ($request->hasFile('link_transkrip_nilai')) {
+                $file = $request->file('link_transkrip_nilai');
+                $filename = 'transkrip_' . $verifiedData['nim'] . '_' . time() . '.' . $file->getClientOriginalExtension();
+                $paths['link_transkrip_nilai'] = $file->storeAs('transkrip_nilai', $filename, 'public');
             }
+
+            // Simpan surat pernyataan ke folder documents/surat_pernyataan
+            if ($request->hasFile('link_surat_pernyataan')) {
+                $file = $request->file('link_surat_pernyataan');
+                $filename = 'surat_pernyataan_' . $verifiedData['nim'] . '_' . time() . '.' . $file->getClientOriginalExtension();
+                $paths['link_surat_pernyataan'] = $file->storeAs('documents/surat_pernyataan', $filename, 'public');
+            }
+
+            // Simpan surat kesiapan ke folder documents/surat_kesiapan
+            if ($request->hasFile('link_surat_kesiapan')) {
+                $file = $request->file('link_surat_kesiapan');
+                $filename = 'surat_kesiapan_' . $verifiedData['nim'] . '_' . time() . '.' . $file->getClientOriginalExtension();
+                $paths['link_surat_kesiapan'] = $file->storeAs('documents/surat_kesiapan', $filename, 'public');
+            }
+
+            // Normalisasi jenis kelamin agar seragam dengan database ('Pria' / 'Wanita')
+            $jk = $request->jk;
+            if ($jk === 'L') $jk = 'Pria';
+            if ($jk === 'P') $jk = 'Wanita';
 
             // =============================================
             // 3. Simpan ke tabel MAHASISWA_TBL
@@ -133,7 +155,7 @@ class RegistrasiPPKPMController extends Controller
                 // Identitas
                 'nim'                  => $verifiedData['nim'],
                 'id_prodi'             => $request->id_prodi,
-                'jk'                   => $request->jk,
+                'jk'                   => $jk,
                 'no_hp_wa'             => $request->hp,
 
                 // Akademik

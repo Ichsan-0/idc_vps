@@ -409,6 +409,8 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
                                                     <Select value={data.jk} label="Jenis Kelamin" onChange={(e) => setData("jk", e.target.value)}>
                                                         <MenuItem value="L">Laki-laki</MenuItem>
                                                         <MenuItem value="P">Perempuan</MenuItem>
+                                                        <MenuItem value="Pria">Pria</MenuItem>
+                                                        <MenuItem value="Wanita">Wanita</MenuItem>
                                                     </Select>
                                                 </FormControl>
                                                 <InputError message={errors.jk} />
@@ -442,7 +444,7 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
                                                 <FormControl fullWidth>
                                                     <InputLabel>Cluster Kegiatan</InputLabel>
                                                     <Select value={data.cluster_kegiatan} label="Cluster Kegiatan" onChange={(e) => setData("cluster_kegiatan", e.target.value)}>
-                                                        <MenuItem value="PPKPM (PPL + KPM)">PPKPM (PPL + KPM)</MenuItem>
+                                                        <MenuItem value="PPKPM">PPKPM (PPL + KPM)</MenuItem>
                                                         <MenuItem value="PPL">PPL</MenuItem>
                                                         <MenuItem value="KPM">KPM</MenuItem>
                                                     </Select>
@@ -480,6 +482,7 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
                                                         onChange={(e, v) => setProvinceAsal(v)}
                                                         renderInput={(p) => <TextField {...p} label="Provinsi" />}
                                                     />
+                                                    <InputError message={errors.province_code} />
                                                 </Grid>
                                                 <Grid item xs={12} md={6}>
                                                     <Autocomplete
@@ -490,6 +493,7 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
                                                         disabled={!provinceAsal}
                                                         renderInput={(p) => <TextField {...p} label="Kabupaten" />}
                                                     />
+                                                    <InputError message={errors.regency_code} />
                                                 </Grid>
                                                 <Grid item xs={12} md={6}>
                                                     <Autocomplete
@@ -500,6 +504,7 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
                                                         disabled={!regencyAsal}
                                                         renderInput={(p) => <TextField {...p} label="Kecamatan" />}
                                                     />
+                                                    <InputError message={errors.subdistrict_code} />
                                                 </Grid>
                                                 <Grid item xs={12} md={6}>
                                                     <Autocomplete
@@ -510,6 +515,7 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
                                                         disabled={!subDistrictAsal}
                                                         renderInput={(p) => <TextField {...p} label="Desa" />}
                                                     />
+                                                    <InputError message={errors.village_code} />
                                                 </Grid>
                                             </Grid>
                                         </CustomTabPanel>
@@ -528,6 +534,7 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
                                                         onChange={(e, v) => setProvinceNow(v)}
                                                         renderInput={(p) => <TextField {...p} label="Provinsi" />}
                                                     />
+                                                    <InputError message={errors.province_code_now} />
                                                 </Grid>
                                                 <Grid item xs={12} md={6}>
                                                     <Autocomplete
@@ -538,6 +545,7 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
                                                         disabled={!provinceNow}
                                                         renderInput={(p) => <TextField {...p} label="Kabupaten" />}
                                                     />
+                                                    <InputError message={errors.regency_code_now} />
                                                 </Grid>
                                                 <Grid item xs={12} md={6}>
                                                     <Autocomplete
@@ -548,6 +556,7 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
                                                         disabled={!regencyNow}
                                                         renderInput={(p) => <TextField {...p} label="Kecamatan" />}
                                                     />
+                                                    <InputError message={errors.subdistrict_code_now} />
                                                 </Grid>
                                                 <Grid item xs={12} md={6}>
                                                     <Autocomplete
@@ -558,6 +567,7 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
                                                         disabled={!subDistrictNow}
                                                         renderInput={(p) => <TextField {...p} label="Desa" />}
                                                     />
+                                                    <InputError message={errors.village_code_now} />
                                                 </Grid>
                                             </Grid>
                                         </CustomTabPanel>

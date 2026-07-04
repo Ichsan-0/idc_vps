@@ -32,6 +32,12 @@ class VerifikasiMahasiswaController extends Controller
             'tanggal_lahir' => 'required|date_format:Y-m-d',
         ]);
 
+        if (\App\Models\User::where('username', $request->nim)->exists() || \App\Models\Mahasiswa::where('nim', $request->nim)->exists()) {
+            return back()->withErrors([
+                'nim' => 'NIM ' . $request->nim . ' sudah terdaftar dalam sistem. Silakan login atau hubungi admin.',
+            ]);
+        }
+
         try {
             $response = $sevima->getMahasiswaByNim($request->nim);
 

@@ -250,7 +250,7 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
         email: verifiedData.email || "",
         hp: verifiedData.hp || "",
         program_studi: verifiedData.program_studi || "",
-        jk: verifiedData.jenis_kelamin || "",
+        jk: (verifiedData.jenis_kelamin === "L" || verifiedData.jenis_kelamin === "Laki-laki" || verifiedData.jenis_kelamin === "Pria") ? "Pria" : ((verifiedData.jenis_kelamin === "P" || verifiedData.jenis_kelamin === "Perempuan" || verifiedData.jenis_kelamin === "Wanita") ? "Wanita" : ""),
         semester: verifiedData.semester || "",
         ipk: verifiedData.ipk || "",
         nilai_micro_teaching: verifiedData.nilai_micro_teaching || "",
@@ -404,11 +404,9 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
                                                 <TextField label="NIM" fullWidth disabled value={data.nim} variant="outlined" />
                                             </Grid>
                                             <Grid item xs={12} md={6}>
-                                                <FormControl fullWidth disabled>
+                                                <FormControl fullWidth>
                                                     <InputLabel>Jenis Kelamin</InputLabel>
                                                     <Select value={data.jk} label="Jenis Kelamin" onChange={(e) => setData("jk", e.target.value)}>
-                                                        <MenuItem value="L">Laki-laki</MenuItem>
-                                                        <MenuItem value="P">Perempuan</MenuItem>
                                                         <MenuItem value="Pria">Pria</MenuItem>
                                                         <MenuItem value="Wanita">Wanita</MenuItem>
                                                     </Select>

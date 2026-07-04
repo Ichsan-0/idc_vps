@@ -49,6 +49,13 @@ class RegistrasiPPKPMController extends Controller
             return redirect()->route('verifikasi.mahasiswa');
         }
 
+        $nim = $verifiedData['nim'];
+        if (User::where('username', $nim)->exists() || Mahasiswa::where('nim', $nim)->exists()) {
+            return redirect()->route('verifikasi.mahasiswa')->withErrors([
+                'nim' => 'NIM ' . $nim . ' sudah terdaftar dalam sistem. Silakan login atau hubungi admin.',
+            ]);
+        }
+
         $request->validate([
             // Data Akun
             'name'         => 'required|string|max:255',
@@ -198,7 +205,7 @@ class RegistrasiPPKPMController extends Controller
         // Hapus session verifikasi setelah selesai
         session()->forget('verified_mahasiswa');
 
-        return redirect()->route('dashboard')->with('message', [
+        return redirect()->route('profil')->with('message', [
             'success' => 'Pendaftaran berhasil! Selamat datang di IDC. Data Anda sedang dalam proses review.'
         ]);
     }

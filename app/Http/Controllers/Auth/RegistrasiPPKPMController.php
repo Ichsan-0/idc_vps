@@ -39,7 +39,7 @@ class RegistrasiPPKPMController extends Controller
     }
 
     /**
-     * Simpan data registrasi mahasiswa PPKPM.
+     * Simpan data registrasi mahasiswa PPKPM ke tabel users dan mahasiswa_tbl.
      */
     public function store(Request $request): RedirectResponse
     {
@@ -50,86 +50,135 @@ class RegistrasiPPKPMController extends Controller
         }
 
         $request->validate([
+            // Data Akun
             'name'         => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:'.User::class.',email',
+            'email'        => 'required|string|lowercase|email|max:255|unique:' . User::class . ',email',
             'password'     => ['required', 'confirmed', Rules\Password::defaults()],
+
+            // Data Pribadi
             'hp'           => 'required|string|max:20',
             'jk'           => 'required|string|in:L,P',
             'id_prodi'     => 'required|exists:prodi_tbl,id',
-            'semester'     => 'required|numeric',
+            'semester'     => 'required|numeric|min:1|max:14',
             'ipk'          => 'required|numeric|min:0|max:4',
-            'nilai_micro_teaching' => 'required|string',
+
+            // nullable: nilai micro teaching bisa belum ada dari Sevima
+            'nilai_micro_teaching' => 'nullable|string|max:10',
             'cluster_kegiatan'     => 'required|string',
-            'alamat_asal'         => 'required|string|max:500',
+
+            // Alamat Asal (wajib)
+            'alamat_asal'          => 'required|string|max:500',
             'province_code'        => 'required|string',
             'regency_code'         => 'required|string',
             'subdistrict_code'     => 'required|string',
             'village_code'         => 'required|string',
+
+            // Alamat Sekarang (opsional)
+            'alamat_sekarang'      => 'nullable|string|max:500',
+            'province_code_now'    => 'nullable|string',
+            'regency_code_now'     => 'nullable|string',
+            'subdistrict_code_now' => 'nullable|string',
+            'village_code_now'     => 'nullable|string',
+
+            // Dokumen
             'link_transkrip_nilai'  => 'nullable|file|mimes:pdf|max:512',
             'link_surat_pernyataan' => 'required|file|mimes:pdf|max:512',
             'link_surat_kesiapan'   => 'required|file|mimes:pdf|max:512',
+        ], [
+            'email.unique'              => 'Email ini sudah terdaftar. Gunakan email lain atau login.',
+            'id_prodi.exists'           => 'Program studi tidak ditemukan.',
+            'link_surat_pernyataan.required' => 'Surat Pernyataan Ka Prodi wajib diunggah.',
+            'link_surat_kesiapan.required'   => 'Surat Kesiapan Mahasiswa wajib diunggah.',
+            'link_surat_pernyataan.max'      => 'Ukuran Surat Pernyataan maksimal 500KB.',
+            'link_surat_kesiapan.max'        => 'Ukuran Surat Kesiapan maksimal 500KB.',
+            'link_transkrip_nilai.max'       => 'Ukuran Transkrip Nilai maksimal 500KB.',
         ]);
 
         $latestGelombang = \App\Models\Gelombang::latest()->first();
 
         DB::transaction(function () use ($request, $verifiedData, $latestGelombang) {
-            // 1. Simpan User
+
+            // =============================================
+            // 1. Simpan ke tabel USERS
+            // =============================================
             $user = User::create([
-                'name'         => $request->name,
-                'email'        => $request->email,
-                'username'     => $verifiedData['nim'],
-                'password'     => Hash::make($request->password),
-                'role'         => 'mahasiswa',
+                'name'     => $request->name,
+                'email'    => $request->email,
+                'username' => $verifiedData['nim'],   // NIM sebagai username
+                'password' => Hash::make($request->password),
+                'role'     => 'mahasiswa',
             ]);
 
             event(new Registered($user));
 
             Auth::login($user);
 
-            // 2. Handle File Uploads (Simpan di storage/app/public)
+            // =============================================
+            // 2. Handle Upload File ke storage/app/public
+            // =============================================
             $paths = [];
             foreach (['link_transkrip_nilai', 'link_surat_pernyataan', 'link_surat_kesiapan'] as $field) {
                 if ($request->hasFile($field)) {
-                    $file = $request->file($field);
-                    $folder = str_replace('link_', '', $field);
+                    $file   = $request->file($field);
+                    $folder = str_replace('link_', '', $field);  // contoh: transkrip_nilai
                     $filename = $folder . '_' . $verifiedData['nim'] . '_' . time() . '.' . $file->getClientOriginalExtension();
                     $paths[$field] = $file->storeAs($folder, $filename, 'public');
                 }
             }
 
-            // 3. Simpan Mahasiswa
+            // =============================================
+            // 3. Simpan ke tabel MAHASISWA_TBL
+            // =============================================
             Mahasiswa::create([
+                // Identitas
                 'nim'                  => $verifiedData['nim'],
                 'id_prodi'             => $request->id_prodi,
-                'no_hp_wa'             => $request->hp,
                 'jk'                   => $request->jk,
+                'no_hp_wa'             => $request->hp,
+
+                // Akademik
                 'semester'             => $request->semester,
                 'ipk'                  => $request->ipk,
-                'nilai_micro_teaching' => $request->nilai_micro_teaching,
+                'nilai_micro_teaching' => $request->nilai_micro_teaching ?? null,
                 'cluster_kegiatan'     => $request->cluster_kegiatan,
-                'alamat_asal'         => $request->alamat_asal,
+
+                // Alamat Asal
+                'alamat_asal'          => $request->alamat_asal,
                 'province_code'        => $request->province_code,
                 'regency_code'         => $request->regency_code,
                 'subdistrict_code'     => $request->subdistrict_code,
                 'village_code'         => $request->village_code,
-                'province_code_now'    => $request->province_code_now,
-                'regency_code_now'     => $request->regency_code_now,
-                'subdistrict_code_now' => $request->subdistrict_code_now,
-                'village_code_now'     => $request->village_code_now,
+
+                // Alamat Sekarang
+                'alamat_sekarang'      => $request->alamat_sekarang ?? null,
+                'province_code_now'    => $request->province_code_now ?? null,
+                'regency_code_now'     => $request->regency_code_now ?? null,
+                'subdistrict_code_now' => $request->subdistrict_code_now ?? null,
+                'village_code_now'     => $request->village_code_now ?? null,
+
+                // Gelombang & Status
                 'id_gelombang'         => $latestGelombang ? $latestGelombang->id : null,
                 'status'               => 'submitted',
+
+                // Dokumen
                 'link_transkrip_nilai'  => $paths['link_transkrip_nilai'] ?? null,
                 'link_surat_pernyataan' => $paths['link_surat_pernyataan'] ?? null,
                 'link_surat_kesiapan'   => $paths['link_surat_kesiapan'] ?? null,
             ]);
 
+            // =============================================
+            // 4. Buat API Token untuk mahasiswa
+            // =============================================
             $token = $user->createToken('api-token')->plainTextToken;
             session(['access_token' => $token]);
         });
 
+        // Hapus session verifikasi setelah selesai
         session()->forget('verified_mahasiswa');
 
-        return redirect()->route('dashboard');
+        return redirect()->route('dashboard')->with('message', [
+            'success' => 'Pendaftaran berhasil! Selamat datang di IDC. Data Anda sedang dalam proses review.'
+        ]);
     }
 
     /**

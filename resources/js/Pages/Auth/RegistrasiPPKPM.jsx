@@ -659,11 +659,6 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
                                     {processing ? "Memproses..." : "Selesaikan Pendaftaran"}
                                 </Button>
 
-                                <div className="text-center mt-4">
-                                    <p className="text-sm">
-                                        Sudah punya akun? <Link href={route("login")} className="text-primary-main font-bold hover:underline">Login di sini</Link>
-                                    </p>
-                                </div>
                             </Grid>
                         </Grid>
                     </form>
@@ -801,10 +796,10 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
                                     <span>
                                         {verifiedData.tanggal_lahir
                                             ? new Date(verifiedData.tanggal_lahir).toLocaleDateString("id-ID", {
-                                                  day: "numeric",
-                                                  month: "long",
-                                                  year: "numeric",
-                                              })
+                                                day: "numeric",
+                                                month: "long",
+                                                year: "numeric",
+                                            })
                                             : "-"}
                                     </span>
                                 </div>

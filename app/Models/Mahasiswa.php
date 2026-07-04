@@ -47,6 +47,7 @@ class Mahasiswa extends Model
         'keterangan',
         'jk',
         'alamat_asal',
+        'alamat_sekarang',
         'id_gelombang'
     ];
 

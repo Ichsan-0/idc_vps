@@ -11,7 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        //
+        Schema::table('mahasiswa_tbl', function (Blueprint $table) {
+            if (!Schema::hasColumn('mahasiswa_tbl', 'alamat_sekarang')) {
+                $table->string('alamat_sekarang', 500)->nullable()->after('alamat_asal');
+            }
+        });
     }
 
     /**
@@ -19,6 +23,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        //
+        Schema::table('mahasiswa_tbl', function (Blueprint $table) {
+            if (Schema::hasColumn('mahasiswa_tbl', 'alamat_sekarang')) {
+                $table->dropColumn('alamat_sekarang');
+            }
+        });
     }
 };

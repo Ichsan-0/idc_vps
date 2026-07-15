@@ -45,7 +45,22 @@ if ($curlErrNo) {
     echo "CURL ERROR (#$curlErrNo): $curlError\n\n";
 } else {
     echo "HTTP STATUS: $httpCode\n";
-    echo "RESPONSE BODY:\n$response\n\n";
+    echo "RESPONSE BODY:\n" . substr($response, 0, 300) . "...\n\n"; // Preview body
+}
+
+// 2b. Test menggunakan Laravel Http client
+echo "[2b] MENCOBA HIT API SEVIMA DENGAN LARAVEL HTTP FACADE:\n";
+try {
+    $res = \Illuminate\Support\Facades\Http::withoutVerifying()->withHeaders([
+        'X-App-Key'    => env('SEVIMA_APP_KEY'),
+        'X-Secret-Key' => env('SEVIMA_APP_SECRET'),
+        'Accept'      => 'application/json',
+    ])->get(env('SEVIMA_BASE_URL', 'https://api.sevimaplatform.com/siakadcloud/v1') . '/mahasiswa/220212005');
+    
+    echo "HTTP STATUS: " . $res->status() . "\n";
+    echo "BODY PREVIEW: " . substr($res->body(), 0, 300) . "...\n\n";
+} catch (\Exception $e) {
+    echo "ERROR: " . $e->getMessage() . "\n\n";
 }
 
 // 3. Dump 50 Baris Terakhir Laravel Log

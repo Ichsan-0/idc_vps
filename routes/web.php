@@ -294,5 +294,63 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+Route::get('/debug-log', function() {
+    $baseUrl = env('SEVIMA_BASE_URL', 'https://api.sevimaplatform.com/siakadcloud/v1');
+    $appKey = env('SEVIMA_APP_KEY');
+    $secretKey = env('SEVIMA_APP_SECRET');
+
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $baseUrl . "/mahasiswa/220212005");
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        "X-App-Key: " . $appKey,
+        "X-Secret-Key: " . $secretKey,
+        "Accept: application/json"
+    ]);
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlErrNo = curl_errno($ch);
+    $curlError = curl_error($ch);
+    curl_close($ch);
+
+    $logPath = storage_path('logs/laravel.log');
+    $logContent = '';
+    if (file_exists($logPath)) {
+        $lines = file($logPath);
+        $count = count($lines);
+        $start = max(0, $count - 50);
+        for ($i = $start; $i < $count; $i++) {
+            $logContent .= $lines[$i];
+        }
+    } else {
+        $logContent = "Log file not found.";
+    }
+
+    $out = "=========================================\n";
+    $out .= "          IDC SERVER DIAGNOSTICS         \n";
+    $out .= "=========================================\n\n";
+    $out .= "[1] MEMERIKSA KONFIGURASI SEVIMA:\n";
+    $out .= "SEVIMA_BASE_URL: " . $baseUrl . "\n";
+    $out .= "SEVIMA_APP_KEY: " . ($appKey ? substr($appKey, 0, 5) . '...' : 'KOSONG / TIDAK TERBACA') . "\n";
+    $out .= "SEVIMA_APP_SECRET: " . ($secretKey ? substr($secretKey, 0, 5) . '...' : 'KOSONG / TIDAK TERBACA') . "\n\n";
+    $out .= "[2] MENCOBA HIT API SEVIMA DARI WEB SERVER (GET /mahasiswa/220212005):\n";
+    if ($curlErrNo) {
+        $out .= "CURL ERROR (#$curlErrNo): $curlError\n\n";
+    } else {
+        $out .= "HTTP STATUS: $httpCode\n";
+        $out .= "RESPONSE BODY:\n$response\n\n";
+    }
+    $out .= "[3] 50 BARIS TERAKHIR DARI LARAVEL.LOG:\n";
+    $out .= "-----------------------------------------\n";
+    $out .= $logContent;
+    $out .= "-----------------------------------------\n";
+
+    return response($out, 200)->header('Content-Type', 'text/plain');
+});
+
 require __DIR__ . '/auth.php';
 require __DIR__ . '/super_admin.php';

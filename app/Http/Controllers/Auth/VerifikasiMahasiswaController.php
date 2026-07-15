@@ -54,8 +54,10 @@ class VerifikasiMahasiswaController extends Controller
                     ]);
                 }
 
+                $status = $response->status();
+                $body = substr($response->body(), 0, 100);
                 return back()->withErrors([
-                    'nim' => 'Gagal menghubungi server Sevima. Coba lagi nanti.',
+                    'nim' => "Gagal menghubungi server Sevima. Status: {$status}. Body: {$body}",
                 ]);
             }
 
@@ -218,7 +220,7 @@ class VerifikasiMahasiswaController extends Controller
             ]);
 
             return back()->withErrors([
-                'nim' => 'Terjadi kesalahan pada sistem. Coba lagi nanti.',
+                'nim' => 'Terjadi kesalahan pada sistem: ' . $e->getMessage(),
             ]);
         }
     }

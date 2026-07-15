@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Head, useForm, usePage } from "@inertiajs/react";
-import { Alert, CircularProgress, Snackbar, TextField } from "@mui/material";
+import { Alert, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Snackbar, TextField } from "@mui/material";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import gambar from "../../../../public/assets/landmark-uinar-scaled.jpg";
 import InputError from "@/Components/InputError";
@@ -67,12 +67,20 @@ export default function VerifikasiMahasiswa() {
 
     const [notif, setNotif] = useState(false);
     const [dateValue, setDateValue] = useState(data.tanggal_lahir ? dayjs(data.tanggal_lahir) : null);
+    const [microWarningOpen, setMicroWarningOpen] = useState(false);
 
     useEffect(() => {
         if (errors.nim || errors.tanggal_lahir) {
             setNotif(false);
         }
     }, [errors]);
+
+    // Buka popup saat flash micro_warning diterima dari redirect
+    useEffect(() => {
+        if (flash?.micro_warning) {
+            setMicroWarningOpen(true);
+        }
+    }, [flash?.micro_warning]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -172,6 +180,78 @@ export default function VerifikasiMahasiswa() {
                     alt="UIN Ar-Raniry"
                 />
             </div>
+
+            {/* Pop-up Peringatan Nilai Micro Teaching - di luar grid agar tampil sebagai overlay penuh */}
+            <Dialog
+                open={microWarningOpen}
+                onClose={() => setMicroWarningOpen(false)}
+                maxWidth="sm"
+                fullWidth
+                PaperProps={{
+                    style: {
+                        borderRadius: "16px",
+                        padding: "8px",
+                    },
+                }}
+            >
+                <DialogTitle
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1.5,
+                        fontWeight: 700,
+                        fontSize: "1.15rem",
+                        color: "#b45309",
+                        pb: 0,
+                    }}
+                >
+                    <span style={{ fontSize: "1.5rem" }}>⚠️</span>
+                    Nilai Micro Teaching Belum Ada
+                </DialogTitle>
+
+                <DialogContent sx={{ pt: 2 }}>
+                    <div
+                        style={{
+                            backgroundColor: "#fefce8",
+                            border: "1px solid #fde68a",
+                            borderRadius: "12px",
+                            padding: "16px",
+                            marginBottom: "12px",
+                        }}
+                    >
+                        <p style={{ margin: 0, color: "#78350f", fontWeight: 600, marginBottom: "6px" }}>
+                            Saat ini nilai Micro Teaching Anda belum tersedia.
+                        </p>
+                        <p style={{ margin: 0, color: "#92400e", fontSize: "0.9rem", lineHeight: 1.6 }}>
+                            Silahkan hubungi dosen/koordinator program studi Anda untuk memastikan
+                            nilai Micro Teaching telah diinputkan ke sistem akademik, atau coba
+                            verifikasi kembali beberapa saat setelah nilai telah diproses.
+                        </p>
+                    </div>
+                    <p style={{ margin: 0, color: "#6b7280", fontSize: "0.85rem" }}>
+                        Pendaftaran <strong>tidak dapat dilanjutkan</strong> sampai nilai Micro Teaching
+                        Anda tersedia di SIAKAD / SEVIMA.
+                    </p>
+                </DialogContent>
+
+                <DialogActions sx={{ px: 3, pb: 2.5, justifyContent: "center" }}>
+                    <Button
+                        onClick={() => setMicroWarningOpen(false)}
+                        variant="contained"
+                        sx={{
+                            borderRadius: "10px",
+                            textTransform: "none",
+                            fontWeight: 600,
+                            backgroundColor: "#eab308",
+                            "&:hover": { backgroundColor: "#ca8a04" },
+                            boxShadow: "none",
+                            px: 4,
+                        }}
+                    >
+                        Tutup
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </ThemeProvider>
     );
 }

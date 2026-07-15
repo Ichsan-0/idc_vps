@@ -47,6 +47,7 @@ import {
     AssignmentInd,
     LocationOn,
     Home,
+    ContentCopy,
 } from "@mui/icons-material";
 import Navigation from "@/Components/Mahasiswa/Navigation";
 import ButtomFooter from "@/Components/frontpage/ButtomFooter";
@@ -144,6 +145,60 @@ const Profil = ({
     const [previewFile, setPreviewFile] = useState(null);
     const [previewType, setPreviewType] = useState("");
     const [previewTitle, setPreviewTitle] = useState("");
+
+    // Transkrip states & logic
+    const [transkripOpen, setTranskripOpen] = useState(false);
+    const [transkripData, setTranskripData] = useState([]);
+    const [loadingTranskrip, setLoadingTranskrip] = useState(false);
+
+    const handleFetchTranskrip = async () => {
+        setLoadingTranskrip(true);
+        setTranskripOpen(true);
+        try {
+            const response = await fetch('/profil/transkrip');
+            const result = await response.json();
+            if (response.ok) {
+                setTranskripData(result.data || []);
+            } else {
+                alert(result.error || 'Gagal memuat transkrip nilai.');
+                setTranskripOpen(false);
+            }
+        } catch (error) {
+            console.error('Error fetching transkrip:', error);
+            alert('Terjadi kesalahan jaringan.');
+            setTranskripOpen(false);
+        } finally {
+            setLoadingTranskrip(false);
+        }
+    };
+
+    const transkripStats = useMemo(() => {
+        let sksDiambil = 0;
+        let sksLulus = 0;
+        let totalMutu = 0;
+
+        transkripData.forEach((item) => {
+            const attrs = item.attributes || {};
+            const sks = parseFloat(attrs.sks_mata_kuliah || attrs.sks || 0);
+            const bobot = parseFloat(attrs.bobot_mata_kuliah || attrs.bobot || 0);
+            const lulus = attrs.is_lulus === "1" || attrs.is_lulus === true;
+
+            sksDiambil += sks;
+            if (lulus) {
+                sksLulus += sks;
+            }
+            totalMutu += bobot;
+        });
+
+        const calculatedIpk = sksDiambil > 0 ? (totalMutu / sksDiambil).toFixed(2) : "0.00";
+
+        return {
+            sksDiambil,
+            sksLulus,
+            totalMutu: totalMutu.toFixed(2),
+            ipk: calculatedIpk,
+        };
+    }, [transkripData]);
 
     useEffect(() => {
         if (flash?.message) {
@@ -374,14 +429,19 @@ const Profil = ({
     );
 
     const [suratPernyataan, setSuratPernyataan] = useState(null);
-    const [linkSuratPernyataan] = useState(
+    const [linkSuratPernyataan, setLinkSuratPernyataan] = useState(
         mahasiswa?.data_mahasiswa?.link_surat_pernyataan || null
     );
 
     const [suratKesiapan, setSuratKesiapan] = useState(null);
-    const [linkSuratKesiapan] = useState(
+    const [linkSuratKesiapan, setLinkSuratKesiapan] = useState(
         mahasiswa?.data_mahasiswa?.link_surat_kesiapan || null
     );
+
+    useEffect(() => {
+        setLinkSuratPernyataan(mahasiswa?.data_mahasiswa?.link_surat_pernyataan || null);
+        setLinkSuratKesiapan(mahasiswa?.data_mahasiswa?.link_surat_kesiapan || null);
+    }, [mahasiswa]);
 
     const { setData, post, errors, processing } = useForm({
         province_code: provinceAsal?.kode || "",
@@ -404,6 +464,14 @@ const Profil = ({
         jk: jenisKelamin,
         alamat_asal: alamatAsal,
     });
+
+    useEffect(() => {
+        if (errors && Object.keys(errors).length > 0) {
+            setNotifyStatus("error");
+            setNotify(true);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+    }, [errors]);
 
     // Initialize regency list based on province for alamat asal
     useEffect(() => {
@@ -461,62 +529,37 @@ const Profil = ({
 
     // Fungsi untuk membuka preview file
     const handleOpenPreview = useCallback(
-        async (type) => {
+        (type) => {
             let file = null;
             let fileUrl = null;
-            let title = "";
 
             switch (type) {
-                case "transkrip":
-                    file = transkrip;
-                    fileUrl = linkTranskrip;
-                    title = "Preview Transkrip Nilai";
-                    break;
                 case "surat_pernyataan":
                     file = suratPernyataan;
                     fileUrl = linkSuratPernyataan;
-                    title = "Preview Surat Pernyataan KA PRODI";
                     break;
                 case "surat_kesiapan":
                     file = suratKesiapan;
                     fileUrl = linkSuratKesiapan;
-                    title = "Preview Surat Kesiapan Mahasiswa";
                     break;
                 default:
                     return;
             }
 
-            setLoadingPreview(true);
-
             if (file) {
                 // Untuk file yang baru diupload
                 const url = URL.createObjectURL(file);
-                setPreviewFile(url);
-                setPreviewType("object");
+                window.open(url, '_blank');
             } else if (fileUrl) {
-                // Untuk file yang sudah ada di server
-                // Gunakan getFullUrl untuk menggabungkan base URL dengan path file
-                const fullUrl = getFullUrl(fileUrl);
-                setPreviewFile(fullUrl);
-                console.log("url file ", fullUrl);
-                setPreviewType("url");
-            } else {
-                setLoadingPreview(false);
-                return;
+                // Panggil secure controller route
+                window.open(`/profil/document/${type}`, '_blank');
             }
-
-            setPreviewTitle(title);
-            setPreviewOpen(true);
-            setLoadingPreview(false);
         },
         [
-            transkrip,
-            linkTranskrip,
             suratPernyataan,
             linkSuratPernyataan,
             suratKesiapan,
             linkSuratKesiapan,
-            getFullUrl,
         ]
     );
 
@@ -697,6 +740,21 @@ const Profil = ({
         [setData]
     );
 
+    const handleCopyAlamatAsal = useCallback(() => {
+        setProvinceNow(provinceAsal);
+        setRegencyNow(regencyAsal);
+        setSubDistrictNow(subDistrictAsal);
+        setVillageNow(villageAsal);
+
+        setData((prev) => ({
+            ...prev,
+            province_code_now: provinceAsal?.kode || "",
+            regency_code_now: regencyAsal?.kode || "",
+            subdistrict_code_now: subDistrictAsal?.kode || "",
+            village_code_now: villageAsal?.kode || "",
+        }));
+    }, [provinceAsal, regencyAsal, subDistrictAsal, villageAsal, setData]);
+
     const handleClusterKegiatanChange = useCallback(
         (e) => {
             const value = e.target.value;
@@ -745,9 +803,14 @@ const Profil = ({
     const onSubmit = useCallback(
         (e) => {
             e.preventDefault();
-            post("/profil/save");
+            post("/profil/save", {
+                onSuccess: () => {
+                    setSuratPernyataan(null);
+                    setSuratKesiapan(null);
+                }
+            });
         },
-        [post]
+        [post, setSuratPernyataan, setSuratKesiapan]
     );
 
     useEffect(() => {
@@ -1215,34 +1278,58 @@ const Profil = ({
         <ThemeProvider theme={theme}>
             <Head title="Profil Mahasiswa" />
             <Header />
+
+            {/* Snackbar Notifikasi */}
             <Snackbar
                 open={notify}
-                anchorOrigin={{
-                    vertical: "top",
-                    horizontal: "right",
-                }}
-                autoHideDuration={3000}
+                anchorOrigin={{ vertical: "top", horizontal: "right" }}
+                autoHideDuration={4000}
                 onClose={handleCloseNotify}
             >
-                <Alert
-                    onClose={handleCloseNotify}
-                    severity={notifyStatus}
-                    variant="filled"
-                    sx={{ width: "100%" }}
-                >
-                    {flash?.message &&
-                        (flash.message[notifyStatus] ||
-                            flash.message.success ||
-                            flash.message.error ||
-                            "Terjadi kesalahan")}
+                <Alert onClose={handleCloseNotify} severity={notifyStatus} variant="filled" sx={{ width: "100%" }}>
+                    {flash?.message ? (
+                        flash.message[notifyStatus] || flash.message.success || flash.message.error || "Terjadi kesalahan"
+                    ) : Object.keys(errors).length > 0 ? (
+                        "Terdapat kesalahan pada form. Periksa kembali seluruh input yang wajib diisi."
+                    ) : (
+                        "Terjadi kesalahan"
+                    )}
                 </Alert>
             </Snackbar>
 
-            {/* Modal Preview */}
+            {/* Modal Preview Dokumen */}
             <Modal
                 open={previewOpen}
                 onClose={handleClosePreview}
-                aria-labelledby="preview-modal-title"
+                sx={{ display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(4px)" }}
+            >
+                <Box sx={{ position: "relative", width: "95vw", height: "95vh", maxWidth: "1200px", bgcolor: "background.paper", borderRadius: 3, boxShadow: 24, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+                    <Box sx={{ p: 3, borderBottom: 1, borderColor: "divider", display: "flex", alignItems: "center", justifyContent: "space-between", bgcolor: "primary.main", color: "white" }}>
+                        <Typography variant="h6" sx={{ fontWeight: 600 }}>{previewTitle}</Typography>
+                        <IconButton onClick={handleClosePreview} sx={{ color: "white", "&:hover": { backgroundColor: "rgba(255,255,255,0.1)" } }}>
+                            <FaTimes />
+                        </IconButton>
+                    </Box>
+                    <Box sx={{ flexGrow: 1, overflow: "hidden", position: "relative" }}>
+                        {loadingPreview ? (
+                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%" }}>
+                                <CircularProgress />
+                                <Typography sx={{ ml: 2 }}>Memuat preview...</Typography>
+                            </Box>
+                        ) : previewFile ? (
+                            <iframe src={previewFile} title={previewTitle} style={{ width: "100%", height: "100%", border: "none" }} />
+                        ) : null}
+                    </Box>
+                    <Box sx={{ p: 2, borderTop: 1, borderColor: "divider", display: "flex", justifyContent: "flex-end" }}>
+                        <Button variant="outlined" onClick={handleClosePreview} startIcon={<FaTimes />}>Tutup</Button>
+                    </Box>
+                </Box>
+            </Modal>
+
+            {/* Modal Transkrip Sementara */}
+            <Modal
+                open={transkripOpen}
+                onClose={() => setTranskripOpen(false)}
                 sx={{
                     display: "flex",
                     alignItems: "center",
@@ -1252,1017 +1339,577 @@ const Profil = ({
             >
                 <Box
                     sx={{
-                        position: "relative",
-                        width: "95vw",
-                        height: "95vh",
-                        maxWidth: "1200px",
+                        width: "90%",
+                        maxWidth: 900,
+                        maxHeight: "90vh",
                         bgcolor: "background.paper",
                         borderRadius: 3,
                         boxShadow: 24,
-                        overflow: "hidden",
-                        display: "flex",
-                        flexDirection: "column",
+                        p: 4,
+                        position: "relative",
+                        overflowY: "auto",
                     }}
                 >
-                    {/* Header Modal */}
-                    <Box
-                        sx={{
-                            p: 3,
-                            borderBottom: 1,
-                            borderColor: "divider",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            bgcolor: "primary.main",
-                            color: "white",
-                        }}
+                    <IconButton
+                        onClick={() => setTranskripOpen(false)}
+                        sx={{ position: "absolute", right: 16, top: 16, color: "text.secondary" }}
                     >
-                        <Typography
-                            variant="h6"
-                            component="h2"
-                            sx={{ fontWeight: 600 }}
-                        >
-                            {previewTitle}
-                        </Typography>
-                        <IconButton
-                            onClick={handleClosePreview}
-                            sx={{
-                                color: "white",
-                                "&:hover": {
-                                    backgroundColor: "rgba(255,255,255,0.1)",
-                                },
-                            }}
-                        >
-                            <FaTimes />
-                        </IconButton>
-                    </Box>
+                        <FaTimes />
+                    </IconButton>
 
-                    {/* Content Modal */}
-                    <Box
-                        sx={{
-                            flexGrow: 1,
-                            overflow: "hidden",
-                            p: 0,
-                            position: "relative",
-                        }}
-                    >
-                        {loadingPreview ? (
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    height: "100%",
-                                }}
-                            >
-                                <CircularProgress />
-                                <Typography sx={{ ml: 2 }}>
-                                    Memuat preview...
-                                </Typography>
-                            </Box>
-                        ) : previewFile ? (
-                            <iframe
-                                src={previewFile}
-                                title={previewTitle}
-                                style={{
-                                    width: "100%",
-                                    height: "100%",
-                                    border: "none",
-                                }}
-                            />
-                        ) : null}
-                    </Box>
-
-                    {/* Footer Modal */}
-                    <Box
-                        sx={{
-                            p: 2,
-                            borderTop: 1,
-                            borderColor: "divider",
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            gap: 2,
-                        }}
-                    >
-                        <Typography variant="body2" color="text.secondary">
-                            {previewType === "object"
-                                ? "File baru (belum disimpan)"
-                                : "File tersimpan di server"}
-                        </Typography>
-                        <Box sx={{ display: "flex", gap: 2 }}>
-                            <Button
-                                variant="outlined"
-                                onClick={handleClosePreview}
-                                startIcon={<FaTimes />}
-                            >
-                                Tutup
-                            </Button>
+                    {loadingTranskrip ? (
+                        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", py: 8 }}>
+                            <CircularProgress color="primary" />
+                            <Typography sx={{ mt: 2 }}>Memuat Data Transkrip...</Typography>
                         </Box>
-                    </Box>
+                    ) : (
+                        <div className="p-2 text-black bg-white" style={{ fontFamily: "serif" }}>
+                            {/* Kop Surat */}
+                            <div className="flex items-center justify-center border-b-4 border-double border-black pb-4 mb-4">
+                                <img src="/Lambang_UIN_Ar-Raniry.png" className="w-16 h-16 mr-4" alt="Logo UIN" />
+                                <div className="text-center text-black">
+                                    <h1 className="text-xl font-bold tracking-wide uppercase">UIN Ar-Raniry Banda Aceh</h1>
+                                    <p className="text-xs">Jalan Lingkar Kampus UIN Ar-Raniry, Kota Pelajar Mahasiswa, Darussalam, Banda Aceh</p>
+                                    <p className="text-xs">Website: http://ar-raniry.ac.id / e-Mail: uin@ar-raniry.ac.id / Telepon: 0651-7552921</p>
+                                </div>
+                            </div>
+
+                            {/* Judul Dokumen */}
+                            <div className="text-center mb-6">
+                                <h2 className="text-lg font-bold uppercase tracking-widest border-b border-black pb-1 inline-block text-black">
+                                    TRANSKRIP SEMENTARA
+                                </h2>
+                            </div>
+
+                            {/* Data Mahasiswa */}
+                            <div className="grid grid-cols-2 gap-x-8 gap-y-1 text-sm mb-6 text-black">
+                                <div className="flex">
+                                    <span className="w-32 font-bold">Program Studi</span>
+                                    <span className="mr-2">:</span>
+                                    <span>{prodi?.name || "-"}</span>
+                                </div>
+                                <div className="flex">
+                                    <span className="w-36 font-bold">Jenjang Pendidikan</span>
+                                    <span className="mr-2">:</span>
+                                    <span>Strata 1 (S1)</span>
+                                </div>
+                                <div className="flex">
+                                    <span className="w-32 font-bold">NIM</span>
+                                    <span className="mr-2">:</span>
+                                    <span>{nim || "-"}</span>
+                                </div>
+                                <div className="flex">
+                                    <span className="w-36 font-bold">Nama</span>
+                                    <span className="mr-2">:</span>
+                                    <span className="uppercase">{name || "-"}</span>
+                                </div>
+                                <div className="flex">
+                                    <span className="w-32 font-bold">Tempat Lahir</span>
+                                    <span className="mr-2">:</span>
+                                    <span className="uppercase">-</span>
+                                </div>
+                                <div className="flex">
+                                    <span className="w-36 font-bold">Tahun Masuk</span>
+                                    <span className="mr-2">:</span>
+                                    <span>{nim && nim.length >= 2 && !isNaN(nim.substring(0, 2)) ? "20" + nim.substring(0, 2) : "-"}</span>
+                                </div>
+                                <div className="flex">
+                                    <span className="w-32 font-bold">Tanggal Lahir</span>
+                                    <span className="mr-2">:</span>
+                                    <span>-</span>
+                                </div>
+                            </div>
+
+                            {/* Tabel Transkrip */}
+                            <table className="w-full border-collapse border border-black text-xs mb-6 text-black">
+                                <thead>
+                                    <tr className="bg-gray-100">
+                                        <th className="border border-black px-2 py-1 text-center w-8">NO</th>
+                                        <th className="border border-black px-2 py-1 text-center w-24">KODE</th>
+                                        <th className="border border-black px-2 py-1 text-left">MATA KULIAH</th>
+                                        <th className="border border-black px-2 py-1 text-center w-16">NILAI</th>
+                                        <th className="border border-black px-2 py-1 text-center w-16">A.M</th>
+                                        <th className="border border-black px-2 py-1 text-center w-12">SKS</th>
+                                        <th className="border border-black px-2 py-1 text-center w-16">BOBOT</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {transkripData.length > 0 ? (
+                                        transkripData.map((item, index) => {
+                                            const attrs = item.attributes || {};
+                                            return (
+                                                <tr key={item.id || index} className="hover:bg-gray-50">
+                                                    <td className="border border-black px-2 py-1 text-center">{index + 1}</td>
+                                                    <td className="border border-black px-2 py-1 text-center font-mono">{attrs.kode_mata_kuliah || "-"}</td>
+                                                    <td className="border border-black px-2 py-1">{attrs.nama_mata_kuliah || "-"}</td>
+                                                    <td className="border border-black px-2 py-1 text-center">{attrs.nilai_huruf || "-"}</td>
+                                                    <td className="border border-black px-2 py-1 text-center">
+                                                        {parseFloat(attrs.nilai_angka || 0).toFixed(2)}
+                                                    </td>
+                                                    <td className="border border-black px-2 py-1 text-center">{attrs.sks_mata_kuliah || 0}</td>
+                                                    <td className="border border-black px-2 py-1 text-center">
+                                                        {parseFloat(attrs.bobot_mata_kuliah || 0).toFixed(2)}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="7" className="border border-black px-2 py-8 text-center text-gray-500">
+                                                Tidak ada data transkrip nilai.
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+
+                            {/* Keterangan & Summary */}
+                            <div className="grid grid-cols-2 text-xs border-t border-black pt-4 text-black">
+                                <div>
+                                    <p className="font-bold mb-1">KETERANGAN</p>
+                                    <div className="grid grid-cols-[40px_10px_1fr] gap-y-0.5">
+                                        <span>SKS</span>
+                                        <span>:</span>
+                                        <span>Satuan Kredit Semester</span>
+
+                                        <span>HM</span>
+                                        <span>:</span>
+                                        <span>Huruf Mutu</span>
+
+                                        <span>AM</span>
+                                        <span>:</span>
+                                        <span>Angka Mutu</span>
+
+                                        <span>M</span>
+                                        <span>:</span>
+                                        <span>Mutu</span>
+                                    </div>
+                                </div>
+                                <div className="flex flex-col items-end">
+                                    <div className="grid grid-cols-[200px_10px_50px] gap-y-1">
+                                        <span>Jumlah SKS Yang Diambil</span>
+                                        <span>:</span>
+                                        <span className="text-right font-bold">{transkripStats.sksDiambil}</span>
+
+                                        <span>Jumlah SKS Yang Lulus</span>
+                                        <span>:</span>
+                                        <span className="text-right font-bold">{transkripStats.sksLulus}</span>
+
+                                        <span>Jumlah Mutu</span>
+                                        <span>:</span>
+                                        <span className="text-right font-bold">{transkripStats.totalMutu}</span>
+
+                                        <span>Index Prestasi Kumulatif (IPK)</span>
+                                        <span>:</span>
+                                        <span className="text-right font-bold">{transkripStats.ipk}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </Box>
             </Modal>
 
-            <main className="flex text-gray-600 justify-center flex-col items-center w-full px-4 md:px-6 lg:px-8 z-[0] bg-gray-50 min-h-screen">
-                <div className="w-full max-w-6xl py-6">
-                    {/* Header Section */}
+            <main className="flex text-gray-600 justify-center flex-col items-center w-full px-4 md:px-6 lg:px-8 bg-gray-50 min-h-screen pt-20 pb-10">
+                <div className="w-full max-w-6xl">
+
+                    {/* Header */}
                     <Box sx={{ mb: 4 }}>
-                        <Paper
-                            elevation={0}
-                            sx={{
-                                p: 4,
-                                borderRadius: 3,
-                                background: "#ffffff",
-                                border: "1px solid #e5e7eb", 
-                                color: "black",
-                            }}
-                        >
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    justifyContent: "space-between",
-                                    alignItems: "center",
-                                    flexWrap: "wrap",
-                                    gap: 2,
-                                }}
-                            >
+                        <Paper elevation={0} sx={{ p: 4, borderRadius: 3, background: "#ffffff", border: "1px solid #e5e7eb" }}>
+                            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
                                 <Box>
-                                    <Typography
-                                        variant="h4"
-                                        gutterBottom
-                                        sx={{ fontWeight: 700 }}
-                                    >
-                                        Profil Mahasiswa
-                                    </Typography>
-                                    <Typography
-                                        variant="body1"
-                                        sx={{ opacity: 0.9, maxWidth: "600px" }}
-                                    >
-                                        Lengkapi data profil Anda untuk
-                                        keperluan administrasi. Pastikan semua
-                                        informasi yang dimasukkan valid dan
-                                        dokumen yang diunggah sesuai dengan
-                                        ketentuan.
+                                    <Typography variant="h4" gutterBottom sx={{ fontWeight: 700 }}>Profil Mahasiswa</Typography>
+                                    <Typography variant="body1" sx={{ opacity: 0.8, maxWidth: "600px" }}>
+                                        Lengkapi dan perbarui data profil Anda. Data yang bersumber dari SIAKAD bersifat <strong>read-only</strong> dan hanya dapat diubah melalui sistem akademik.
                                     </Typography>
                                 </Box>
-                                <StatusBadge
-                                    status={mahasiswa?.data_mahasiswa?.status}
-                                />
+                                {/* Status Badge */}
+                                {(() => {
+                                    const statusConfig = {
+                                        submitted: { label: "Sedang Direview", color: "#ed6c02" },
+                                        rejected:  { label: "Ditolak", color: "#d32f2f" },
+                                        accepted:  { label: "Diterima ✓", color: "#2e7d32" },
+                                        revisi:    { label: "Perlu Revisi", color: "#ed6c02" },
+                                    };
+                                    const cfg = statusConfig[mahasiswa?.data_mahasiswa?.status];
+                                    return cfg ? (
+                                        <Chip
+                                            label={cfg.label}
+                                            sx={{ fontWeight: 700, fontSize: "0.875rem", height: 36, px: 1, bgcolor: cfg.color, color: "#fff" }}
+                                        />
+                                    ) : (
+                                        <Chip label="Lengkapi Profil" sx={{ fontWeight: 700, fontSize: "0.875rem", height: 36, px: 1, bgcolor: "#d32f2f", color: "#fff" }} />
+                                    );
+                                })()}
                             </Box>
                         </Paper>
                     </Box>
 
-                    {/* Status Messages */}
+                    {/* Alert Revisi / Ditolak */}
                     {mahasiswa?.data_mahasiswa?.status === "revisi" && (
-                        <Alert
-                            severity="warning"
-                            sx={{
-                                mb: 3,
-                                borderRadius: 2,
-                                "& .MuiAlert-icon": { fontSize: 28 },
-                            }}
-                        >
-                            <Typography
-                                variant="subtitle1"
-                                gutterBottom
-                                sx={{ fontWeight: 600 }}
-                            >
-                                Perlu Revisi
-                            </Typography>
-                            <Typography variant="body2">
-                                {mahasiswa?.data_mahasiswa?.keterangan ||
-                                    "Silakan perbaiki data profil Anda sesuai dengan petunjuk yang diberikan."}
-                            </Typography>
+                        <Alert severity="warning" sx={{ mb: 3, borderRadius: 2 }}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Perlu Revisi</Typography>
+                            <Typography variant="body2">{mahasiswa?.data_mahasiswa?.keterangan || "Silakan perbaiki data profil Anda sesuai petunjuk."}</Typography>
                         </Alert>
                     )}
-
                     {mahasiswa?.data_mahasiswa?.status === "rejected" && (
-                        <Alert
-                            severity="error"
-                            sx={{
-                                mb: 3,
-                                borderRadius: 2,
-                                "& .MuiAlert-icon": { fontSize: 28 },
-                            }}
-                        >
-                            <Typography
-                                variant="subtitle1"
-                                gutterBottom
-                                sx={{ fontWeight: 600 }}
-                            >
-                                Ditolak
-                            </Typography>
-                            <Typography variant="body2">
-                                {mahasiswa?.data_mahasiswa?.keterangan ||
-                                    "Pendaftaran Anda tidak dapat diproses lebih lanjut. Silakan hubungi administrasi untuk informasi lebih detail."}
-                            </Typography>
+                        <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Ditolak</Typography>
+                            <Typography variant="body2">{mahasiswa?.data_mahasiswa?.keterangan || "Pendaftaran tidak dapat diproses. Hubungi administrasi."}</Typography>
                         </Alert>
                     )}
 
-                    {/* Additional Sections */}
-                    {link_grup &&
-                        mahasiswa?.data_mahasiswa?.status === "accepted" && (
-                            <Paper
-                                elevation={0}
-                                sx={{
-                                    mt: 4,
-                                    p: 4,
-                                    borderRadius: 3,
-                                    border: "1px solid",
-                                    borderColor: "success.light",
-                                    borderLeft: "6px solid",
-                                    borderLeftColor: "success.main",
-                                    backgroundColor: "success.50",
-                                }}
-                            >
-                                <Box
-                                    sx={{
-                                        display: "flex",
-                                        flexDirection: {
-                                            xs: "column",
-                                            md: "row",
-                                        },
-                                        alignItems: "center",
-                                        justifyContent: "space-between",
-                                        gap: 3,
-                                    }}
-                                >
-                                    <Box sx={{ flex: 1 }}>
-                                        <Typography
-                                            variant="h6"
-                                            gutterBottom
-                                            sx={{
-                                                fontWeight: 600,
-                                                color: "success.main",
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: 1.5,
-                                            }}
-                                        >
-                                            <FaWhatsapp
-                                                style={{ fontSize: "1.5rem" }}
-                                            />
-                                            Informasi Grup WhatsApp
-                                        </Typography>
-                                        <Typography
-                                            variant="body1"
-                                            color="text.secondary"
-                                        >
-                                            Selamat! Pendaftaran Anda telah
-                                            diterima. Bergabunglah dengan grup
-                                            WhatsApp untuk mendapatkan informasi
-                                            terbaru dan koordinasi lebih lanjut
-                                            mengenai kegiatan yang akan diikuti.
-                                        </Typography>
-                                    </Box>
-                                    <Button
-                                        component="a"
-                                        href={link_grup}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        variant="contained"
-                                        startIcon={<FaWhatsapp />}
-                                        sx={{
-                                            bgcolor: "success.main",
-                                            "&:hover": {
-                                                bgcolor: "success.dark",
-                                            },
-                                            textTransform: "capitalize",
-                                            fontWeight: 600,
-                                            px: 4,
-                                            py: 1.5,
-                                            borderRadius: 2,
-                                            whiteSpace: "nowrap",
-                                        }}
-                                    >
-                                        Gabung Grup
-                                    </Button>
+                    {/* Link Grup WA (jika accepted) */}
+                    {link_grup && mahasiswa?.data_mahasiswa?.status === "accepted" && (
+                        <Paper elevation={0} sx={{ mb: 3, p: 3, borderRadius: 3, border: "1px solid", borderColor: "success.light", borderLeft: "6px solid", borderLeftColor: "success.main", backgroundColor: "#f0fdf4" }}>
+                            <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, alignItems: "center", justifyContent: "space-between", gap: 2 }}>
+                                <Box>
+                                    <Typography variant="h6" sx={{ fontWeight: 600, color: "success.main", display: "flex", alignItems: "center", gap: 1 }}>
+                                        <FaWhatsapp style={{ fontSize: "1.4rem" }} /> Grup WhatsApp
+                                    </Typography>
+                                    <Typography variant="body2" color="text.secondary">
+                                        Selamat! Pendaftaran Anda diterima. Bergabunglah ke grup WhatsApp untuk koordinasi lebih lanjut.
+                                    </Typography>
                                 </Box>
-                            </Paper>
-                        )}
+                                <Button component="a" href={link_grup} target="_blank" rel="noopener noreferrer" variant="contained"
+                                    startIcon={<FaWhatsapp />}
+                                    sx={{ bgcolor: "success.main", "&:hover": { bgcolor: "success.dark" }, fontWeight: 600, px: 3, py: 1.5, borderRadius: 2, whiteSpace: "nowrap" }}>
+                                    Gabung Grup
+                                </Button>
+                            </Box>
+                        </Paper>
+                    )}
 
                     {/* Main Form */}
-                    <form onSubmit={onSubmit} className="mt-8">
+                    <form onSubmit={onSubmit}>
                         <Grid container spacing={3}>
-                            {/* Left Column - Data Pribadi */}
-                            <Grid item xs={12} md={6}>
-                                <Card
-                                    elevation={0}
-                                    sx={{
-                                        height: "100%",
-                                        borderRadius: 3,
-                                        border: "1px solid",
-                                        borderColor: "divider",
-                                    }}
-                                >
-                                    <CardContent>
-                                        <Typography
-                                            variant="h5"
-                                            gutterBottom
-                                            sx={{
-                                                fontWeight: 600,
-                                                mb: 3,
-                                            }}
-                                        >
-                                            <Box
-                                                sx={{
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    gap: 1,
-                                                }}
-                                            >
-                                                Data Pribadi
-                                            </Box>
+
+                            {/* ===== KOLOM KIRI: Data Pribadi + Alamat ===== */}
+                            <Grid item xs={12} md={7}>
+
+                                {/* Card: Data Pribadi & Akademik */}
+                                <Card elevation={0} sx={{ borderRadius: 3, border: "1px solid #e5e7eb", mb: 3 }}>
+                                    <CardContent className="space-y-6">
+                                        <Typography variant="h6" sx={{ borderBottom: "2px solid #008a01", pb: 1, width: "fit-content" }}>
+                                            Data Pribadi &amp; Akademik
                                         </Typography>
 
-                                        <Box
-                                            sx={{
-                                                display: "flex",
-                                                flexDirection: "column",
-                                                gap: 2.5,
-                                            }}
-                                        >
+                                        <Grid container spacing={2}>
+                                            {/* Nama — readonly dari SIAKAD */}
+                                            <Grid item xs={12} md={6}>
+                                                <TextField label="Nama Lengkap" fullWidth disabled value={name} variant="outlined"
+                                                    helperText="Data dari SIAKAD" />
+                                            </Grid>
+
+                                            {/* NIM — readonly */}
+                                            <Grid item xs={12} md={6}>
+                                                <TextField label="NIM" fullWidth disabled value={nim} variant="outlined"
+                                                    helperText="Data dari SIAKAD" />
+                                            </Grid>
+
+                                            {/* Jenis Kelamin — editable */}
+                                            <Grid item xs={12} md={6}>
+                                                <FormControl fullWidth error={!!errors.jk}>
+                                                    <InputLabel>Jenis Kelamin</InputLabel>
+                                                    <Select value={jenisKelamin} label="Jenis Kelamin" onChange={handleJenisKelaminChange}>
+                                                        <MenuItem value="Pria">Pria</MenuItem>
+                                                        <MenuItem value="Wanita">Wanita</MenuItem>
+                                                    </Select>
+                                                    {errors.jk && <Typography variant="caption" color="error" sx={{ mt: 0.5, display: "block" }}>{errors.jk}</Typography>}
+                                                </FormControl>
+                                            </Grid>
+
+                                            {/* No. HP/WA — editable */}
+                                            <Grid item xs={12} md={6}>
+                                                <TextField label="Nomor WhatsApp" fullWidth value={noHpWa} onChange={handleNoHpWa}
+                                                    error={!!errors.no_hp_wa} helperText={errors.no_hp_wa} placeholder="08xxxxxxxxxx" />
+                                                <Typography variant="caption" sx={{ mt: 0.5, display: "block", color: "primary.main", fontStyle: "italic" }}>
+                                                    * Ganti dengan nomor WhatsApp yang aktif
+                                                </Typography>
+                                            </Grid>
+
+                                            {/* Program Studi — readonly dari SIAKAD */}
+                                            <Grid item xs={12}>
+                                                <TextField label="Program Studi" fullWidth disabled value={prodi?.name || ""} variant="outlined"
+                                                    helperText="Data dari SIAKAD" />
+                                                {errors.id_prodi && <Typography variant="caption" color="error">{errors.id_prodi}</Typography>}
+                                            </Grid>
+
+                                            {/* Semester — readonly */}
+                                            <Grid item xs={12} md={4}>
+                                                <TextField label="Semester" type="number" fullWidth disabled value={semester} variant="outlined"
+                                                    helperText="Data dari SIAKAD" />
+                                            </Grid>
+
+                                            {/* IPK — readonly */}
+                                            <Grid item xs={12} md={4}>
+                                                <TextField label="IPK Terakhir" type="number" fullWidth disabled value={IPK} variant="outlined"
+                                                    helperText="Data dari SIAKAD" />
+                                            </Grid>
+
+                                            {/* Nilai Micro Teaching — readonly */}
+                                            <Grid item xs={12} md={4}>
+                                                <TextField label="Nilai Micro Teaching" fullWidth disabled
+                                                    value={nilaiMicro || "Belum ada"} variant="outlined"
+                                                    helperText="Data dari SIAKAD" />
+                                            </Grid>
+
+                                            {/* Cluster Kegiatan — editable */}
+                                            <Grid item xs={12}>
+                                                <FormControl fullWidth error={!!errors.cluster_kegiatan}>
+                                                    <InputLabel>Cluster Kegiatan</InputLabel>
+                                                    <Select value={clusterKegiatan} label="Cluster Kegiatan" onChange={handleClusterKegiatanChange}>
+                                                        <MenuItem value="PPKPM">PPKPM (PPL + KPM)</MenuItem>
+                                                        <MenuItem value="PPL">PPL</MenuItem>
+                                                        <MenuItem value="KPM">KPM</MenuItem>
+                                                        <MenuItem value="PPKPM_Mandiri">PPKPM Mandiri</MenuItem>
+                                                        <MenuItem value="PPL_Mandiri">PPL Mandiri</MenuItem>
+                                                        <MenuItem value="KPM_Mandiri">KPM Mandiri</MenuItem>
+                                                    </Select>
+                                                    {errors.cluster_kegiatan && <Typography variant="caption" color="error" sx={{ mt: 0.5, display: "block" }}>{errors.cluster_kegiatan}</Typography>}
+                                                </FormControl>
+                                            </Grid>
+                                        </Grid>
+                                    </CardContent>
+                                </Card>
+
+                                {/* Card: Informasi Alamat */}
+                                <Card elevation={0} sx={{ borderRadius: 3, border: "1px solid #e5e7eb", mb: 3 }}>
+                                    <CardContent>
+                                        <Typography variant="h6" sx={{ borderBottom: "2px solid #008a01", pb: 1, width: "fit-content", mb: 2 }}>
+                                            Informasi Alamat
+                                        </Typography>
+
+                                        {/* Alamat Lengkap */}
+                                        <Box sx={{ mb: 2 }}>
                                             <TextField
-                                                id="nama"
-                                                value={name}
-                                                label="Nama Lengkap"
-                                                disabled
-                                                required
-                                                fullWidth
-                                                variant="outlined"
-                                                size="medium"
-                                                sx={{
-                                                    "& .MuiOutlinedInput-root.Mui-focused":
-                                                        {
-                                                            outline: "none",
-                                                            boxShadow: "none",
-                                                        },
-                                                    "& .MuiInputBase-input:focus":
-                                                        {
-                                                            outline: "none",
-                                                            boxShadow: "none",
-                                                        },
-                                                }}
-                                            />
-                                            <TextField
-                                                id="nim"
-                                                value={nim}
-                                                label="NIM"
-                                                disabled
-                                                required
-                                                fullWidth
-                                                variant="outlined"
-                                                size="medium"
-                                                sx={{
-                                                    "& .MuiOutlinedInput-root.Mui-focused":
-                                                        {
-                                                            outline: "none",
-                                                            boxShadow: "none",
-                                                        },
-                                                    "& .MuiInputBase-input:focus":
-                                                        {
-                                                            outline: "none",
-                                                            boxShadow: "none",
-                                                        },
-                                                }}
-                                            />
-                                            <TextField
-                                                id="no_hp_wa"
-                                                value={noHpWa}
-                                                label="No. HP/WhatsApp"
-                                                type="tel"
-                                                required
-                                                onChange={handleNoHpWa}
-                                                fullWidth
-                                                error={!!errors.no_hp_wa}
-                                                variant="outlined"
-                                                size="medium"
-                                                helperText={errors.no_hp_wa}
-                                                sx={{
-                                                    "& .MuiOutlinedInput-root.Mui-focused":
-                                                        {
-                                                            outline: "none",
-                                                            boxShadow: "none",
-                                                        },
-                                                    "& .MuiInputBase-input:focus":
-                                                        {
-                                                            outline: "none",
-                                                            boxShadow: "none",
-                                                        },
-                                                }}
-                                            />
-                                            <TextField
-                                                id="alamat_asal"
+                                                label="Alamat Lengkap (Jalan/Desa)"
+                                                fullWidth multiline rows={2}
                                                 value={alamatAsal}
-                                                label="Alamat Lengkap Asal (Kampung)"
-                                                required
-                                                onChange={
-                                                    handleAlamatAsalChange
-                                                }
-                                                fullWidth
+                                                onChange={handleAlamatAsalChange}
                                                 error={!!errors.alamat_asal}
-                                                variant="outlined"
-                                                size="medium"
-                                                multiline
-                                                rows={3}
                                                 helperText={errors.alamat_asal}
-                                                sx={{
-                                                    "& .MuiOutlinedInput-root.Mui-focused":
-                                                        {
-                                                            outline: "none",
-                                                            boxShadow: "none",
-                                                        },
-                                                    "& .MuiInputBase-input:focus":
-                                                        {
-                                                            outline: "none",
-                                                            boxShadow: "none",
-                                                        },
-                                                }}
-                                                placeholder="Contoh: Jl. Merdeka No. 123, RT 01/RW 02, Desa/Kelurahan"
+                                                placeholder="Contoh: Jl. Merdeka No. 123, Desa..."
                                             />
-
-                                            <Divider sx={{ my: 2 }} />
-
-                                            {/* Tabs untuk alamat asal dan sekarang */}
-                                            <Paper
-                                                sx={{ mb: 2, borderRadius: 2 }}
-                                            >
-                                                <Tabs
-                                                    value={addressTab}
-                                                    onChange={
-                                                        handleAddressTabChange
-                                                    }
-                                                    variant="fullWidth"
-                                                    sx={{
-                                                        "& .MuiTab-root": {
-                                                            textTransform:
-                                                                "capitalize",
-                                                            fontWeight: 600,
-                                                            fontSize:
-                                                                "0.875rem",
-                                                        },
-                                                    }}
-                                                >
-                                                    <Tab
-                                                        icon={
-                                                            <FaHome
-                                                                style={{
-                                                                    marginRight: 8,
-                                                                }}
-                                                            />
-                                                        }
-                                                        iconPosition="start"
-                                                        label="Alamat Asal"
-                                                    />
-                                                    <Tab
-                                                        icon={
-                                                            <FaMapMarkerAlt
-                                                                style={{
-                                                                    marginRight: 8,
-                                                                }}
-                                                            />
-                                                        }
-                                                        iconPosition="start"
-                                                        label="Alamat Sekarang"
-                                                    />
-                                                </Tabs>
-                                            </Paper>
-
-                                            {/* Tab Content */}
-                                            <Box sx={{ mt: 2 }}>
-                                                {addressTab === 0 ? (
-                                                    <AddressSection
-                                                        title="Detail Alamat Asal"
-                                                        icon={Home}
-                                                        province={provinceAsal}
-                                                        regency={regencyAsal}
-                                                        subDistrict={
-                                                            subDistrictAsal
-                                                        }
-                                                        village={villageAsal}
-                                                        onProvinceChange={
-                                                            handleProvinceAsalChange
-                                                        }
-                                                        onRegencyChange={
-                                                            handleRegencyAsalChange
-                                                        }
-                                                        onSubDistrictChange={
-                                                            handleSubDistrictAsalChange
-                                                        }
-                                                        onVillageChange={
-                                                            handleVillageAsalChange
-                                                        }
-                                                        listOfRegencies={
-                                                            listOfRegenciesAsal
-                                                        }
-                                                        listOfSubdistricts={
-                                                            listOfSubdistrictsAsal
-                                                        }
-                                                        listOfVillages={
-                                                            listOfVillagesAsal
-                                                        }
-                                                        errors={errors}
-                                                    />
-                                                ) : (
-                                                    <AddressSection
-                                                        title="Detail Alamat Domisili Saat Kuliah"
-                                                        icon={LocationOn}
-                                                        province={provinceNow}
-                                                        regency={regencyNow}
-                                                        subDistrict={
-                                                            subDistrictNow
-                                                        }
-                                                        village={villageNow}
-                                                        onProvinceChange={
-                                                            handleProvinceNowChange
-                                                        }
-                                                        onRegencyChange={
-                                                            handleRegencyNowChange
-                                                        }
-                                                        onSubDistrictChange={
-                                                            handleSubDistrictNowChange
-                                                        }
-                                                        onVillageChange={
-                                                            handleVillageNowChange
-                                                        }
-                                                        listOfRegencies={
-                                                            listOfRegenciesNow
-                                                        }
-                                                        listOfSubdistricts={
-                                                            listOfSubdistrictsNow
-                                                        }
-                                                        listOfVillages={
-                                                            listOfVillagesNow
-                                                        }
-                                                        errors={errors}
-                                                        isNow={true}
-                                                    />
-                                                )}
-                                            </Box>
                                         </Box>
+
+                                        {/* Tabs Alamat */}
+                                        <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+                                            <Tabs value={addressTab} onChange={handleAddressTabChange}>
+                                                <Tab icon={<Home sx={{ fontSize: 20 }} />} iconPosition="start" label="Alamat Asal" />
+                                                <Tab icon={<LocationOn sx={{ fontSize: 20 }} />} iconPosition="start" label="Alamat Sekarang" />
+                                            </Tabs>
+                                        </Box>
+
+                                        {/* Tab: Alamat Asal */}
+                                        <CustomTabPanel value={addressTab} index={0}>
+                                            <Grid container spacing={2}>
+                                                <Grid item xs={12} md={6}>
+                                                    <Autocomplete
+                                                        options={listOfProvincies}
+                                                        getOptionLabel={(opt) => opt.nama}
+                                                        value={provinceAsal}
+                                                        onChange={handleProvinceAsalChange}
+                                                        renderInput={(p) => <TextField {...p} label="Provinsi" error={!!errors.province_code} helperText={errors.province_code} />}
+                                                    />
+                                                </Grid>
+                                                <Grid item xs={12} md={6}>
+                                                    <Autocomplete
+                                                        options={listOfRegenciesAsal}
+                                                        getOptionLabel={(opt) => opt.nama}
+                                                        value={regencyAsal}
+                                                        onChange={handleRegencyAsalChange}
+                                                        disabled={!provinceAsal}
+                                                        renderInput={(p) => <TextField {...p} label="Kabupaten/Kota" error={!!errors.regency_code} helperText={errors.regency_code} />}
+                                                    />
+                                                </Grid>
+                                                <Grid item xs={12} md={6}>
+                                                    <Autocomplete
+                                                        options={listOfSubdistrictsAsal}
+                                                        getOptionLabel={(opt) => opt.nama}
+                                                        value={subDistrictAsal}
+                                                        onChange={handleSubDistrictAsalChange}
+                                                        disabled={!regencyAsal}
+                                                        renderInput={(p) => <TextField {...p} label="Kecamatan" error={!!errors.subdistrict_code} helperText={errors.subdistrict_code} />}
+                                                    />
+                                                </Grid>
+                                                <Grid item xs={12} md={6}>
+                                                    <Autocomplete
+                                                        options={listOfVillagesAsal}
+                                                        getOptionLabel={(opt) => opt.nama}
+                                                        value={villageAsal}
+                                                        onChange={handleVillageAsalChange}
+                                                        disabled={!subDistrictAsal}
+                                                        renderInput={(p) => <TextField {...p} label="Desa/Kelurahan" error={!!errors.village_code} helperText={errors.village_code} />}
+                                                    />
+                                                </Grid>
+                                            </Grid>
+                                        </CustomTabPanel>
+
+                                        {/* Tab: Alamat Sekarang */}
+                                        <CustomTabPanel value={addressTab} index={1}>
+                                            <Box sx={{ mb: 2, display: "flex", justifyContent: "flex-end" }}>
+                                                <Button
+                                                    size="small"
+                                                    variant="outlined"
+                                                    onClick={handleCopyAlamatAsal}
+                                                    startIcon={<ContentCopy />}
+                                                    sx={{ textTransform: "none", borderRadius: 1.5 }}
+                                                >
+                                                    Salin dari Alamat Asal
+                                                </Button>
+                                            </Box>
+                                            <Grid container spacing={2}>
+                                                <Grid item xs={12} md={6}>
+                                                    <Autocomplete
+                                                        options={listOfProvincies}
+                                                        getOptionLabel={(opt) => opt.nama}
+                                                        value={provinceNow}
+                                                        onChange={handleProvinceNowChange}
+                                                        renderInput={(p) => <TextField {...p} label="Provinsi" error={!!errors.province_code_now} helperText={errors.province_code_now} />}
+                                                    />
+                                                </Grid>
+                                                <Grid item xs={12} md={6}>
+                                                    <Autocomplete
+                                                        options={listOfRegenciesNow}
+                                                        getOptionLabel={(opt) => opt.nama}
+                                                        value={regencyNow}
+                                                        onChange={handleRegencyNowChange}
+                                                        disabled={!provinceNow}
+                                                        renderInput={(p) => <TextField {...p} label="Kabupaten/Kota" error={!!errors.regency_code_now} helperText={errors.regency_code_now} />}
+                                                    />
+                                                </Grid>
+                                                <Grid item xs={12} md={6}>
+                                                    <Autocomplete
+                                                        options={listOfSubdistrictsNow}
+                                                        getOptionLabel={(opt) => opt.nama}
+                                                        value={subDistrictNow}
+                                                        onChange={handleSubDistrictNowChange}
+                                                        disabled={!regencyNow}
+                                                        renderInput={(p) => <TextField {...p} label="Kecamatan" error={!!errors.subdistrict_code_now} helperText={errors.subdistrict_code_now} />}
+                                                    />
+                                                </Grid>
+                                                <Grid item xs={12} md={6}>
+                                                    <Autocomplete
+                                                        options={listOfVillagesNow}
+                                                        getOptionLabel={(opt) => opt.nama}
+                                                        value={villageNow}
+                                                        onChange={handleVillageNowChange}
+                                                        disabled={!subDistrictNow}
+                                                        renderInput={(p) => <TextField {...p} label="Desa/Kelurahan" error={!!errors.village_code_now} helperText={errors.village_code_now} />}
+                                                    />
+                                                </Grid>
+                                            </Grid>
+                                        </CustomTabPanel>
                                     </CardContent>
                                 </Card>
                             </Grid>
 
-                            {/* Right Column - Data Akademik & Dokumen */}
-                            <Grid item xs={12} md={6}>
-                                <Card
-                                    elevation={0}
-                                    sx={{
-                                        height: "100%",
-                                        borderRadius: 3,
-                                        border: "1px solid",
-                                        borderColor: "divider",
-                                    }}
-                                >
+                            {/* ===== KOLOM KANAN: Dokumen ===== */}
+                            <Grid item xs={12} md={5}>
+
+                                {/* Info Akademik Summary — readonly card */}
+                                <Card elevation={0} sx={{ borderRadius: 3, border: "1px solid #e5e7eb", mb: 3, bgcolor: "#f8fffe" }}>
                                     <CardContent>
-                                        <Typography
-                                            variant="h5"
-                                            gutterBottom
-                                            sx={{
-                                                fontWeight: 600,
-                                                mb: 3,
-                                            }}
-                                        >
-                                            <Box
-                                                sx={{
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    gap: 1,
-                                                }}
-                                            >
-                                                Data Akademik & Dokumen
-                                            </Box>
+                                        <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: "primary.main" }}>
+                                            📋 Ringkasan Akademik
                                         </Typography>
-
-                                        <Box
-                                            sx={{
-                                                display: "flex",
-                                                flexDirection: "column",
-                                                gap: 2.5,
-                                            }}
-                                        >
-                                            <Autocomplete
-                                                id="prodi"
-                                                value={prodi}
-                                                required
-                                                options={list_prodi}
-                                                onChange={handleProdiChange}
-                                                fullWidth
-                                                getOptionLabel={(option) =>
-                                                    option.name
-                                                }
-                                                renderInput={(params) => (
-                                                    <TextField
-                                                        {...params}
-                                                        label="Program Studi"
-                                                        sx={{
-                                                            "& .MuiOutlinedInput-root.Mui-focused":
-                                                                {
-                                                                    outline:
-                                                                        "none",
-                                                                    boxShadow:
-                                                                        "none",
-                                                                },
-                                                            "& .MuiInputBase-input:focus":
-                                                                {
-                                                                    outline:
-                                                                        "none",
-                                                                    boxShadow:
-                                                                        "none",
-                                                                },
-                                                        }}
-                                                        error={
-                                                            !!errors.id_prodi
-                                                        }
-                                                        helperText={
-                                                            errors.id_prodi
-                                                        }
-                                                        variant="outlined"
-                                                        size="medium"
-                                                    />
-                                                )}
-                                            />
-
-                                            <Grid container spacing={2}>
-                                                <Grid item xs={12} sm={6}>
-                                                    <TextField
-                                                        id="ipk"
-                                                        value={IPK}
-                                                        label="IPK"
-                                                        type="text"
-                                                        inputMode="decimal"
-                                                        sx={{
-                                                            "& .MuiOutlinedInput-root.Mui-focused":
-                                                                {
-                                                                    outline:
-                                                                        "none",
-                                                                    boxShadow:
-                                                                        "none",
-                                                                },
-                                                            "& .MuiInputBase-input:focus":
-                                                                {
-                                                                    outline:
-                                                                        "none",
-                                                                    boxShadow:
-                                                                        "none",
-                                                                },
-                                                        }}
-                                                        required
-                                                        onChange={
-                                                            handleIPKChange
-                                                        }
-                                                        fullWidth
-                                                        error={!!errors.ipk}
-                                                        helperText={errors.ipk}
-                                                        variant="outlined"
-                                                        size="medium"
-                                                    />
-                                                </Grid>
-                                                <Grid item xs={12} sm={6}>
-                                                    <FormControl
-                                                        fullWidth
-                                                        error={
-                                                            !!errors.nilai_micro_teaching
-                                                        }
-                                                    >
-                                                        <InputLabel>
-                                                            Nilai Micro Teaching
-                                                        </InputLabel>
-                                                        <Select
-                                                            value={nilaiMicro}
-                                                            required
-                                                            label="Nilai Micro Teaching"
-                                                            onChange={
-                                                                handleNilaiMicroChange
-                                                            }
-                                                            size="medium"
-                                                        >
-                                                            <MenuItem
-                                                                value={"A"}
-                                                            >
-                                                                A
-                                                            </MenuItem>
-                                                            <MenuItem
-                                                                value={"A-"}
-                                                            >
-                                                                A-
-                                                            </MenuItem>
-                                                            <MenuItem
-                                                                value={"B+"}
-                                                            >
-                                                                B+
-                                                            </MenuItem>
-                                                            <MenuItem
-                                                                value={"B"}
-                                                            >
-                                                                B
-                                                            </MenuItem>
-                                                            <MenuItem
-                                                                value={"B-"}
-                                                            >
-                                                                B-
-                                                            </MenuItem>
-                                                            <MenuItem
-                                                                value={"C+"}
-                                                            >
-                                                                C+
-                                                            </MenuItem>
-                                                            <MenuItem
-                                                                value={"C"}
-                                                            >
-                                                                C
-                                                            </MenuItem>
-                                                            <MenuItem
-                                                                value={"C-"}
-                                                            >
-                                                                C-
-                                                            </MenuItem>
-                                                        </Select>
-                                                        {errors.nilai_micro_teaching && (
-                                                            <Typography
-                                                                variant="caption"
-                                                                color="error"
-                                                                sx={{
-                                                                    mt: 0.5,
-                                                                    display:
-                                                                        "block",
-                                                                }}
-                                                            >
-                                                                {
-                                                                    errors.nilai_micro_teaching
-                                                                }
-                                                            </Typography>
-                                                        )}
-                                                    </FormControl>
-                                                </Grid>
-                                            </Grid>
-
-                                            <Grid container spacing={2}>
-                                                <Grid item xs={12} sm={6}>
-                                                    <FormControl
-                                                        fullWidth
-                                                        error={
-                                                            !!errors.cluster_kegiatan
-                                                        }
-                                                    >
-                                                        <InputLabel>
-                                                            Cluster Kegiatan
-                                                        </InputLabel>
-                                                        <Select
-                                                            value={
-                                                                clusterKegiatan
-                                                            }
-                                                            label="Cluster Kegiatan"
-                                                            onChange={
-                                                                handleClusterKegiatanChange
-                                                            }
-                                                            size="medium"
-                                                        >
-                                                            <MenuItem
-                                                                value={"PPKPM"}
-                                                            >
-                                                                PPKPM Reguler
-                                                            </MenuItem>
-                                                            <MenuItem
-                                                                value={"PPL"}
-                                                            >
-                                                                PPL Reguler
-                                                            </MenuItem>
-                                                            <MenuItem
-                                                                value={"KPM"}
-                                                            >
-                                                                KPM Reguler
-                                                            </MenuItem>
-                                                            <MenuItem
-                                                                value={
-                                                                    "PPKPM_Mandiri"
-                                                                }
-                                                            >
-                                                                PPKPM Mandiri
-                                                            </MenuItem>
-                                                            <MenuItem
-                                                                value={
-                                                                    "PPL_Mandiri"
-                                                                }
-                                                            >
-                                                                PPL Mandiri
-                                                            </MenuItem>
-                                                            <MenuItem
-                                                                value={
-                                                                    "KPM_Mandiri"
-                                                                }
-                                                            >
-                                                                KPM Mandiri
-                                                            </MenuItem>
-                                                        </Select>
-                                                        {errors.cluster_kegiatan && (
-                                                            <Typography
-                                                                variant="caption"
-                                                                color="error"
-                                                                sx={{
-                                                                    mt: 0.5,
-                                                                    display:
-                                                                        "block",
-                                                                }}
-                                                            >
-                                                                {
-                                                                    errors.cluster_kegiatan
-                                                                }
-                                                            </Typography>
-                                                        )}
-                                                    </FormControl>
-                                                </Grid>
-                                                <Grid item xs={12} sm={6}>
-                                                    <TextField
-                                                        id="semester"
-                                                        value={semester}
-                                                        label="Semester"
-                                                        sx={{
-                                                            "& .MuiOutlinedInput-root.Mui-focused":
-                                                                {
-                                                                    outline:
-                                                                        "none",
-                                                                    boxShadow:
-                                                                        "none",
-                                                                },
-                                                            "& .MuiInputBase-input:focus":
-                                                                {
-                                                                    outline:
-                                                                        "none",
-                                                                    boxShadow:
-                                                                        "none",
-                                                                },
-                                                        }}
-                                                        type="number"
-                                                        required
-                                                        onChange={
-                                                            handleSemesterChange
-                                                        }
-                                                        fullWidth
-                                                        error={
-                                                            !!errors.semester
-                                                        }
-                                                        helperText={
-                                                            errors.semester
-                                                        }
-                                                        variant="outlined"
-                                                        size="medium"
-                                                        inputProps={{
-                                                            min: 1,
-                                                            max: 14,
-                                                        }}
-                                                    />
-                                                </Grid>
-                                            </Grid>
-
-                                            <FormControl
-                                                fullWidth
-                                                error={!!errors.jk}
-                                            >
-                                                <InputLabel>
-                                                    Jenis Kelamin
-                                                </InputLabel>
-                                                <Select
-                                                    value={jenisKelamin}
-                                                    label="Jenis Kelamin"
-                                                    onChange={
-                                                        handleJenisKelaminChange
-                                                    }
-                                                    size="medium"
-                                                >
-                                                    <MenuItem value={"Pria"}>
-                                                        Pria
-                                                    </MenuItem>
-                                                    <MenuItem value={"Wanita"}>
-                                                        Wanita
-                                                    </MenuItem>
-                                                </Select>
-                                                {errors.jk && (
-                                                    <Typography
-                                                        variant="caption"
-                                                        color="error"
-                                                        sx={{
-                                                            mt: 0.5,
-                                                            display: "block",
-                                                        }}
-                                                    >
-                                                        {errors.jk}
-                                                    </Typography>
-                                                )}
-                                            </FormControl>
-
-                                            <Divider sx={{ my: 2 }} />
-
-                                            {/* File Upload Sections */}
-                                            <Typography
-                                                variant="h6"
-                                                gutterBottom
-                                                sx={{
-                                                    fontWeight: 600,
-                                                    color: "text.primary",
-                                                }}
-                                            >
-                                                Dokumen Pendukung
-                                            </Typography>
-
-                                            <FileUploadSection
-                                                file={transkrip}
-                                                link={linkTranskrip}
-                                                type="transkrip"
-                                                title="Transkrip Nilai"
-                                                description="Unggah scan transkrip nilai terbaru dalam format PDF"
-                                                icon={Description}
-                                                onPreview={handleOpenPreview}
-                                                onChange={handleTranskripChange}
-                                                error={
-                                                    errors.link_transkrip_nilai
-                                                }
-                                            />
-
-                                            <FileUploadSection
-                                                file={suratPernyataan}
-                                                link={linkSuratPernyataan}
-                                                type="surat_pernyataan"
-                                                title="Surat Pernyataan KA PRODI"
-                                                description="Surat pernyataan dari Kepala Program Studi"
-                                                icon={Assignment}
-                                                onPreview={handleOpenPreview}
-                                                onChange={
-                                                    handleSuratPernyataanChange
-                                                }
-                                                error={
-                                                    errors.link_surat_pernyataan
-                                                }
-                                            />
-
-                                            <FileUploadSection
-                                                file={suratKesiapan}
-                                                link={linkSuratKesiapan}
-                                                type="surat_kesiapan"
-                                                title="Surat Kesiapan Mahasiswa"
-                                                description="Surat pernyataan kesiapan mengikuti kegiatan"
-                                                icon={AssignmentInd}
-                                                onPreview={handleOpenPreview}
-                                                onChange={
-                                                    handleSuratKesiapanChange
-                                                }
-                                                error={
-                                                    errors.link_surat_kesiapan
-                                                }
-                                            />
+                                        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                                            {[
+                                                { label: "Status Pendaftaran", value: mahasiswa?.data_mahasiswa?.status === "submitted" ? "Sedang Direview"
+                                                    : mahasiswa?.data_mahasiswa?.status === "accepted" ? "✓ Diterima"
+                                                    : mahasiswa?.data_mahasiswa?.status === "rejected" ? "✗ Ditolak"
+                                                    : mahasiswa?.data_mahasiswa?.status === "revisi" ? "⚠ Perlu Revisi"
+                                                    : "Belum Lengkap" },
+                                                { label: "Gelombang", value: mahasiswa?.data_mahasiswa?.gelombang?.name || "-" },
+                                                { label: "Cluster", value: clusterKegiatan || "-" },
+                                            ].map((item) => (
+                                                <Box key={item.label} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", py: 0.5, borderBottom: "1px solid #e5e7eb" }}>
+                                                    <Typography variant="body2" color="text.secondary">{item.label}</Typography>
+                                                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.value}</Typography>
+                                                </Box>
+                                            ))}
                                         </Box>
                                     </CardContent>
                                 </Card>
+
+                                {/* Dokumen Pendukung */}
+                                <Typography variant="h6" className="mb-3 px-1">Dokumen Pendukung</Typography>
+
+                                {/* Transkrip Nilai */}
+                                <Card variant="outlined" sx={{ mb: 2, borderColor: "divider" }}>
+                                    <CardContent>
+                                        <Box sx={{ display: "flex", alignItems: "flex-start", mb: 2 }}>
+                                            <Box sx={{ bgcolor: "primary.main", borderRadius: 2, p: 1.5, mr: 2 }}>
+                                                <Description sx={{ fontSize: 28, color: "white" }} />
+                                            </Box>
+                                            <Box sx={{ flex: 1 }}>
+                                                <Typography variant="h6">Transkrip Nilai</Typography>
+                                                <Typography variant="body2" color="text.secondary">
+                                                    Lihat transkrip nilai sementara Anda langsung dari sistem akademik
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                        <Button
+                                            variant="contained"
+                                            color="secondary"
+                                            startIcon={<FaEye />}
+                                            fullWidth
+                                            onClick={handleFetchTranskrip}
+                                        >
+                                            Lihat Transkrip Nilai
+                                        </Button>
+                                    </CardContent>
+                                </Card>
+
+                                {/* Surat Pernyataan */}
+                                <FileUploadSection
+                                    file={suratPernyataan}
+                                    link={linkSuratPernyataan}
+                                    type="surat_pernyataan"
+                                    title="Surat Pernyataan"
+                                    description="Surat Pernyataan Ka Prodi (PDF, Max 500KB)"
+                                    icon={Assignment}
+                                    onPreview={handleOpenPreview}
+                                    onChange={handleSuratPernyataanChange}
+                                    error={errors.link_surat_pernyataan}
+                                />
+
+                                {/* Surat Kesiapan */}
+                                <FileUploadSection
+                                    file={suratKesiapan}
+                                    link={linkSuratKesiapan}
+                                    type="surat_kesiapan"
+                                    title="Surat Kesiapan"
+                                    description="Surat Kesiapan Mahasiswa (PDF, Max 500KB)"
+                                    icon={AssignmentInd}
+                                    onPreview={handleOpenPreview}
+                                    onChange={handleSuratKesiapanChange}
+                                    error={errors.link_surat_kesiapan}
+                                />
+
+                                {/* Tombol Simpan */}
+                                <Button
+                                    type="submit"
+                                    variant="contained"
+                                    fullWidth
+                                    size="large"
+                                    disabled={processing}
+                                    sx={{ mt: 2, py: 2, borderRadius: 3, fontWeight: "bold" }}
+                                >
+                                    {processing ? (
+                                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                            <CircularProgress size={20} color="inherit" />
+                                            Menyimpan...
+                                        </Box>
+                                    ) : "Simpan Profil"}
+                                </Button>
                             </Grid>
                         </Grid>
-
-                        {/* Action Buttons */}
-                        <Box
-                            sx={{
-                                mt: 4,
-                                display: "flex",
-                                justifyContent: "flex-end",
-                                gap: 2,
-                            }}
-                        >
-                            <Button
-                                type="submit"
-                                disabled={processing}
-                                variant="contained"
-                                color="primary"
-                                size="large"
-                                sx={{
-                                    textTransform: "capitalize",
-                                    fontWeight: 600,
-                                    px: 4,
-                                    py: 1.5,
-                                    borderRadius: 2,
-                                    minWidth: "140px",
-                                }}
-                            >
-                                {processing ? (
-                                    <Box
-                                        sx={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: 1,
-                                        }}
-                                    >
-                                        <CircularProgress
-                                            size={20}
-                                            color="inherit"
-                                        />
-                                        Menyimpan...
-                                    </Box>
-                                ) : (
-                                    "Simpan Profil"
-                                )}
-                            </Button>
-                        </Box>
                     </form>
                 </div>
             </main>
+
             <ButtomFooter />
             <Navigation />
         </ThemeProvider>

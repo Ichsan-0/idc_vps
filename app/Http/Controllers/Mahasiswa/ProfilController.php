@@ -8,6 +8,7 @@ use App\Models\Gelombang;
 use App\Models\Mahasiswa;
 use App\Models\Prodi;
 use App\Models\User;
+use App\Services\SevimaService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -66,10 +67,6 @@ class ProfilController extends Controller
     ];
 
     // Hanya validasi file jika status revisi/null dan belum ada file
-    if (!$data_mahasiswa->link_transkrip_nilai) {
-        $rules['link_transkrip_nilai'] = 'required|file|mimes:pdf|max:500';
-    }
-
     if (!$data_mahasiswa->link_surat_pernyataan) {
         $rules['link_surat_pernyataan'] = 'required|file|mimes:pdf|max:500';
     }
@@ -97,9 +94,6 @@ class ProfilController extends Controller
         'semester.required' => 'Semester wajib diisi',
         'jk.required' => 'Jenis Kelamin wajib diisi',
         'alamat_asal.required' => 'Alamat asal wajib diisi',
-        'link_transkrip_nilai.required' => 'Transkrip nilai wajib diisi',
-        'link_transkrip_nilai.mimes' => 'File transkrip nilai harus format PDF',
-        'link_transkrip_nilai.max' => 'File transkrip nilai maksimal 500kb',
         'link_surat_pernyataan.required' => 'Surat pernyataan prodi wajib diisi',
         'link_surat_pernyataan.mimes' => 'File surat pernyataan harus format PDF',
         'link_surat_pernyataan.max' => 'File surat pernyataan maksimal 500kb',
@@ -221,4 +215,53 @@ class ProfilController extends Controller
         return redirect()->back()->with('message', ['error' => 'Terjadi kesalahan: ' . $e->getMessage()]);
     }
 }
+
+    /**
+     * Ambil data transkrip nilai mahasiswa aktif dari Sevima API.
+     */
+    public function getTranskrip(SevimaService $sevima)
+    {
+        $nim = Auth::user()->username;
+
+        try {
+            $response = $sevima->getTranskripMahasiswa($nim);
+
+            if ($response->failed()) {
+                return response()->json(['error' => 'Gagal menghubungi server Sevima.'], 500);
+            }
+
+            return response()->json($response->json());
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Terjadi kesalahan sistem: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Lihat/preview dokumen yang diupload secara secure.
+     */
+    public function viewDocument($type)
+    {
+        $mahasiswa = Mahasiswa::where('nim', Auth::user()->username)->first();
+        if (!$mahasiswa) {
+            abort(404);
+        }
+
+        $filePath = null;
+        if ($type === 'transkrip') {
+            $filePath = $mahasiswa->link_transkrip_nilai;
+        } elseif ($type === 'surat_pernyataan') {
+            $filePath = $mahasiswa->link_surat_pernyataan;
+        } elseif ($type === 'surat_kesiapan') {
+            $filePath = $mahasiswa->link_surat_kesiapan;
+        }
+
+        if (!$filePath || !Storage::disk('public')->exists($filePath)) {
+            abort(404, 'File tidak ditemukan.');
+        }
+
+        return response()->file(Storage::disk('public')->path($filePath), [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . basename($filePath) . '"'
+        ]);
+    }
 }

@@ -197,6 +197,15 @@ class VerifikasiMahasiswaController extends Controller
                 'nilai_micro_teaching' => $nilaiMicroTeaching,
             ];
 
+            // Jika nilai micro teaching belum ada, jangan simpan session
+            // dan redirect balik ke halaman verifikasi dengan flash warning
+            if (empty($nilaiMicroTeaching)) {
+                return redirect()
+                    ->route('verifikasi.mahasiswa')
+                    ->with('micro_warning', true);
+            }
+
+            // Nilai micro ada → simpan session dan lanjut ke registrasi
             session(['verified_mahasiswa' => $verifiedData]);
 
             return redirect()->route('registrasi.ppkpm');

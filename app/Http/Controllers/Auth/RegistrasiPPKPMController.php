@@ -56,6 +56,21 @@ class RegistrasiPPKPMController extends Controller
             ]);
         }
 
+        // =============================================
+        // Fallback: Jika id_prodi tidak terkirim atau kosong,
+        // cari berdasarkan nama program_studi dari session Sevima
+        // (case-insensitive + trim) sebagai lapisan keamanan
+        // =============================================
+        if (empty($request->id_prodi) && !empty($verifiedData['program_studi'])) {
+            $namaProdi = trim(strtolower($verifiedData['program_studi']));
+            $prodi = \App\Models\Prodi::all()->first(function ($p) use ($namaProdi) {
+                return trim(strtolower($p->name)) === $namaProdi;
+            });
+            if ($prodi) {
+                $request->merge(['id_prodi' => $prodi->id]);
+            }
+        }
+
         $request->validate([
             // Data Akun
             'name'         => 'required|string|max:255',

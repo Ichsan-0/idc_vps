@@ -255,7 +255,11 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
         ipk: verifiedData.ipk || "",
         nilai_micro_teaching: verifiedData.nilai_micro_teaching || "",
         cluster_kegiatan: "",
-        id_prodi: list_prodi.find(p => p.nama === verifiedData.program_studi)?.id || "",
+        id_prodi: (() => {
+            const prodiFromSevima = (verifiedData.program_studi || "").trim().toLowerCase();
+            const match = list_prodi.find(p => p.name.trim().toLowerCase() === prodiFromSevima);
+            return match?.id || "";
+        })(),
         alamat_asal: verifiedData.alamat || "",
         alamat_sekarang: "",
         // Regions Asal
@@ -334,6 +338,16 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
         e.preventDefault();
         post(route("registrasi.ppkpm.store"));
     };
+
+    // Tampilkan notif jika ada error validasi dari server
+    useEffect(() => {
+        if (Object.keys(errors).length > 0) {
+            setNotifyStatus("error");
+            setNotify(true);
+            // Scroll ke atas agar user melihat error
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+    }, [errors]);
 
     const FileUploadSection = ({ file, type, title, description, icon: Icon, error }) => {
         return (
@@ -423,6 +437,7 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
 
                                             <Grid item xs={12} md={12}>
                                                 <TextField label="Program Studi" fullWidth disabled value={data.program_studi} variant="outlined" />
+                                                <InputError message={errors.id_prodi} />
                                             </Grid>
 
                                             <Grid item xs={12} md={4}>
@@ -906,6 +921,28 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
 
             <ButtomFooter />
             <Navigation />
+
+            {/* Snackbar global error validasi */}
+            <Snackbar
+                open={notify && notifyStatus === "error"}
+                autoHideDuration={6000}
+                onClose={() => setNotify(false)}
+                anchorOrigin={{ vertical: "top", horizontal: "center" }}
+            >
+                <Alert
+                    onClose={() => setNotify(false)}
+                    severity="error"
+                    variant="filled"
+                    sx={{ width: "100%", borderRadius: 2 }}
+                >
+                    <strong>Terdapat kesalahan pada form.</strong> Periksa kembali semua field yang wajib diisi.
+                    {errors.id_prodi && (
+                        <div style={{ fontSize: "0.85rem", marginTop: 4 }}>
+                            ⚠ Program Studi: {errors.id_prodi}
+                        </div>
+                    )}
+                </Alert>
+            </Snackbar>
         </ThemeProvider>
     );
 }

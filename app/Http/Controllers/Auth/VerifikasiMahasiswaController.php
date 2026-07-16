@@ -22,9 +22,15 @@ class VerifikasiMahasiswaController extends Controller
         echo "     WEB SERVER CONTEXT DIAGNOSTICS      \n";
         echo "=========================================\n\n";
 
-        // 1. Cek User yang menjalankan PHP-FPM
-        $processUser = posix_getpwuid(posix_geteuid());
-        echo "[1] USER RUNNING PHP-FPM: " . $processUser['name'] . "\n\n";
+        // 1. Cek User yang menjalankan PHP-FPM (cara aman)
+        $processUserName = 'Unknown';
+        if (function_exists('posix_getpwuid') && function_exists('posix_geteuid')) {
+            $user = posix_getpwuid(posix_geteuid());
+            $processUserName = $user['name'] ?? 'Unknown';
+        } else {
+            $processUserName = trim(shell_exec('whoami') ?? 'posix disabled');
+        }
+        echo "[1] USER RUNNING PHP-FPM: " . $processUserName . "\n\n";
 
         // 2. Cek Pembacaan File .env
         $envPath = base_path('.env');

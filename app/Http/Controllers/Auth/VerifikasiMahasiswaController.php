@@ -17,73 +17,7 @@ class VerifikasiMahasiswaController extends Controller
      */
     public function create()
     {
-        header('Content-Type: text/plain; charset=utf-8');
-        echo "=========================================\n";
-        echo "     WEB SERVER CONTEXT DIAGNOSTICS      \n";
-        echo "=========================================\n\n";
-
-        // 1. Cek User yang menjalankan PHP-FPM (cara aman)
-        $processUserName = 'Unknown';
-        if (function_exists('posix_getpwuid') && function_exists('posix_geteuid')) {
-            $user = posix_getpwuid(posix_geteuid());
-            $processUserName = $user['name'] ?? 'Unknown';
-        } else {
-            $processUserName = trim(shell_exec('whoami') ?? 'posix disabled');
-        }
-        echo "[1] USER RUNNING PHP-FPM: " . $processUserName . "\n\n";
-
-        // 2. Cek Pembacaan File .env
-        $envPath = base_path('.env');
-        echo "[2] FILE PERMISSIONS FOR .env:\n";
-        echo "Path: " . $envPath . "\n";
-        if (file_exists($envPath)) {
-            echo "Exists: YES\n";
-            echo "Permissions: " . substr(sprintf('%o', fileperms($envPath)), -4) . "\n";
-            echo "Owner ID: " . fileowner($envPath) . "\n";
-            echo "Readable: " . (is_readable($envPath) ? 'YES' : 'NO') . "\n";
-        } else {
-            echo "Exists: NO\n";
-        }
-        echo "\n";
-
-        // 3. Cek Nilai Env di Web Context
-        $baseUrl = env('SEVIMA_BASE_URL', 'https://api.sevimaplatform.com/siakadcloud/v1');
-        $appKey = env('SEVIMA_APP_KEY');
-        $secretKey = env('SEVIMA_APP_SECRET');
-
-        echo "[3] SEVIMA ENV VALUES IN WEB CONTEXT:\n";
-        echo "SEVIMA_BASE_URL: " . $baseUrl . "\n";
-        echo "SEVIMA_APP_KEY: " . ($appKey ? substr($appKey, 0, 5) . '...' : 'KOSONG / TIDAK TERBACA') . "\n";
-        echo "SEVIMA_APP_SECRET: " . ($secretKey ? substr($secretKey, 0, 5) . '...' : 'KOSONG / TIDAK TERBACA') . "\n\n";
-
-        // 4. Tes Koneksi ke Sevima dari Web Context
-        echo "[4] TESTING SEVIMA API CONNECTION:\n";
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $baseUrl . "/mahasiswa/220212005");
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            "X-App-Key: " . $appKey,
-            "X-Secret-Key: " . $secretKey,
-            "Accept: application/json"
-        ]);
-
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlErrNo = curl_errno($ch);
-        $curlError = curl_error($ch);
-        curl_close($ch);
-
-        if ($curlErrNo) {
-            echo "CURL ERROR (#$curlErrNo): $curlError\n";
-        } else {
-            echo "HTTP STATUS: $httpCode\n";
-            echo "RESPONSE BODY: " . substr($response, 0, 300) . "...\n";
-        }
-
-        exit;
+        return Inertia::render('Auth/VerifikasiMahasiswa');
     }
 
     /**

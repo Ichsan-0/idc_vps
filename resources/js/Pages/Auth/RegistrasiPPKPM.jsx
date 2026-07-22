@@ -181,6 +181,7 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
     const [previewTitle, setPreviewTitle] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [termsOpen, setTermsOpen] = useState(false);
+    const [frontendErrors, setFrontendErrors] = useState({});
 
     // Transkrip states & logic
     const [transkripOpen, setTranskripOpen] = useState(false);
@@ -333,17 +334,56 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
         setData("village_code_now", villageNow?.kode || "");
     }, [villageNow]);
 
+    const validateForm = () => {
+        const errs = {};
+        if (!data.jk) errs.jk = 'Jenis kelamin wajib dipilih.';
+        if (!data.hp) errs.hp = 'Nomor WhatsApp wajib diisi.';
+        if (!data.cluster_kegiatan) errs.cluster_kegiatan = 'Cluster kegiatan wajib dipilih.';
+        if (!data.alamat_asal) errs.alamat_asal = 'Alamat asal wajib diisi.';
+        if (!data.province_code) errs.province_code = 'Provinsi asal wajib dipilih.';
+        if (!data.regency_code) errs.regency_code = 'Kabupaten asal wajib dipilih.';
+        if (!data.subdistrict_code) errs.subdistrict_code = 'Kecamatan asal wajib dipilih.';
+        if (!data.village_code) errs.village_code = 'Desa asal wajib dipilih.';
+        if (!data.alamat_sekarang) errs.alamat_sekarang = 'Alamat sekarang wajib diisi.';
+        if (!data.province_code_now) errs.province_code_now = 'Provinsi sekarang wajib dipilih.';
+        if (!data.regency_code_now) errs.regency_code_now = 'Kabupaten sekarang wajib dipilih.';
+        if (!data.subdistrict_code_now) errs.subdistrict_code_now = 'Kecamatan sekarang wajib dipilih.';
+        if (!data.village_code_now) errs.village_code_now = 'Desa sekarang wajib dipilih.';
+        if (!data.email) errs.email = 'Email wajib diisi.';
+        if (!data.password) errs.password = 'Password wajib diisi.';
+        if (!data.password_confirmation) errs.password_confirmation = 'Konfirmasi password wajib diisi.';
+        if (data.password && data.password_confirmation && data.password !== data.password_confirmation)
+            errs.password_confirmation = 'Konfirmasi password tidak cocok.';
+        if (!data.link_surat_pernyataan) errs.link_surat_pernyataan = 'Surat Pernyataan Ka Prodi wajib diunggah.';
+        if (!data.link_surat_kesiapan) errs.link_surat_kesiapan = 'Surat Kesiapan Mahasiswa wajib diunggah.';
+        return errs;
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
+        const errs = validateForm();
+        if (Object.keys(errs).length > 0) {
+            setFrontendErrors(errs);
+            setNotifyStatus('error');
+            setNotify(true);
+            // Auto-switch ke tab alamat sekarang jika error ada di sana
+            const hasAsalError = errs.alamat_asal || errs.province_code || errs.regency_code || errs.subdistrict_code || errs.village_code;
+            const hasSekarangError = errs.alamat_sekarang || errs.province_code_now || errs.regency_code_now || errs.subdistrict_code_now || errs.village_code_now;
+            if (hasSekarangError && !hasAsalError) setAddressTab(1);
+            else if (hasAsalError) setAddressTab(0);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+        }
+        setFrontendErrors({});
         post(route("registrasi.ppkpm.store"));
     };
 
     // Tampilkan notif jika ada error validasi dari server
     useEffect(() => {
         if (Object.keys(errors).length > 0) {
+            setFrontendErrors({});
             setNotifyStatus("error");
             setNotify(true);
-            // Scroll ke atas agar user melihat error
             window.scrollTo({ top: 0, behavior: "smooth" });
         }
     }, [errors]);
@@ -376,6 +416,9 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
             </Card>
         );
     };
+
+    // Gabungkan error frontend dan server
+    const allErrors = { ...frontendErrors, ...errors };
 
     return (
         <ThemeProvider theme={theme}>
@@ -424,32 +467,32 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
                                                         <MenuItem value="Wanita">Wanita</MenuItem>
                                                     </Select>
                                                 </FormControl>
-                                                <InputError message={errors.jk} />
+                                                <InputError message={allErrors.jk} />
                                             </Grid>
                                             <Grid item xs={12} md={6}>
                                                 <TextField label="Nomor WhatsApp" fullWidth value={data.hp} onChange={(e) => setData("hp", e.target.value)} placeholder="08xxxxxxxxxx" />
                                                 <Typography variant="caption" sx={{ mt: 0.5, display: "block", color: "primary.main", fontStyle: "italic" }}>
                                                     * Ganti dengan nomor WhatsApp yang aktif
                                                 </Typography>
-                                                <InputError message={errors.hp} />
+                                                <InputError message={allErrors.hp} />
                                             </Grid>
 
                                             <Grid item xs={12} md={12}>
                                                 <TextField label="Program Studi" fullWidth disabled value={data.program_studi} variant="outlined" />
-                                                <InputError message={errors.id_prodi} />
+                                                <InputError message={allErrors.id_prodi} />
                                             </Grid>
 
                                             <Grid item xs={12} md={4}>
                                                 <TextField label="Semester" type="number" fullWidth disabled value={data.semester} onChange={(e) => setData("semester", e.target.value)} />
-                                                <InputError message={errors.semester} />
+                                                <InputError message={allErrors.semester} />
                                             </Grid>
                                             <Grid item xs={12} md={4}>
                                                 <TextField label="IPK Terakhir" type="number" step="0.01" fullWidth disabled value={data.ipk} onChange={(e) => setData("ipk", e.target.value)} />
-                                                <InputError message={errors.ipk} />
+                                                <InputError message={allErrors.ipk} />
                                             </Grid>
                                             <Grid item xs={12} md={4}>
                                                 <TextField label="Nilai Micro Teaching" fullWidth disabled value={data.nilai_micro_teaching || "Belum ada"} variant="outlined" />
-                                                <InputError message={errors.nilai_micro_teaching} />
+                                                <InputError message={allErrors.nilai_micro_teaching} />
                                             </Grid>
 
                                             <Grid item xs={12}>
@@ -461,7 +504,7 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
                                                         <MenuItem value="KPM">KPM</MenuItem>
                                                     </Select>
                                                 </FormControl>
-                                                <InputError message={errors.cluster_kegiatan} />
+                                                <InputError message={allErrors.cluster_kegiatan} />
                                             </Grid>
                                         </Grid>
                                     </CardContent>
@@ -484,7 +527,7 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
                                             <Grid container spacing={2}>
                                                 <Grid item xs={12}>
                                                     <TextField label="Alamat Lengkap (Jalan/Desa)" fullWidth multiline rows={2} value={data.alamat_asal} onChange={(e) => setData("alamat_asal", e.target.value)} />
-                                                    <InputError message={errors.alamat_asal} />
+                                                    <InputError message={allErrors.alamat_asal} />
                                                 </Grid>
                                                 <Grid item xs={12} md={6}>
                                                     <Autocomplete
@@ -494,7 +537,7 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
                                                         onChange={(e, v) => setProvinceAsal(v)}
                                                         renderInput={(p) => <TextField {...p} label="Provinsi" />}
                                                     />
-                                                    <InputError message={errors.province_code} />
+                                                    <InputError message={allErrors.province_code} />
                                                 </Grid>
                                                 <Grid item xs={12} md={6}>
                                                     <Autocomplete
@@ -505,7 +548,7 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
                                                         disabled={!provinceAsal}
                                                         renderInput={(p) => <TextField {...p} label="Kabupaten" />}
                                                     />
-                                                    <InputError message={errors.regency_code} />
+                                                    <InputError message={allErrors.regency_code} />
                                                 </Grid>
                                                 <Grid item xs={12} md={6}>
                                                     <Autocomplete
@@ -516,7 +559,7 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
                                                         disabled={!regencyAsal}
                                                         renderInput={(p) => <TextField {...p} label="Kecamatan" />}
                                                     />
-                                                    <InputError message={errors.subdistrict_code} />
+                                                    <InputError message={allErrors.subdistrict_code} />
                                                 </Grid>
                                                 <Grid item xs={12} md={6}>
                                                     <Autocomplete
@@ -527,7 +570,7 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
                                                         disabled={!subDistrictAsal}
                                                         renderInput={(p) => <TextField {...p} label="Desa" />}
                                                     />
-                                                    <InputError message={errors.village_code} />
+                                                    <InputError message={allErrors.village_code} />
                                                 </Grid>
                                             </Grid>
                                         </CustomTabPanel>
@@ -536,7 +579,7 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
                                             <Grid container spacing={2}>
                                                 <Grid item xs={12}>
                                                     <TextField label="Alamat Lengkap Sekarang (Jalan/Desa)" fullWidth multiline rows={2} value={data.alamat_sekarang} onChange={(e) => setData("alamat_sekarang", e.target.value)} />
-                                                    <InputError message={errors.alamat_sekarang} />
+                                                    <InputError message={allErrors.alamat_sekarang} />
                                                 </Grid>
                                                 <Grid item xs={12} md={6}>
                                                     <Autocomplete
@@ -546,7 +589,7 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
                                                         onChange={(e, v) => setProvinceNow(v)}
                                                         renderInput={(p) => <TextField {...p} label="Provinsi" />}
                                                     />
-                                                    <InputError message={errors.province_code_now} />
+                                                    <InputError message={allErrors.province_code_now} />
                                                 </Grid>
                                                 <Grid item xs={12} md={6}>
                                                     <Autocomplete
@@ -557,7 +600,7 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
                                                         disabled={!provinceNow}
                                                         renderInput={(p) => <TextField {...p} label="Kabupaten" />}
                                                     />
-                                                    <InputError message={errors.regency_code_now} />
+                                                    <InputError message={allErrors.regency_code_now} />
                                                 </Grid>
                                                 <Grid item xs={12} md={6}>
                                                     <Autocomplete
@@ -568,7 +611,7 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
                                                         disabled={!regencyNow}
                                                         renderInput={(p) => <TextField {...p} label="Kecamatan" />}
                                                     />
-                                                    <InputError message={errors.subdistrict_code_now} />
+                                                    <InputError message={allErrors.subdistrict_code_now} />
                                                 </Grid>
                                                 <Grid item xs={12} md={6}>
                                                     <Autocomplete
@@ -579,7 +622,7 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
                                                         disabled={!subDistrictNow}
                                                         renderInput={(p) => <TextField {...p} label="Desa" />}
                                                     />
-                                                    <InputError message={errors.village_code_now} />
+                                                    <InputError message={allErrors.village_code_now} />
                                                 </Grid>
                                             </Grid>
                                         </CustomTabPanel>
@@ -593,7 +636,7 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
                                     <CardContent className="space-y-4">
                                         <Typography variant="h6" sx={{ fontWeight: "bold" }}>Data Akun</Typography>
                                         <TextField label="Email Kampus" fullWidth value={data.email} onChange={(e) => setData("email", e.target.value)} />
-                                        <InputError message={errors.email} />
+                                        <InputError message={allErrors.email} />
 
                                         <FormControl variant="outlined" fullWidth>
                                             <InputLabel>Password</InputLabel>
@@ -610,7 +653,7 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
                                                 }
                                                 label="Password"
                                             />
-                                            <InputError message={errors.password} />
+                                            <InputError message={allErrors.password} />
                                         </FormControl>
 
                                         <FormControl variant="outlined" fullWidth>
@@ -621,7 +664,7 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
                                                 onChange={(e) => setData("password_confirmation", e.target.value)}
                                                 label="Konfirmasi Password"
                                             />
-                                            <InputError message={errors.password_confirmation} />
+                                            <InputError message={allErrors.password_confirmation} />
                                         </FormControl>
                                     </CardContent>
                                 </Card>
@@ -659,7 +702,7 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
                                     title="Surat Pernyataan"
                                     description="Surat Pernyataan Ka Prodi (PDF, Max 500KB)"
                                     icon={Assignment}
-                                    error={errors.link_surat_pernyataan}
+                                    error={allErrors.link_surat_pernyataan}
                                 />
 
                                 <FileUploadSection
@@ -668,7 +711,7 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
                                     title="Surat Kesiapan"
                                     description="Surat Kesiapan Mahasiswa (PDF, Max 500KB)"
                                     icon={AssignmentInd}
-                                    error={errors.link_surat_kesiapan}
+                                    error={allErrors.link_surat_kesiapan}
                                 />
 
                                 <Button
@@ -934,7 +977,7 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
                     sx={{ width: "100%", borderRadius: 2 }}
                 >
                     <strong>Terdapat kesalahan pada form.</strong> Periksa kembali semua field yang wajib diisi.
-                    {errors.id_prodi && (
+                    {allErrors.id_prodi && (
                         <div style={{ fontSize: "0.85rem", marginTop: 4 }}>
                             ⚠ Program Studi: {errors.id_prodi}
                         </div>

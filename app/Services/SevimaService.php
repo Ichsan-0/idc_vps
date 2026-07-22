@@ -19,11 +19,13 @@ class SevimaService
 
     protected function request($endpoint)
     {
-        return Http::withoutVerifying()->withHeaders([
-            'X-App-Key'    => $this->appKey,
-            'X-Secret-Key'=> $this->secretKey,
-            'Accept'      => 'application/json',
-        ])->get($this->baseUrl . $endpoint);
+        return Http::withoutVerifying()
+            ->timeout(15)
+            ->withHeaders([
+                'X-App-Key'    => $this->appKey,
+                'X-Secret-Key' => $this->secretKey,
+                'Accept'       => 'application/json',
+            ])->get($this->baseUrl . $endpoint);
     }
 
     public function getMahasiswa()

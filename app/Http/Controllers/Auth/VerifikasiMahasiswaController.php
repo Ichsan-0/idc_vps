@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Services\SevimaService;
 use Carbon\Carbon;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
@@ -211,6 +212,15 @@ class VerifikasiMahasiswaController extends Controller
             session(['verified_mahasiswa' => $verifiedData]);
 
             return redirect()->route('registrasi.ppkpm');
+
+        } catch (ConnectionException $e) {
+            Log::error('[Verifikasi] Koneksi ke Sevima gagal', [
+                'message' => $e->getMessage(),
+            ]);
+
+            return back()->withErrors([
+                'nim' => 'Tidak dapat terhubung ke server Sevima. Pastikan koneksi internet server aktif atau hubungi admin.',
+            ]);
 
         } catch (\Exception $e) {
             Log::error('[Verifikasi] Exception tidak terduga', [

@@ -95,24 +95,29 @@ class RegistrasiPPKPMController extends Controller
             'subdistrict_code'     => 'required|string',
             'village_code'         => 'required|string',
 
-            // Alamat Sekarang (opsional)
-            'alamat_sekarang'      => 'nullable|string|max:500',
-            'province_code_now'    => 'nullable|string',
-            'regency_code_now'     => 'nullable|string',
-            'subdistrict_code_now' => 'nullable|string',
-            'village_code_now'     => 'nullable|string',
+            // Alamat Sekarang (wajib)
+            'alamat_sekarang'      => 'required|string|max:500',
+            'province_code_now'    => 'required|string',
+            'regency_code_now'     => 'required|string',
+            'subdistrict_code_now' => 'required|string',
+            'village_code_now'     => 'required|string',
 
             // Dokumen
             'link_transkrip_nilai'  => 'nullable|file|mimes:pdf|max:512',
             'link_surat_pernyataan' => 'required|file|mimes:pdf|max:512',
             'link_surat_kesiapan'   => 'required|file|mimes:pdf|max:512',
         ], [
-            'email.unique'              => 'Email ini sudah terdaftar. Gunakan email lain atau login.',
-            'id_prodi.exists'           => 'Program studi tidak ditemukan.',
-            'province_code.required'    => 'Provinsi asal wajib diisi.',
-            'regency_code.required'     => 'Kabupaten asal wajib diisi.',
-            'subdistrict_code.required' => 'Kecamatan asal wajib diisi.',
-            'village_code.required'     => 'Desa asal wajib diisi.',
+            'email.unique'                   => 'Email ini sudah terdaftar. Gunakan email lain atau login.',
+            'id_prodi.exists'                => 'Program studi tidak ditemukan.',
+            'province_code.required'         => 'Provinsi asal wajib diisi.',
+            'regency_code.required'          => 'Kabupaten asal wajib diisi.',
+            'subdistrict_code.required'      => 'Kecamatan asal wajib diisi.',
+            'village_code.required'          => 'Desa asal wajib diisi.',
+            'alamat_sekarang.required'       => 'Alamat sekarang wajib diisi.',
+            'province_code_now.required'     => 'Provinsi sekarang wajib diisi.',
+            'regency_code_now.required'      => 'Kabupaten sekarang wajib diisi.',
+            'subdistrict_code_now.required'  => 'Kecamatan sekarang wajib diisi.',
+            'village_code_now.required'      => 'Desa sekarang wajib diisi.',
             'link_surat_pernyataan.required' => 'Surat Pernyataan Ka Prodi wajib diunggah.',
             'link_surat_kesiapan.required'   => 'Surat Kesiapan Mahasiswa wajib diunggah.',
             'link_surat_pernyataan.max'      => 'Ukuran Surat Pernyataan maksimal 500KB.',
@@ -128,11 +133,12 @@ class RegistrasiPPKPMController extends Controller
             // 1. Simpan ke tabel USERS
             // =============================================
             $user = User::create([
-                'name'     => $request->name,
-                'email'    => $request->email,
-                'username' => $verifiedData['nim'],   // NIM sebagai username
-                'password' => Hash::make($request->password),
-                'role'     => 'user',
+                'name'              => $request->name,
+                'email'             => $request->email,
+                'username'          => $verifiedData['nim'],   // NIM sebagai username
+                'password'          => Hash::make($request->password),
+                'role'              => 'user',
+                'email_verified_at' => now(), // Sudah terverifikasi via Sevima
             ]);
 
             event(new Registered($user));

@@ -976,7 +976,7 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
                     variant="filled"
                     sx={{ width: "100%", borderRadius: 2 }}
                 >
-                    <strong>Terdapat kesalahan pada form.</strong> Periksa kembali semua field yang wajib diisi.
+                    <strong>Terdapat kesalahan pada form.</strong> Mohon periksa kembali form yang wajib diisi.
                     {allErrors.id_prodi && (
                         <div style={{ fontSize: "0.85rem", marginTop: 4 }}>
                             ⚠ Program Studi: {errors.id_prodi}

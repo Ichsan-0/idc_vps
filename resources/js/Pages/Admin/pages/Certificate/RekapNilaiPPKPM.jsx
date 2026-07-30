@@ -18,7 +18,7 @@ import ExportCertificateModal from "@/Components/admin/ExportCertificateModal";
 const RekapNilaiPPKPM = ({ flash, base_url }) => {
     const [openDialog, setOpenDialog] = useState(false);
     const [idObjToDelete, setIdObjToDelete] = useState(null);
-    const [notify, setNotify] = useState(flash.message !== null ? true : false);
+    const [notify, setNotify] = useState(flash?.message != null ? true : false);
     const [notifyStatus, setNotifyStatus] = useState("default");
     const [dropdownOpen, setDropdownOpen] = useState(null);
     const dropdownRef = useRef(null);
@@ -34,9 +34,11 @@ const RekapNilaiPPKPM = ({ flash, base_url }) => {
     const [selectedGelombang, setSelectedGelombang] = useState(null);
 
 
-    const getVisiblePages = (page, dataRuang) => {
-        let totalPages = Math.ceil(dataRuang.total / dataRuang?.data?.length);
-
+    const getVisiblePages = (page, totalPages) => {
+        if (!totalPages || totalPages <= 0) {
+            setVisiblePages([]);
+            return;
+        }
         const vvisiblePages = [];
         if (totalPages <= 5) {
             for (let i = 1; i <= totalPages; i++) {
@@ -44,9 +46,7 @@ const RekapNilaiPPKPM = ({ flash, base_url }) => {
             }
         } else {
             vvisiblePages.push(1);
-
             if (page > 4) vvisiblePages.push("...");
-
             for (
                 let i = Math.max(2, page - 1);
                 i <= Math.min(totalPages - 1, page + 1);
@@ -54,9 +54,7 @@ const RekapNilaiPPKPM = ({ flash, base_url }) => {
             ) {
                 vvisiblePages.push(i);
             }
-
             if (page < totalPages - 3) vvisiblePages.push("...");
-
             vvisiblePages.push(totalPages);
         }
         setVisiblePages(vvisiblePages);
@@ -88,19 +86,17 @@ const RekapNilaiPPKPM = ({ flash, base_url }) => {
                 {
                     params: {
                         page: currentPage,
-                        search: searchKey,
+                        search_key: searchKey,
                         idGelombang: selectedGelombang,
                     },
                 }
             );
             setDataRuang(response.data);
-
-            setCurrentPage(response.data.current_page);
-
-            setLastPage(response.data.last_page);
+            setCurrentPage(response.data.current_page ?? 1);
+            setLastPage(response.data.last_page ?? 1);
             getVisiblePages(
-                response.data.current_page,
-                response.data
+                response.data.current_page ?? 1,
+                response.data.last_page ?? 1
             );
         } catch (err) {
             console.log(err);
@@ -210,28 +206,15 @@ const RekapNilaiPPKPM = ({ flash, base_url }) => {
     };
 
     useEffect(() => {
-        if (flash.message) {
-            console.log("notify");
+        if (flash?.message) {
             if (flash.message.success) {
                 setNotifyStatus("success");
             } else {
                 setNotifyStatus("error");
             }
+            setNotify(true);
         }
-        setNotify(true);
-    }, [flash.message]);
-
-    useEffect(() => {
-        if (flash.message) {
-            console.log("notify");
-            if (flash.message.success) {
-                setNotifyStatus("success");
-            } else {
-                setNotifyStatus("error");
-            }
-        }
-        setNotify(true);
-    }, [flash.message]);
+    }, [flash?.message]);
 
     const handleCloseNotify = (event, reason) => {
         if (reason === "clickaway") {
@@ -591,15 +574,13 @@ const RekapNilaiPPKPM = ({ flash, base_url }) => {
                                 <span className="flex gap-x-2 text-sm font-normal text-gray-500 dark:text-gray-400">
                                     Showing
                                     <span className="font-semibold text-gray-900 dark:text-white">
-                                        {`${
-                                            dataRuang.to -
-                                            dataRuang?.data?.length +
-                                            1
-                                        }-${dataRuang.to}`}
+                                        {dataRuang?.total > 0
+                                            ? `${dataRuang.from ?? 1}-${dataRuang.to ?? 0}`
+                                            : "0-0"}
                                     </span>
                                     of
                                     <span className="font-semibold text-gray-900 dark:text-white">
-                                        {dataRuang.total}
+                                        {dataRuang?.total ?? 0}
                                     </span>
                                 </span>
 

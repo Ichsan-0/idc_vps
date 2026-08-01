@@ -58,9 +58,28 @@ export default function DetailStudent({ id, base_url }) {
     const [dataDesaSekarang, setDataDesaSekarang] = useState([]);
     
     const [loading, setLoading] = useState(false);
+    const [resetLoading, setResetLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [validationError, setValidationError] = useState({});
     const { openModal, closeModal, isOpen } = useModal();
+
+    const handleResetPassword = async () => {
+        const confirmReset = window.confirm("yakin mereset password");
+        if (!confirmReset) return;
+
+        try {
+            setResetLoading(true);
+            await axios.post(
+                `${config.base_url}/api/admin/users/student/reset-password/${id}`
+            );
+            alert("Password berhasil di-reset menjadi 12345678");
+        } catch (error) {
+            console.error("Failed to reset password:", error);
+            alert("Gagal mereset password");
+        } finally {
+            setResetLoading(false);
+        }
+    };
 
     const getData = async () => {
         try {
@@ -451,27 +470,65 @@ export default function DetailStudent({ id, base_url }) {
                                 </div>
                             </div>
 
-                            <button
-                                onClick={handleEditClick}
-                                className="flex w-full items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 lg:inline-flex lg:w-auto"
-                            >
-                                <svg
-                                    className="fill-current"
-                                    width="18"
-                                    height="18"
-                                    viewBox="0 0 18 18"
-                                    fill="none"
-                                    xmlns="http://www.w3.org/2000/svg"
+                            <div className="flex flex-col gap-3 w-full sm:flex-row lg:w-auto">
+                                <button
+                                    onClick={handleResetPassword}
+                                    className="flex w-full items-center justify-center gap-2 rounded-full border border-red-300 bg-white px-4 py-3 text-sm font-medium text-red-600 shadow-theme-xs hover:bg-red-50 hover:text-red-700 dark:border-red-700 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-950/20 lg:inline-flex lg:w-auto"
+                                    disabled={resetLoading}
                                 >
-                                    <path
-                                        fillRule="evenodd"
-                                        clipRule="evenodd"
-                                        d="M15.0911 2.78206C14.2125 1.90338 12.7878 1.90338 11.9092 2.78206L4.57524 10.116C4.26682 10.4244 4.0547 10.8158 3.96468 11.2426L3.31231 14.3352C3.25997 14.5833 3.33653 14.841 3.51583 15.0203C3.69512 15.1996 3.95286 15.2761 4.20096 15.2238L7.29355 14.5714C7.72031 14.4814 8.11172 14.2693 8.42013 13.9609L15.7541 6.62695C16.6327 5.74827 16.6327 4.32365 15.7541 3.44497L15.0911 2.78206ZM12.9698 3.84272C13.2627 3.54982 13.7376 3.54982 14.0305 3.84272L14.6934 4.50563C14.9863 4.79852 14.9863 5.2734 14.6934 5.56629L14.044 6.21573L12.3204 4.49215L12.9698 3.84272ZM11.2597 5.55281L5.6359 11.1766C5.53309 11.2794 5.46238 11.4099 5.43238 11.5522L5.01758 13.5185L6.98394 13.1037C7.1262 13.0737 7.25666 13.003 7.35947 12.9002L12.9833 7.27639L11.2597 5.55281Z"
-                                        fill=""
-                                    />
-                                </svg>
-                                Edit Status
-                            </button>
+                                    {resetLoading ? (
+                                        <LoaderOnButton />
+                                    ) : (
+                                        <>
+                                            <svg
+                                                className="fill-current"
+                                                width="18"
+                                                height="18"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                            >
+                                                <path
+                                                    d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z"
+                                                    stroke="currentColor"
+                                                    strokeWidth="2"
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                />
+                                                <path
+                                                    d="M19.4 15A1.65 1.65 0 0 0 22 16.4V17.6A1.65 1.65 0 0 0 19.4 19H17A1.65 1.65 0 0 0 14.4 20.4L13.8 21.6A1.65 1.65 0 0 0 10.6 21.6L10 20.4A1.65 1.65 0 0 0 7.4 19H5A1.65 1.65 0 0 0 2.4 17.6V16.4A1.65 1.65 0 0 0 5 15C5.7 15 6.4 14.5 6.6 13.8L7.2 12.6C7.5 11.9 7.5 11.1 7.2 10.4L6.6 9.2A1.65 1.65 0 0 0 5 8V6.8A1.65 1.65 0 0 0 2.4 5.4H4.8A1.65 1.65 0 0 0 7.4 4H9.8A1.65 1.65 0 0 0 12.4 2.6L13 1.4A1.65 1.65 0 0 0 16.2 1.4L16.8 2.6A1.65 1.65 0 0 0 19.4 4H21.8A1.65 1.65 0 0 0 24.4 5.4V6.8A1.65 1.65 0 0 0 21.8 8.2L21.2 9.4C20.9 10.1 20.9 10.9 21.2 11.6L21.8 12.8A1.65 1.65 0 0 0 24.4 14.2V15"
+                                                    stroke="currentColor"
+                                                    strokeWidth="2"
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                />
+                                            </svg>
+                                            Reset Password
+                                        </>
+                                    )}
+                                </button>
+                                <button
+                                    onClick={handleEditClick}
+                                    className="flex w-full items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 lg:inline-flex lg:w-auto"
+                                >
+                                    <svg
+                                        className="fill-current"
+                                        width="18"
+                                        height="18"
+                                        viewBox="0 0 18 18"
+                                        fill="none"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                        <path
+                                            fillRule="evenodd"
+                                            clipRule="evenodd"
+                                            d="M15.0911 2.78206C14.2125 1.90338 12.7878 1.90338 11.9092 2.78206L4.57524 10.116C4.26682 10.4244 4.0547 10.8158 3.96468 11.2426L3.31231 14.3352C3.25997 14.5833 3.33653 14.841 3.51583 15.0203C3.69512 15.1996 3.95286 15.2761 4.20096 15.2238L7.29355 14.5714C7.72031 14.4814 8.11172 14.2693 8.42013 13.9609L15.7541 6.62695C16.6327 5.74827 16.6327 4.32365 15.7541 3.44497L15.0911 2.78206ZM12.9698 3.84272C13.2627 3.54982 13.7376 3.54982 14.0305 3.84272L14.6934 4.50563C14.9863 4.79852 14.9863 5.2734 14.6934 5.56629L14.044 6.21573L12.3204 4.49215L12.9698 3.84272ZM11.2597 5.55281L5.6359 11.1766C5.53309 11.2794 5.46238 11.4099 5.43238 11.5522L5.01758 13.5185L6.98394 13.1037C7.1262 13.0737 7.25666 13.003 7.35947 12.9002L12.9833 7.27639L11.2597 5.55281Z"
+                                            fill=""
+                                        />
+                                    </svg>
+                                    Edit Status
+                                </button>
+                            </div>
                         </div>
                     )}
                 </div>

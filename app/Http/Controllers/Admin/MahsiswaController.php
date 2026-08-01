@@ -14,6 +14,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -122,6 +123,36 @@ class MahsiswaController extends Controller
         $mahasiswa = User::where('username', $id)->with(['dataMahasiswa', 'dataMahasiswa.prodi'])->first();
 
         return Inertia::render('Admin/pages/Pengguna/Mahasiswa/DetailMahasiswa', ['mahasiswa' => $mahasiswa, 'base_url' => url('/')]);
+    }
+
+    public function resetPassword(Request $request, $id)
+    {
+        try {
+            $user = User::where('username', $id)->first();
+            if (!$user) {
+                return response()->json([
+                    'status' => 'Gagal mereset password',
+                    'code' => 404,
+                    'message' => 'User tidak ditemukan'
+                ], 404);
+            }
+
+            $user->update([
+                'password' => Hash::make('12345678')
+            ]);
+
+            return response()->json([
+                'status' => 'Berhasil mereset password',
+                'code' => 200,
+                'message' => 'Password berhasil di-reset menjadi 12345678'
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => 'Gagal mereset password',
+                'code' => $e->getCode(),
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function getMahasiswaByUsername(Request $request)

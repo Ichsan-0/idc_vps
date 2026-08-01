@@ -188,6 +188,7 @@ Route::middleware(['auth:sanctum', 'role:admin'])
                     Route::get('/list', [MahsiswaController::class, 'listMahasiswa']);
                     Route::get('/detail', [MahsiswaController::class, 'getMahasiswaByUsername']);
                     Route::post('/status/{id}', [MahsiswaController::class, 'updateStatus']);
+                    Route::post('/reset-password/{id}', [MahsiswaController::class, 'resetPassword']);
                     Route::post('/export', [MahsiswaController::class, 'exportData']);
 
 

@@ -13,6 +13,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\File as RulesFile;
 use Illuminate\Validation\ValidationException;
@@ -47,6 +48,22 @@ class ProfilController extends Controller
 {
     $data_mahasiswa = Mahasiswa::where('nim', Auth::user()->username)->first();
     $latestGelombang = Gelombang::latest()->first();
+
+    if ($request->filled('password')) {
+        $request->validate([
+            'password' => ['required', 'min:8'],
+        ], [
+            'password.min' => 'Password minimal harus 8 karakter.',
+        ]);
+
+        Auth::user()->update([
+            'password' => Hash::make($request->password),
+        ]);
+
+        if ($data_mahasiswa && in_array($data_mahasiswa->status, ['accepted', 'submitted', 'rejected'])) {
+            return redirect()->back()->with('message', ['success' => 'Password berhasil diperbaharui!']);
+        }
+    }
 
     $rules = [
         'province_code' => 'required',
@@ -190,7 +207,8 @@ class ProfilController extends Controller
             
    
             
-            return redirect()->back()->with('message', ['success' => 'Profil Berhasil diperbaharui!']);
+            $successMsg = $request->filled('password') ? 'Profil dan password berhasil diperbaharui!' : 'Profil Berhasil diperbaharui!';
+            return redirect()->back()->with('message', ['success' => $successMsg]);
             
         } elseif ($data_mahasiswa->status === 'accepted') {
             DB::rollBack();

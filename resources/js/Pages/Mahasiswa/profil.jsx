@@ -22,6 +22,7 @@ import {
     CircularProgress,
     Tabs,
     Tab,
+    InputAdornment,
 } from "@mui/material";
 import PropTypes from "prop-types";
 import {
@@ -48,6 +49,8 @@ import {
     LocationOn,
     Home,
     ContentCopy,
+    Visibility,
+    VisibilityOff,
 } from "@mui/icons-material";
 import Navigation from "@/Components/Mahasiswa/Navigation";
 import ButtomFooter from "@/Components/frontpage/ButtomFooter";
@@ -422,6 +425,8 @@ const Profil = ({
     const [jenisKelamin, setJenisKelamin] = useState(
         mahasiswa?.data_mahasiswa?.jk || ""
     );
+    const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
 
     const [transkrip, setTranskrip] = useState(null);
     const [linkTranskrip] = useState(
@@ -463,6 +468,7 @@ const Profil = ({
         link_surat_kesiapan: suratKesiapan,
         jk: jenisKelamin,
         alamat_asal: alamatAsal,
+        password: "",
     });
 
     useEffect(() => {
@@ -800,6 +806,15 @@ const Profil = ({
         [setData]
     );
 
+    const handlePasswordChange = useCallback(
+        (e) => {
+            const value = e.target.value;
+            setPassword(value);
+            setData("password", value);
+        },
+        [setData]
+    );
+
     const onSubmit = useCallback(
         (e) => {
             e.preventDefault();
@@ -807,10 +822,12 @@ const Profil = ({
                 onSuccess: () => {
                     setSuratPernyataan(null);
                     setSuratKesiapan(null);
+                    setPassword("");
+                    setData("password", "");
                 }
             });
         },
-        [post, setSuratPernyataan, setSuratKesiapan]
+        [post, setSuratPernyataan, setSuratKesiapan, setData]
     );
 
     useEffect(() => {
@@ -1586,6 +1603,55 @@ const Profil = ({
 
                             {/* ===== KOLOM KIRI: Data Pribadi + Alamat ===== */}
                             <Grid item xs={12} md={7}>
+
+                                {/* Card: Data Akun */}
+                                <Card elevation={0} sx={{ borderRadius: 3, border: "1px solid #e5e7eb", mb: 3 }}>
+                                    <CardContent className="space-y-6">
+                                        <Typography variant="h6" sx={{ borderBottom: "2px solid #008a01", pb: 1, width: "fit-content" }}>
+                                            Data Akun
+                                        </Typography>
+
+                                        <Grid container spacing={2}>
+                                            {/* Username (NIM) — readonly */}
+                                            <Grid item xs={12} md={6}>
+                                                <TextField
+                                                    label="Username"
+                                                    fullWidth
+                                                    disabled
+                                                    value={nim}
+                                                    variant="outlined"
+                                                    helperText="Username login (Sesuai NIM)"
+                                                />
+                                            </Grid>
+
+                                            {/* Password Baru — editable */}
+                                            <Grid item xs={12} md={6}>
+                                                <TextField
+                                                    label="Password Baru"
+                                                    type={showPassword ? "text" : "password"}
+                                                    fullWidth
+                                                    value={password}
+                                                    onChange={handlePasswordChange}
+                                                    error={!!errors.password}
+                                                    helperText={errors.password || "Kosongkan jika tidak ingin mengubah password"}
+                                                    variant="outlined"
+                                                    InputProps={{
+                                                        endAdornment: (
+                                                            <InputAdornment position="end">
+                                                                <IconButton
+                                                                    onClick={() => setShowPassword(!showPassword)}
+                                                                    edge="end"
+                                                                >
+                                                                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                                                                </IconButton>
+                                                            </InputAdornment>
+                                                        ),
+                                                    }}
+                                                />
+                                            </Grid>
+                                        </Grid>
+                                    </CardContent>
+                                </Card>
 
                                 {/* Card: Data Pribadi & Akademik */}
                                 <Card elevation={0} sx={{ borderRadius: 3, border: "1px solid #e5e7eb", mb: 3 }}>

@@ -1,15 +1,12 @@
 import {
-    Avatar,
     Box,
     IconButton,
     Menu,
     MenuItem,
-    Tooltip,
     Typography,
 } from "@mui/material";
 import React from "react";
 import { Link, router, usePage } from "@inertiajs/react";
-import avatar from "../../../../public/assets/user.png";
 import { IoNotificationsOutline } from "react-icons/io5";
 import NotificationDropdown from "../Mahasiswa/NotificationDropdown";
 import {
@@ -19,10 +16,9 @@ import {
     Shield,
     User,
     MapPinHouse,
-    Menu as MenuIcon
+    Menu as MenuIcon,
+    LogOut
 } from "lucide-react";
-
-const settings = ["Profile", "Logout"];
 
 const navigationItems = [
     {
@@ -58,20 +54,7 @@ const Header = () => {
     const hasUser = props.auth && props.auth.user;
     const pathname = url ? new URL(url, window.location.origin).pathname : "";
 
-    const [anchorElUser, setAnchorElUser] = React.useState(null);
     const [anchorElNav, setAnchorElNav] = React.useState(null);
-
-    const handleOpenUserMenu = (event) => {
-        setAnchorElUser(event.currentTarget);
-    };
-    const handleCloseUserMenu = (e, value) => {
-        setAnchorElUser(null);
-        if (value === 0) {
-            router.get("/profil");
-        } else if (value === 1) {
-            router.post("/logout");
-        }
-    };
     return (
         <header className="flex z-[100] w-full  sticky top-0 shadow-md bg-[#06359f] justify-center items-center ">
             <div className="flex w-full px-5 max-w-7xl h-fit py-2 lg:px-20 md:px-10 justify-between items-center">
@@ -176,49 +159,17 @@ const Header = () => {
                                 );
                             })}
                         </nav>
+                        
+                        {/* Logout Button */}
+                        <button
+                            onClick={() => router.post("/logout")}
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold tracking-wide transition-all duration-200 text-red-200 hover:text-white hover:bg-red-600/30 border border-red-500/20"
+                        >
+                            <LogOut className="w-4 h-4" />
+                            <span className="sm:inline hidden">Logout</span>
+                        </button>
                         </>
                     )}
-
-                    {/* <NotificationDropdown /> */}
-                    <Box sx={{ flexGrow: 0 }}>
-                        <Tooltip title="Open settings">
-                            <IconButton
-                                onClick={handleOpenUserMenu}
-                                sx={{ p: 0 }}
-                            >
-                                <Avatar src={avatar}></Avatar>
-                            </IconButton>
-                        </Tooltip>
-                        <Menu
-                            sx={{ mt: "45px" }}
-                            id="menu-appbar"
-                            anchorEl={anchorElUser}
-                            anchorOrigin={{
-                                vertical: "top",
-                                horizontal: "right",
-                            }}
-                            keepMounted
-                            transformOrigin={{
-                                vertical: "top",
-                                horizontal: "right",
-                            }}
-                            open={Boolean(anchorElUser)}
-                            onClose={handleCloseUserMenu}
-                        >
-                            {settings.map((setting, index) => (
-                                <MenuItem
-                                    key={setting}
-                                    onClick={(e) => {
-                                        handleCloseUserMenu(e, index);
-                                    }}
-                                >
-                                    <Typography textAlign="center">
-                                        {setting}
-                                    </Typography>
-                                </MenuItem>
-                            ))}
-                        </Menu>
-                    </Box>
                 </div>
             </div>
         </header>

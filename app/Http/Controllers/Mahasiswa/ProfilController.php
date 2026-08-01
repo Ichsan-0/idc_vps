@@ -31,7 +31,7 @@ class ProfilController extends Controller
         $prodi = Prodi::all();
         $link_grup = "";
         $user_data = Mahasiswa::where('nim', $user)->first();
-        if ($user_data->status === 'accepted') {
+        if ($user_data && $user_data->status === 'accepted') {
             $link_grup = Data::all()->first()->link_grup;
         }
         $mahasiswa = User::where('username', $user)->with('dataMahasiswa')->first();
@@ -39,7 +39,8 @@ class ProfilController extends Controller
             'mahasiswa' => $mahasiswa,
             'list_prodi' => $prodi,
             'link_grup' => $link_grup,
-            'base_url' => url('/')
+            'base_url' => url('/'),
+            'flash' => ['message' => session('message')],
         ]);
     }
     public function save(Request $request)

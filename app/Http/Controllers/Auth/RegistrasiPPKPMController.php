@@ -127,7 +127,7 @@ class RegistrasiPPKPMController extends Controller
 
         $latestGelombang = \App\Models\Gelombang::latest()->first();
 
-        DB::transaction(function () use ($request, $verifiedData, $latestGelombang) {
+        $user = DB::transaction(function () use ($request, $verifiedData, $latestGelombang) {
 
             // =============================================
             // 1. Simpan ke tabel USERS
@@ -141,15 +141,11 @@ class RegistrasiPPKPMController extends Controller
                 'email_verified_at' => now(), // Sudah terverifikasi via Sevima
             ]);
 
-            event(new Registered($user));
-
-            Auth::login($user);
-
             // =============================================
             // 2. Handle Upload File ke storage/app/public
             // =============================================
             $paths = [];
-            
+
             // Simpan transkrip ke folder transkrip_nilai
             if ($request->hasFile('link_transkrip_nilai')) {
                 $file = $request->file('link_transkrip_nilai');
@@ -215,12 +211,16 @@ class RegistrasiPPKPMController extends Controller
                 ]
             );
 
-            // =============================================
-            // 4. Buat API Token untuk mahasiswa
-            // =============================================
-            $token = $user->createToken('api-token')->plainTextToken;
-            session(['access_token' => $token]);
+            return $user;
         });
+
+        // Login & event dilakukan SETELAH transaction commit agar session tersimpan dengan benar
+        event(new Registered($user));
+        Auth::login($user);
+
+        // Buat API Token untuk mahasiswa
+        $token = $user->createToken('api-token')->plainTextToken;
+        session(['access_token' => $token]);
 
         // Hapus session verifikasi setelah selesai
         session()->forget('verified_mahasiswa');
@@ -229,6 +229,7 @@ class RegistrasiPPKPMController extends Controller
             'success' => 'Pendaftaran berhasil! Selamat datang di IDC. Data Anda sedang dalam proses review.'
         ]);
     }
+
 
     /**
      * Ambil data transkrip nilai mahasiswa aktif dari Sevima API.

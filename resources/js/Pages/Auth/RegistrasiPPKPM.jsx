@@ -635,8 +635,40 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
                                 <Card elevation={0} sx={{ borderRadius: 3, border: "1px solid #e5e7eb", mb: 3, bgcolor: "primary.50" }}>
                                     <CardContent className="space-y-4">
                                         <Typography variant="h6" sx={{ fontWeight: "bold" }}>Data Akun</Typography>
-                                        <TextField label="Email Kampus" fullWidth value={data.email} onChange={(e) => setData("email", e.target.value)} />
-                                        <InputError message={allErrors.email} />
+                                        <Box>
+                                            <TextField label="Email aktif" fullWidth value={data.email} onChange={(e) => setData("email", e.target.value)} />
+                                            <InputError message={allErrors.email} />
+                                            <Typography variant="caption" sx={{ mt: 0.5, display: "block", color: "#16a34a", fontStyle: "italic" }}>
+                                                * Email ini akan digunakan untuk verifikasi dan notifikasi
+                                            </Typography>
+                                        </Box>
+
+
+                                        <Box>
+                                            <TextField
+                                                label="Username"
+                                                fullWidth
+                                                value={data.nim}
+                                                inputProps={{ readOnly: true }}
+                                                variant="outlined"
+                                                sx={{
+                                                    "& .MuiInputBase-input": {
+                                                        backgroundColor: "#f0fdf4",
+                                                        fontWeight: 600,
+                                                        color: "#166534",
+                                                        cursor: "default",
+                                                    },
+                                                    "& .MuiOutlinedInput-root": {
+                                                        "& fieldset": { borderColor: "#86efac" },
+                                                        "&:hover fieldset": { borderColor: "#4ade80" },
+                                                        "&.Mui-focused fieldset": { borderColor: "#16a34a" },
+                                                    },
+                                                }}
+                                            />
+                                            <Typography variant="caption" sx={{ mt: 0.5, display: "block", color: "#16a34a", fontStyle: "italic" }}>
+                                                * NIM Anda akan menjadi <strong>username</strong> saat login ke sistem
+                                            </Typography>
+                                        </Box>
 
                                         <FormControl variant="outlined" fullWidth>
                                             <InputLabel>Password</InputLabel>

@@ -1,0 +1,1 @@
+const r=e=>e==="submitted"?"Submitted":e==="accepted"?"Diterima":e==="rejected"?"Ditolak":e==="revisi"?"Revisi":"Belum melengkai Biodata",i=e=>e==="submitted"?"warning":e==="accepted"?"success":e==="rejected"?"error":e==="revisi"?"warning":"info";export{i as a,r as g};

@@ -1,0 +1,1 @@
+import{r}from"./app-uj3GaIay.js";function e(t,n){typeof t=="function"?t(n):t&&(t.current=n)}function i(...t){return r.useMemo(()=>t.every(n=>n==null)?null:n=>{t.forEach(o=>{e(o,n)})},t)}function s(t){return typeof t=="string"}export{s as i,e as s,i as u};

@@ -18,7 +18,8 @@ import {
     SquareLibrary,
     Shield,
     User,
-    MapPinHouse
+    MapPinHouse,
+    Menu as MenuIcon
 } from "lucide-react";
 
 const settings = ["Profile", "Logout"];
@@ -58,6 +59,7 @@ const Header = () => {
     const pathname = url ? new URL(url, window.location.origin).pathname : "";
 
     const [anchorElUser, setAnchorElUser] = React.useState(null);
+    const [anchorElNav, setAnchorElNav] = React.useState(null);
 
     const handleOpenUserMenu = (event) => {
         setAnchorElUser(event.currentTarget);
@@ -95,7 +97,66 @@ const Header = () => {
                 {/* Right Section */}
                 <div className="flex justify-end items-center gap-4">
                     {hasUser && (
-                        <nav className="hidden lg:flex items-center gap-1.5 mr-2">
+                        <>
+                            {/* Mobile Hamburger Menu */}
+                            <Box sx={{ display: { xs: "flex", lg: "none" } }}>
+                                <IconButton
+                                    size="large"
+                                    onClick={(e) => setAnchorElNav(e.currentTarget)}
+                                    color="inherit"
+                                    sx={{ color: "white", p: 1 }}
+                                >
+                                    <MenuIcon className="w-6 h-6" />
+                                </IconButton>
+                                <Menu
+                                    id="menu-appbar-nav"
+                                    anchorEl={anchorElNav}
+                                    anchorOrigin={{
+                                        vertical: "bottom",
+                                        horizontal: "left",
+                                    }}
+                                    keepMounted
+                                    transformOrigin={{
+                                        vertical: "top",
+                                        horizontal: "left",
+                                    }}
+                                    open={Boolean(anchorElNav)}
+                                    onClose={() => setAnchorElNav(null)}
+                                    sx={{
+                                        display: { xs: "block", lg: "none" },
+                                        mt: "10px",
+                                    }}
+                                >
+                                    {navigationItems.map((item) => {
+                                        const IconComponent = item.icon;
+                                        const isActive = pathname === item.path || pathname.startsWith(item.path + '/') || (item.path === '/kpm-vacancies' && pathname === '/');
+                                        return (
+                                            <MenuItem
+                                                key={item.id}
+                                                onClick={() => {
+                                                    setAnchorElNav(null);
+                                                    router.get(item.path);
+                                                }}
+                                                sx={{
+                                                    backgroundColor: isActive ? "action.selected" : "transparent",
+                                                    fontWeight: isActive ? "bold" : "normal",
+                                                    color: isActive ? "#06359f" : "inherit",
+                                                    display: "flex",
+                                                    gap: 1.5,
+                                                    py: 1.25,
+                                                    px: 2.5,
+                                                }}
+                                            >
+                                                <IconComponent className="w-4 h-4" />
+                                                <Typography variant="body2">{item.label}</Typography>
+                                            </MenuItem>
+                                        );
+                                    })}
+                                </Menu>
+                            </Box>
+
+                            {/* Desktop Navigation */}
+                            <nav className="hidden lg:flex items-center gap-1.5 mr-2">
                             {navigationItems.map((item) => {
                                 const IconComponent = item.icon;
                                 const isActive = pathname === item.path || pathname.startsWith(item.path + '/') || (item.path === '/kpm-vacancies' && pathname === '/');
@@ -115,6 +176,7 @@ const Header = () => {
                                 );
                             })}
                         </nav>
+                        </>
                     )}
 
                     {/* <NotificationDropdown /> */}

@@ -1,1 +1,0 @@
-import{q as n,j as o,a as x}from"./app-C9gl-f2u.js";function f({active:e=!1,className:s="",children:a,...t}){const{url:r}=n(),i=t.href===r;return o.jsx(x,{...t,className:`${s} ${i||e?"text-white":"text-bodydark2"}`,children:a})}export{f as N};

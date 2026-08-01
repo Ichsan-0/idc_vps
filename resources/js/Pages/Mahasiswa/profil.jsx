@@ -930,17 +930,18 @@ const Profil = ({
                             variant="outlined"
                             size="small"
                             color="primary"
-                            startIcon={<FaDownload />}
+                            startIcon={<FaDownload style={{ fontSize: "10px" }} />}
                             sx={{
                                 position: "absolute",
-                                top: 16,
-                                right: 16,
+                                top: 12,
+                                right: 12,
                                 textTransform: "capitalize",
-                                borderRadius: 2,
-                                fontSize: "0.75rem",
-                                py: 0.5,
-                                px: 1.5,
+                                borderRadius: 1.5,
+                                fontSize: "0.65rem",
+                                py: 0.25,
+                                px: 1,
                                 zIndex: 1,
+                                minWidth: "auto",
                                 backgroundColor: "background.paper",
                                 "&:hover": {
                                     backgroundColor: "primary.main",
@@ -980,7 +981,7 @@ const Profil = ({
                                 }}
                             />
                         </Box>
-                        <Box sx={{ flex: 1, pr: templateUrl ? 14 : 0 }}>
+                        <Box sx={{ flex: 1, pr: templateUrl ? 11 : 0 }}>
                             <Typography variant="h6" gutterBottom>
                                 {title}
                             </Typography>

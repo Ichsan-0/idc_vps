@@ -1,1 +1,0 @@
-import{j as e}from"./app-BiyjAHAl.js";const l=({children:s,title:r="Title"})=>e.jsxs("div",{className:"flex flex-col bg-white rounded-2xl border",children:[e.jsx("div",{className:"p-5 border-b font-semibold",children:r}),e.jsx("div",{className:" bg-white p-5 rounded-b-2xl ",children:s})]});export{l as C};

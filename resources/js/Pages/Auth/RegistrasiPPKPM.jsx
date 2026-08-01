@@ -388,15 +388,45 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
         }
     }, [errors]);
 
-    const FileUploadSection = ({ file, type, title, description, icon: Icon, error }) => {
+    const FileUploadSection = ({ file, type, title, description, icon: Icon, error, templateUrl }) => {
         return (
-            <Card variant="outlined" sx={{ mb: 2, borderColor: error ? "error.main" : "divider" }}>
+            <Card variant="outlined" sx={{ mb: 2, position: "relative", borderColor: error ? "error.main" : "divider" }}>
                 <CardContent>
+                    {templateUrl && (
+                        <Button
+                            component="a"
+                            href={templateUrl}
+                            download
+                            variant="outlined"
+                            size="small"
+                            color="primary"
+                            startIcon={<FaDownload style={{ fontSize: "10px" }} />}
+                            sx={{
+                                position: "absolute",
+                                top: 12,
+                                right: 12,
+                                textTransform: "capitalize",
+                                borderRadius: 1.5,
+                                fontSize: "0.65rem",
+                                py: 0.25,
+                                px: 1,
+                                zIndex: 1,
+                                minWidth: "auto",
+                                backgroundColor: "background.paper",
+                                "&:hover": {
+                                    backgroundColor: "primary.main",
+                                    color: "white",
+                                }
+                            }}
+                        >
+                            Template
+                        </Button>
+                    )}
                     <Box sx={{ display: "flex", alignItems: "flex-start", mb: 2 }}>
                         <Box sx={{ bgcolor: file ? "success.main" : "action.selected", borderRadius: 2, p: 1.5, mr: 2 }}>
                             <Icon sx={{ fontSize: 28, color: file ? "white" : "action.active" }} />
                         </Box>
-                        <Box sx={{ flex: 1 }}>
+                        <Box sx={{ flex: 1, pr: templateUrl ? 11 : 0 }}>
                             <Typography variant="h6">{title}</Typography>
                             <Typography variant="body2" color="text.secondary">{description}</Typography>
                         </Box>
@@ -735,6 +765,7 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
                                     description="Surat Pernyataan Ka Prodi (PDF, Max 500KB)"
                                     icon={Assignment}
                                     error={allErrors.link_surat_pernyataan}
+                                    templateUrl="/assets/Form%20Surat%20Pernyataan%20Kaprodi%20untuk%20PPKPM%20.docx"
                                 />
 
                                 <FileUploadSection
@@ -744,6 +775,7 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
                                     description="Surat Kesiapan Mahasiswa (PDF, Max 500KB)"
                                     icon={AssignmentInd}
                                     error={allErrors.link_surat_kesiapan}
+                                    templateUrl="/assets/SURAT%20PERNYATAAN%20%26%20PERJANJIAN%20MAHASISWA%20PPKPM%20.docx"
                                 />
 
                                 <Button

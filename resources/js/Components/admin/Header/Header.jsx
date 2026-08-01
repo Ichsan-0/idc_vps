@@ -14,7 +14,7 @@ import {
 } from "@mui/material";
 import { router } from "@inertiajs/react";
 
-const settings = ["Profile", "Logout"];
+const settings = ["Logout"];
 
 const Header = ({ user }) => {
     const [anchorElUser, setAnchorElUser] = React.useState(null);
@@ -22,10 +22,9 @@ const Header = ({ user }) => {
     const handleOpenUserMenu = (event) => {
         setAnchorElUser(event.currentTarget);
     };
-    const handleCloseUserMenu = (e, value) => {
+    const handleCloseUserMenu = (e, setting) => {
         setAnchorElUser(null);
-        if (value === 0) {
-        } else if (value === 1) {
+        if (setting === "Logout") {
             router.post("/logout");
         }
     };
@@ -53,13 +52,13 @@ const Header = ({ user }) => {
                         horizontal: "right",
                     }}
                     open={Boolean(anchorElUser)}
-                    onClose={handleCloseUserMenu}
+                    onClose={() => setAnchorElUser(null)}
                 >
-                    {settings.map((setting, index) => (
+                    {settings.map((setting) => (
                         <MenuItem
                             key={setting}
                             onClick={(e) => {
-                                handleCloseUserMenu(e, index);
+                                handleCloseUserMenu(e, setting);
                             }}
                         >
                             <Typography textAlign="center">

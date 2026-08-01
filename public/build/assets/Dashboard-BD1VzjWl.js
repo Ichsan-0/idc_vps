@@ -1,0 +1,1 @@
+import{j as r}from"./app-BXNxYGUH.js";import{O as o}from"./OperatorSekolahLayout-DkR9yegR.js";import"./Lambang_UIN_Ar-Raniry-CySZhFPu.js";import"./NavLink-Cyc7NDeY.js";function i(){return r.jsx(o,{children:"Dashboard"})}export{i as default};

@@ -50,13 +50,13 @@ class LowonganKPM extends Controller
         $quota = TempatKPM::where('id', $request->id)->first();
         $lamaran_accepted = LamaranKPM::where('username_mahasiswa', Auth::user()->username)->where('status', 'accepted')->first();
         $jumlah_lamaran_diterima = LamaranKPM::where('status', 'accepted')->where('id_tempat_kpm', $request->id)->get();
-        $jumlah_lamaran_diterima_lk = LamaranKPM::where('status', 'accepted')
-            ->where('id_tempat_kpm', $request->id)
+        $jumlah_lamaran_diterima_lk = LamaranKPM::where('lamaran_kpm_tbl.status', 'accepted')
+            ->where('lamaran_kpm_tbl.id_tempat_kpm', $request->id)
             ->join('mahasiswa_tbl as m_t', 'lamaran_kpm_tbl.username_mahasiswa', '=', 'm_t.nim')
             ->where('m_t.jk', 'Pria')
             ->get();
-        $jumlah_lamaran_diterima_pr = LamaranKPM::where('status', 'accepted')
-            ->where('id_tempat_kpm', $request->id)
+        $jumlah_lamaran_diterima_pr = LamaranKPM::where('lamaran_kpm_tbl.status', 'accepted')
+            ->where('lamaran_kpm_tbl.id_tempat_kpm', $request->id)
             ->join('mahasiswa_tbl as m_t', 'lamaran_kpm_tbl.username_mahasiswa', '=', 'm_t.nim')
             ->where('m_t.jk', 'Wanita')
             ->get();

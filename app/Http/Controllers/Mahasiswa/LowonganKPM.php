@@ -75,13 +75,18 @@ class LowonganKPM extends Controller
 
             return redirect('/my-proposal')->with('message', ['error' => 'Lamaran Sudah Pernah diajukan']);
         } else {
+            $mahasiswa = Auth::user()->dataMahasiswa;
+            if (!$mahasiswa) {
+                return redirect()->back()->with('message', ['error' => 'Profil mahasiswa tidak ditemukan!']);
+            }
+
             if ($lamaran_accepted) {
                 return redirect('/my-proposal')->with('message', ['error' => 'Kamu sudah diterima di tempat kpm lain']);;
             } elseif (count($jumlah_lamaran_diterima) >= $quota->qouta) {
                 return redirect()->back()->with('message', ['error' => 'Penuh!']);;
-            } elseif (count($jumlah_lamaran_diterima_lk) >= $quota->qouta_lk && Auth::user()->mahasiswa->jk == 'Pria') {
+            } elseif (count($jumlah_lamaran_diterima_lk) >= $quota->qouta_lk && $mahasiswa->jk == 'Pria') {
                 return redirect()->back()->with('message', ['error' => 'Kuota Pria Penuh!']);
-            } elseif (count($jumlah_lamaran_diterima_pr) >= $quota->qouta_pr && Auth::user()->mahasiswa->jk == 'Wanita') {
+            } elseif (count($jumlah_lamaran_diterima_pr) >= $quota->qouta_pr && $mahasiswa->jk == 'Wanita') {
                 return redirect()->back()->with('message', ['error' => 'Kuota Wanita Penuh!']);;
             }
             LamaranKPM::create($data);

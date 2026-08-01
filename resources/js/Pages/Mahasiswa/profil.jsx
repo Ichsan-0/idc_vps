@@ -899,6 +899,7 @@ const Profil = ({
         onChange,
         error,
         accept = "application/pdf",
+        templateUrl,
     }) => {
         const hasFile = file || link;
         const fullUrl = link ? getFullUrl(link) : null;
@@ -908,6 +909,7 @@ const Profil = ({
                 variant="outlined"
                 sx={{
                     mb: 2,
+                    position: "relative",
                     borderColor: error ? "error.main" : "divider",
                     backgroundColor: hasFile
                         ? "success.50"
@@ -920,6 +922,35 @@ const Profil = ({
                 }}
             >
                 <CardContent>
+                    {templateUrl && (
+                        <Button
+                            component="a"
+                            href={templateUrl}
+                            download
+                            variant="outlined"
+                            size="small"
+                            color="primary"
+                            startIcon={<FaDownload />}
+                            sx={{
+                                position: "absolute",
+                                top: 16,
+                                right: 16,
+                                textTransform: "capitalize",
+                                borderRadius: 2,
+                                fontSize: "0.75rem",
+                                py: 0.5,
+                                px: 1.5,
+                                zIndex: 1,
+                                backgroundColor: "background.paper",
+                                "&:hover": {
+                                    backgroundColor: "primary.main",
+                                    color: "white",
+                                }
+                            }}
+                        >
+                            Template
+                        </Button>
+                    )}
                     <Box
                         sx={{
                             display: "flex",
@@ -949,7 +980,7 @@ const Profil = ({
                                 }}
                             />
                         </Box>
-                        <Box sx={{ flex: 1 }}>
+                        <Box sx={{ flex: 1, pr: templateUrl ? 14 : 0 }}>
                             <Typography variant="h6" gutterBottom>
                                 {title}
                             </Typography>
@@ -1939,6 +1970,7 @@ const Profil = ({
                                     onPreview={handleOpenPreview}
                                     onChange={handleSuratPernyataanChange}
                                     error={errors.link_surat_pernyataan}
+                                    templateUrl="/assets/Form%20Surat%20Pernyataan%20Kaprodi%20untuk%20PPKPM%20.docx"
                                 />
 
                                 {/* Surat Kesiapan */}
@@ -1952,6 +1984,7 @@ const Profil = ({
                                     onPreview={handleOpenPreview}
                                     onChange={handleSuratKesiapanChange}
                                     error={errors.link_surat_kesiapan}
+                                    templateUrl="/assets/SURAT%20PERNYATAAN%20%26%20PERJANJIAN%20MAHASISWA%20PPKPM%20.docx"
                                 />
 
                                 {/* Tombol Simpan */}

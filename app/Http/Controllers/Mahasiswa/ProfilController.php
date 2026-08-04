@@ -87,11 +87,17 @@ class ProfilController extends Controller
     // Hanya validasi file jika status revisi/null dan belum ada file
     if (!$data_mahasiswa->link_surat_pernyataan) {
         $rules['link_surat_pernyataan'] = 'required|file|mimes:pdf|max:500';
+    } else {
+        $rules['link_surat_pernyataan'] = 'nullable|file|mimes:pdf|max:500';
     }
 
     if (!$data_mahasiswa->link_surat_kesiapan) {
         $rules['link_surat_kesiapan'] = 'required|file|mimes:pdf|max:500';
+    } else {
+        $rules['link_surat_kesiapan'] = 'nullable|file|mimes:pdf|max:500';
     }
+
+    $rules['link_transkrip_nilai'] = 'nullable|file|mimes:pdf|max:500';
 
     $messages = [
         'province_code.required' => 'Provinsi wajib diisi',
@@ -118,6 +124,8 @@ class ProfilController extends Controller
         'link_surat_kesiapan.required' => 'Surat kesiapan mahasiswa wajib diisi',
         'link_surat_kesiapan.mimes' => 'File surat kesiapan harus format PDF',
         'link_surat_kesiapan.max' => 'File surat kesiapan maksimal 500kb',
+        'link_transkrip_nilai.mimes' => 'File transkrip nilai harus format PDF',
+        'link_transkrip_nilai.max' => 'File transkrip nilai maksimal 500kb',
     ];
 
     // Validasi

@@ -140,6 +140,7 @@ const Profil = ({
 }) => {
     const [notify, setNotify] = useState(false);
     const [notifyStatus, setNotifyStatus] = useState("info");
+    const [customMessage, setCustomMessage] = useState("");
     const [loadingPreview, setLoadingPreview] = useState(false);
     const [addressTab, setAddressTab] = useState(0);
 
@@ -791,8 +792,19 @@ const Profil = ({
     const handleSuratPernyataanChange = useCallback(
         (e) => {
             const file = e.target.files[0];
+            if (file) {
+                const maxSize = 500 * 1024; // 500 KB
+                if (file.size > maxSize) {
+                    setCustomMessage(`File "${file.name}" terlalu besar! Ukuran file maksimal adalah 500 KB.`);
+                    setNotifyStatus("error");
+                    setNotify(true);
+                    e.target.value = ""; // Reset the input file selection
+                    return;
+                }
+            }
             setSuratPernyataan(file);
             setData("link_surat_pernyataan", file);
+            setCustomMessage(""); // Clear custom warning
         },
         [setData]
     );
@@ -800,8 +812,19 @@ const Profil = ({
     const handleSuratKesiapanChange = useCallback(
         (e) => {
             const file = e.target.files[0];
+            if (file) {
+                const maxSize = 500 * 1024; // 500 KB
+                if (file.size > maxSize) {
+                    setCustomMessage(`File "${file.name}" terlalu besar! Ukuran file maksimal adalah 500 KB.`);
+                    setNotifyStatus("error");
+                    setNotify(true);
+                    e.target.value = ""; // Reset the input file selection
+                    return;
+                }
+            }
             setSuratKesiapan(file);
             setData("link_surat_kesiapan", file);
+            setCustomMessage(""); // Clear custom warning
         },
         [setData]
     );
@@ -1336,7 +1359,9 @@ const Profil = ({
                 onClose={handleCloseNotify}
             >
                 <Alert onClose={handleCloseNotify} severity={notifyStatus} variant="filled" sx={{ width: "100%" }}>
-                    {flash?.message ? (
+                    {customMessage ? (
+                        customMessage
+                    ) : flash?.message ? (
                         flash.message[notifyStatus] || flash.message.success || flash.message.error || "Terjadi kesalahan"
                     ) : Object.keys(errors).length > 0 ? (
                         "Terdapat kesalahan pada form. Periksa kembali seluruh input yang wajib diisi."

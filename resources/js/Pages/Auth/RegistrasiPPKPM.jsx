@@ -172,6 +172,7 @@ const VisuallyHiddenInput = styled("input")({
 export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) {
     const [notify, setNotify] = useState(false);
     const [notifyStatus, setNotifyStatus] = useState("info");
+    const [customMessage, setCustomMessage] = useState("");
     const [loadingPreview, setLoadingPreview] = useState(false);
     const [addressTab, setAddressTab] = useState(0);
 
@@ -388,6 +389,24 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
         }
     }, [errors]);
 
+    const handleFileChange = useCallback(
+        (type, file, e) => {
+            if (file) {
+                const maxSize = 500 * 1024; // 500 KB
+                if (file.size > maxSize) {
+                    setCustomMessage(`File "${file.name}" terlalu besar! Ukuran file maksimal adalah 500 KB.`);
+                    setNotifyStatus("error");
+                    setNotify(true);
+                    if (e) e.target.value = ""; // Reset the input file selection
+                    return;
+                }
+            }
+            setData(type, file);
+            setCustomMessage(""); // Clear custom warning
+        },
+        [setData]
+    );
+
     const FileUploadSection = ({ file, type, title, description, icon: Icon, error, templateUrl }) => {
         return (
             <Card variant="outlined" sx={{ mb: 2, position: "relative", borderColor: error ? "error.main" : "divider" }}>
@@ -438,7 +457,7 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
                         fullWidth
                     >
                         {file ? "Ganti File" : "Unggah File (PDF)"}
-                        <VisuallyHiddenInput type="file" accept="application/pdf" onChange={(e) => setData(type, e.target.files[0])} />
+                        <VisuallyHiddenInput type="file" accept="application/pdf" onChange={(e) => handleFileChange(type, e.target.files[0], e)} />
                     </Button>
                     {file && <Typography variant="caption" sx={{ mt: 1, display: "block" }}>Selected: {file.name}</Typography>}
                     {error && <Typography variant="caption" color="error" sx={{ mt: 1, display: "block" }}>{error}</Typography>}
@@ -1029,22 +1048,28 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
 
             {/* Snackbar global error validasi */}
             <Snackbar
-                open={notify && notifyStatus === "error"}
+                open={notify}
                 autoHideDuration={6000}
                 onClose={() => setNotify(false)}
                 anchorOrigin={{ vertical: "top", horizontal: "center" }}
             >
                 <Alert
                     onClose={() => setNotify(false)}
-                    severity="error"
+                    severity={notifyStatus}
                     variant="filled"
                     sx={{ width: "100%", borderRadius: 2 }}
                 >
-                    <strong>Terdapat kesalahan pada form.</strong> Mohon periksa kembali form yang wajib diisi.
-                    {allErrors.id_prodi && (
-                        <div style={{ fontSize: "0.85rem", marginTop: 4 }}>
-                            ⚠ Program Studi: {errors.id_prodi}
-                        </div>
+                    {customMessage ? (
+                        customMessage
+                    ) : (
+                        <>
+                            <strong>Terdapat kesalahan pada form.</strong> Mohon periksa kembali form yang wajib diisi.
+                            {allErrors.id_prodi && (
+                                <div style={{ fontSize: "0.85rem", marginTop: 4 }}>
+                                    ⚠ Program Studi: {errors.id_prodi}
+                                </div>
+                            )}
+                        </>
                     )}
                 </Alert>
             </Snackbar>

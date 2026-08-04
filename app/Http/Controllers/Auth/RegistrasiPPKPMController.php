@@ -103,9 +103,9 @@ class RegistrasiPPKPMController extends Controller
             'village_code_now'     => 'required|string',
 
             // Dokumen
-            'link_transkrip_nilai'  => 'nullable|file|mimes:pdf|max:512',
-            'link_surat_pernyataan' => 'required|file|mimes:pdf|max:512',
-            'link_surat_kesiapan'   => 'required|file|mimes:pdf|max:512',
+            'link_transkrip_nilai'  => 'nullable|file|mimes:pdf|max:500',
+            'link_surat_pernyataan' => 'required|file|mimes:pdf|max:500',
+            'link_surat_kesiapan'   => 'required|file|mimes:pdf|max:500',
         ], [
             'email.unique'                   => 'Email ini sudah terdaftar. Gunakan email lain atau login.',
             'id_prodi.exists'                => 'Program studi tidak ditemukan.',

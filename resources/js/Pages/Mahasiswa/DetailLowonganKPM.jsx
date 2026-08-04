@@ -664,14 +664,13 @@ const DetailLowonganKPM = ({ flash, tempat_kpm, pelamar }) => {
                                                             <Chip
                                                                 label={
                                                                     item.jk ===
-                                                                    "L"
+                                                                        "Pria"
                                                                         ? "Laki-laki"
                                                                         : "Perempuan"
                                                                 }
                                                                 size="small"
                                                                 color={
-                                                                    item.jk ===
-                                                                    "L"
+                                                                    (item.jk === "Pria" || item.jk === "L")
                                                                         ? "info"
                                                                         : "secondary"
                                                                 }

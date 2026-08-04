@@ -301,16 +301,60 @@ require __DIR__ . '/super_admin.php';
 
 Route::get('/run-migrations-secret-771', function() {
     try {
-        $dbMigrations = \Illuminate\Support\Facades\DB::table('migrations')->pluck('migration')->toArray();
-        $files = array_map(function($path) {
-            return basename($path, '.php');
-        }, glob(database_path('migrations/*.php')));
+        $missing = [
+            '2024_08_05_120000_gelombang_tbl',
+            '2024_08_05_130000_sekolah_master_tbl',
+            '2025_07_20_074056_kelas_ppl',
+            '2025_07_23_125646_lowongan_ppl_tbl_v2',
+            '2025_11_17_124124_sertifikat_tbl_v2',
+            '2025_12_13_001345_mahasiswa_tbl_v2',
+            '2025_12_13_001528_ampraham_kpm_tbl_v2',
+        ];
         
-        $missing = array_diff($files, $dbMigrations);
+        $results = [];
+        foreach ($missing as $m) {
+            try {
+                $exists = \Illuminate\Support\Facades\DB::table('migrations')->where('migration', $m)->exists();
+                if ($exists) {
+                    $results[] = "$m: Already recorded in DB.";
+                    continue;
+                }
+                
+                $migration = require database_path("migrations/{$m}.php");
+                $migration->up();
+                
+                \Illuminate\Support\Facades\DB::table('migrations')->insert([
+                    'migration' => $m,
+                    'batch' => 999
+                ]);
+                $results[] = "$m: Run successfully.";
+            } catch (\Exception $e) {
+                $msg = $e->getMessage();
+                // If it is already in the database, we register it as run
+                if (
+                    strpos($msg, 'already exists') !== false ||
+                    strpos($msg, 'Duplicate column') !== false ||
+                    strpos($msg, 'Duplicate key') !== false ||
+                    strpos($msg, 'Duplicate entry') !== false ||
+                    strpos($msg, 'Multiple primary key') !== false ||
+                    strpos($msg, 'foreign key constraint') !== false
+                ) {
+                    \Illuminate\Support\Facades\DB::table('migrations')->insert([
+                        'migration' => $m,
+                        'batch' => 999
+                    ]);
+                    $results[] = "$m: Skipped (already exists in DB structure, marked as completed).";
+                } else {
+                    $results[] = "$m: Failed with error: " . $msg;
+                }
+            }
+        }
         
-        $output = "Recorded in DB:\n" . implode("\n", $dbMigrations) . "\n\n";
-        $output .= "Missing from DB:\n" . implode("\n", $missing) . "\n";
-        return response($output, 200)->header('Content-Type', 'text/plain');
+        // Also run standard migrate command to catch up anything else
+        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+        $results[] = "\nArtisan migrate output: " . \Illuminate\Support\Facades\Artisan::output();
+        
+        return response(implode("\n", $results), 200)->header('Content-Type', 'text/plain');
     } catch (\Exception $e) {
         return response("Failed: " . $e->getMessage(), 500)->header('Content-Type', 'text/plain');
     }

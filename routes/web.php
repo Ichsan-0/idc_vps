@@ -301,11 +301,17 @@ require __DIR__ . '/super_admin.php';
 
 Route::get('/run-migrations-secret-771', function() {
     try {
-        $output = '';
-        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
-        $output .= "Migration status: " . \Illuminate\Support\Facades\Artisan::output() . "\n";
+        $dbMigrations = \Illuminate\Support\Facades\DB::table('migrations')->pluck('migration')->toArray();
+        $files = array_map(function($path) {
+            return basename($path, '.php');
+        }, glob(database_path('migrations/*.php')));
+        
+        $missing = array_diff($files, $dbMigrations);
+        
+        $output = "Recorded in DB:\n" . implode("\n", $dbMigrations) . "\n\n";
+        $output .= "Missing from DB:\n" . implode("\n", $missing) . "\n";
         return response($output, 200)->header('Content-Type', 'text/plain');
     } catch (\Exception $e) {
-        return response("Migration failed: " . $e->getMessage(), 500)->header('Content-Type', 'text/plain');
+        return response("Failed: " . $e->getMessage(), 500)->header('Content-Type', 'text/plain');
     }
 });

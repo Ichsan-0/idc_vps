@@ -298,28 +298,3 @@ Route::middleware('auth')->group(function () {
 
 require __DIR__ . '/auth.php';
 require __DIR__ . '/super_admin.php';
-
-Route::get('/create-storage-link-secret-771', function() {
-    try {
-        $storagePath = public_path('storage');
-        $output = '';
-        
-        if (file_exists($storagePath) || is_link($storagePath)) {
-            $output .= "Existing storage path found. Removing it...\n";
-            if (is_dir($storagePath) && !is_link($storagePath)) {
-                rename($storagePath, $storagePath . '_backup_' . time());
-                $output .= "Renamed existing physical storage directory to backup.\n";
-            } else {
-                unlink($storagePath);
-                $output .= "Deleted existing symlink.\n";
-            }
-        }
-        
-        \Illuminate\Support\Facades\Artisan::call('storage:link');
-        $output .= "Storage link output: " . \Illuminate\Support\Facades\Artisan::output() . "\n";
-        
-        return response($output, 200)->header('Content-Type', 'text/plain');
-    } catch (\Exception $e) {
-        return response("Failed: " . $e->getMessage(), 500)->header('Content-Type', 'text/plain');
-    }
-});

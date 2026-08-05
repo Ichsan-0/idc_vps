@@ -30,11 +30,8 @@ class ProfilController extends Controller
     {
         $user = Auth::user()->username;
         $prodi = Prodi::all();
-        $link_grup = "";
-        $user_data = Mahasiswa::where('nim', $user)->first();
-        if ($user_data && $user_data->status === 'accepted') {
-            $link_grup = Data::all()->first()->link_grup;
-        }
+        $data_first = Data::first();
+        $link_grup = $data_first ? $data_first->link_grup : "";
         $mahasiswa = User::where('username', $user)->with('dataMahasiswa')->first();
         return Inertia::render('Mahasiswa/profil', [
             'mahasiswa' => $mahasiswa,

@@ -1,1 +1,0 @@
-import{r as n}from"./app-CT6hT6pN.js";import{y as r,e as s}from"./createSvgIcon-CSETMTT_.js";function o(e){return Object.keys(e).length===0}function m(e=null){const t=n.useContext(r);return!t||o(t)?e:t}const u=s();function h(e=u){return m(e)}export{m as a,h as u};

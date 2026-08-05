@@ -1,1 +1,0 @@
-import{j as s}from"./app-CT6hT6pN.js";const a=({className:n})=>s.jsxs("div",{className:`loading-on-btn ${n}`,children:[s.jsx("span",{}),s.jsx("span",{}),s.jsx("span",{}),s.jsx("span",{}),s.jsx("span",{})]}),t=a;export{t as L};

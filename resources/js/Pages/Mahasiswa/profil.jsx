@@ -1633,8 +1633,8 @@ const Profil = ({
                         </Alert>
                     )}
 
-                    {/* Link Grup WA (jika accepted) */}
-                    {link_grup && mahasiswa?.data_mahasiswa?.status === "accepted" && (
+                    {/* Link Grup WA */}
+                    {link_grup && (
                         <Paper elevation={0} sx={{ mb: 3, p: 3, borderRadius: 3, border: "1px solid", borderColor: "success.light", borderLeft: "6px solid", borderLeftColor: "success.main", backgroundColor: "#f0fdf4" }}>
                             <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, alignItems: "center", justifyContent: "space-between", gap: 2 }}>
                                 <Box>
@@ -1642,7 +1642,7 @@ const Profil = ({
                                         <FaWhatsapp style={{ fontSize: "1.4rem" }} /> Grup WhatsApp
                                     </Typography>
                                     <Typography variant="body2" color="text.secondary">
-                                        Selamat! Pendaftaran Anda diterima. Bergabunglah ke grup WhatsApp untuk koordinasi lebih lanjut.
+                                        Silakan bergabung ke grup WhatsApp untuk koordinasi dan informasi lebih lanjut.
                                     </Typography>
                                 </Box>
                                 <Button component="a" href={link_grup} target="_blank" rel="noopener noreferrer" variant="contained"

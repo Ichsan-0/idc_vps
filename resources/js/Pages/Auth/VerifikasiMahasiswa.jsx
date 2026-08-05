@@ -68,6 +68,7 @@ export default function VerifikasiMahasiswa() {
     const [notif, setNotif] = useState(false);
     const [dateValue, setDateValue] = useState(data.tanggal_lahir ? dayjs(data.tanggal_lahir) : null);
     const [microWarningOpen, setMicroWarningOpen] = useState(false);
+    const [warningData, setWarningData] = useState(null);
 
     useEffect(() => {
         if (errors.nim || errors.tanggal_lahir) {
@@ -78,6 +79,7 @@ export default function VerifikasiMahasiswa() {
     // Buka popup saat flash micro_warning diterima dari redirect
     useEffect(() => {
         if (flash?.micro_warning) {
+            setWarningData(flash.micro_warning);
             setMicroWarningOpen(true);
         }
     }, [flash?.micro_warning]);
@@ -182,76 +184,97 @@ export default function VerifikasiMahasiswa() {
             </div>
 
             {/* Pop-up Peringatan Nilai Micro Teaching - di luar grid agar tampil sebagai overlay penuh */}
-            <Dialog
-                open={microWarningOpen}
-                onClose={() => setMicroWarningOpen(false)}
-                maxWidth="sm"
-                fullWidth
-                PaperProps={{
-                    style: {
-                        borderRadius: "16px",
-                        padding: "8px",
-                    },
-                }}
-            >
-                <DialogTitle
-                    sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1.5,
-                        fontWeight: 700,
-                        fontSize: "1.15rem",
-                        color: "#b45309",
-                        pb: 0,
-                    }}
-                >
-                    <span style={{ fontSize: "1.5rem" }}>⚠️</span>
-                    Nilai Micro Teaching Belum Ada
-                </DialogTitle>
+            {(() => {
+                const isMpi = warningData?.is_mpi || false;
+                const warningType = warningData?.type || (warningData === true ? 'not_found' : '');
+                const userGrade = warningData?.nilai || '';
 
-                <DialogContent sx={{ pt: 2 }}>
-                    <div
-                        style={{
-                            backgroundColor: "#fefce8",
-                            border: "1px solid #fde68a",
-                            borderRadius: "12px",
-                            padding: "16px",
-                            marginBottom: "12px",
+                const courseName = isMpi 
+                    ? "Micro Profesi / Program Latihan Profesi (PLP) I" 
+                    : "Micro Teaching";
+
+                let dialogTitle = `Nilai ${courseName} Belum Ada`;
+                let messageTitle = `Saat ini nilai ${courseName} Anda belum tersedia.`;
+                let messageContent = `Silahkan hubungi dosen/koordinator program studi Anda untuk memastikan nilai ${courseName} telah diinputkan ke sistem akademik, atau coba verifikasi kembali beberapa saat setelah nilai telah diproses.`;
+                let footerMessage = `Pendaftaran tidak dapat dilanjutkan sampai nilai ${courseName} Anda tersedia di SIAKAD / SEVIMA.`;
+
+                if (warningType === 'under_grade') {
+                    dialogTitle = `Nilai ${courseName} Tidak Memenuhi Syarat`;
+                    messageTitle = `Nilai ${courseName} Anda (${userGrade}) di bawah batas minimal B-.`;
+                    messageContent = `Berdasarkan persyaratan pendaftaran, nilai mata kuliah ${courseName} minimal harus mendapatkan indeks nilai B-. Nilai Anda saat ini (${userGrade}) tidak diizinkan untuk mendaftar.`;
+                    footerMessage = `Pendaftaran tidak dapat dilanjutkan karena nilai ${courseName} Anda tidak memenuhi syarat minimal B-.`;
+                }
+
+                return (
+                    <Dialog
+                        open={microWarningOpen}
+                        onClose={() => setMicroWarningOpen(false)}
+                        maxWidth="sm"
+                        fullWidth
+                        PaperProps={{
+                            style: {
+                                borderRadius: "16px",
+                                padding: "8px",
+                            },
                         }}
                     >
-                        <p style={{ margin: 0, color: "#78350f", fontWeight: 600, marginBottom: "6px" }}>
-                            Saat ini nilai Micro Teaching Anda belum tersedia.
-                        </p>
-                        <p style={{ margin: 0, color: "#92400e", fontSize: "0.9rem", lineHeight: 1.6 }}>
-                            Silahkan hubungi dosen/koordinator program studi Anda untuk memastikan
-                            nilai Micro Teaching telah diinputkan ke sistem akademik, atau coba
-                            verifikasi kembali beberapa saat setelah nilai telah diproses.
-                        </p>
-                    </div>
-                    <p style={{ margin: 0, color: "#6b7280", fontSize: "0.85rem" }}>
-                        Pendaftaran <strong>tidak dapat dilanjutkan</strong> sampai nilai Micro Teaching
-                        Anda tersedia di SIAKAD / SEVIMA.
-                    </p>
-                </DialogContent>
+                        <DialogTitle
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1.5,
+                                fontWeight: 700,
+                                fontSize: "1.15rem",
+                                color: "#b45309",
+                                pb: 0,
+                            }}
+                        >
+                            <span style={{ fontSize: "1.5rem" }}>⚠️</span>
+                            {dialogTitle}
+                        </DialogTitle>
 
-                <DialogActions sx={{ px: 3, pb: 2.5, justifyContent: "center" }}>
-                    <Button
-                        onClick={() => setMicroWarningOpen(false)}
-                        variant="contained"
-                        sx={{
-                            borderRadius: "10px",
-                            textTransform: "none",
-                            fontWeight: 600,
-                            backgroundColor: "#eab308",
-                            "&:hover": { backgroundColor: "#ca8a04" },
-                            boxShadow: "none",
-                            px: 4,
-                        }}
-                    >
-                        Tutup
-                    </Button>
-                </DialogActions>
-            </Dialog>
+                        <DialogContent sx={{ pt: 2 }}>
+                            <div
+                                style={{
+                                    backgroundColor: "#fefce8",
+                                    border: "1px solid #fde68a",
+                                    borderRadius: "12px",
+                                    padding: "16px",
+                                    marginBottom: "12px",
+                                }}
+                            >
+                                <p style={{ margin: 0, color: "#78350f", fontWeight: 600, marginBottom: "6px" }}>
+                                    {messageTitle}
+                                </p>
+                                <p style={{ margin: 0, color: "#92400e", fontSize: "0.9rem", lineHeight: 1.6 }}>
+                                    {messageContent}
+                                </p>
+                            </div>
+                            <p style={{ margin: 0, color: "#6b7280", fontSize: "0.85rem" }}>
+                                {footerMessage}
+                            </p>
+                        </DialogContent>
+
+                        <DialogActions sx={{ px: 3, pb: 2.5, justifyContent: "center" }}>
+                            <Button
+                                onClick={() => setMicroWarningOpen(false)}
+                                variant="contained"
+                                sx={{
+                                    borderRadius: "10px",
+                                    textTransform: "none",
+                                    fontWeight: 600,
+                                    backgroundColor: "#eab308",
+                                    "&:hover": { backgroundColor: "#ca8a04" },
+                                    boxShadow: "none",
+                                    px: 4,
+                                }}
+                            >
+                                Tutup
+                            </Button>
+                        </DialogActions>
+                    </Dialog>
+                );
+            })()}
         </ThemeProvider>
     );
 }

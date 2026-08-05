@@ -159,6 +159,10 @@ class VerifikasiMahasiswaController extends Controller
                 }
             }
 
+            // Determine if MPI student
+            $prodiName = isset($attributes['program_studi']) ? trim($attributes['program_studi']) : '';
+            $isMpi = (stripos($prodiName, 'Manajemen Pendidikan Islam') !== false) || (stripos($prodiName, 'MPI') !== false);
+
             // Fetch transkrip data API
             $transkripResponse = $sevima->getTranskripMahasiswa($request->nim);
             $nilaiMicroTeaching = '';
@@ -170,8 +174,22 @@ class VerifikasiMahasiswaController extends Controller
                 if (is_array($transkripData) && count($transkripData) > 0) {
                     foreach ($transkripData as $item) {
                         if (isset($item['attributes']['nama_mata_kuliah'])) {
-                            $namaMk = strtolower(trim($item['attributes']['nama_mata_kuliah']));
-                            if ($namaMk === 'micro teaching' || $namaMk === 'microteaching') {
+                            $cleanedMk = strtolower(trim($item['attributes']['nama_mata_kuliah']));
+                            $cleanedMk = preg_replace('/\s+/', ' ', $cleanedMk);
+
+                            $isMatch = false;
+                            if ($isMpi) {
+                                $isMatch = ($cleanedMk === 'micro profesi / program latihan profesi (plp) i') ||
+                                           ($cleanedMk === 'micro profesi/program latihan profesi (plp) i') ||
+                                           ($cleanedMk === 'micro profesi / program latihan profesi (plp) 1') ||
+                                           ($cleanedMk === 'micro profesi/program latihan profesi (plp) 1') ||
+                                           (strpos($cleanedMk, 'micro profesi') !== false) ||
+                                           (strpos($cleanedMk, 'program latihan profesi') !== false && strpos($cleanedMk, 'plp') !== false);
+                            } else {
+                                $isMatch = ($cleanedMk === 'micro teaching' || $cleanedMk === 'microteaching');
+                            }
+
+                            if ($isMatch) {
                                 // Defaulting to nilai_huruf, but fallback to nilai if it's named differently
                                 $nilaiMicroTeaching = $item['attributes']['nilai_huruf'] ?? $item['attributes']['nilai'] ?? '';
                                 break;
@@ -185,7 +203,7 @@ class VerifikasiMahasiswaController extends Controller
             $verifiedData = [
                 'nim'            => $attributes['nim']            ?? $request->nim,
                 'nama'           => $attributes['nama']           ?? null,
-                'tanggal_lahir'  => $tglLahirNormal,
+                'tanggal_lahir'  => $tglLiarNormal ?? $tglLahirNormal,
                 'jenis_kelamin'  => $attributes['jenis_kelamin']  ?? null,
                 'tempat_lahir'   => $attributes['tempat_lahir']   ?? null,
                 'agama'          => $attributes['agama']          ?? null,
@@ -200,15 +218,30 @@ class VerifikasiMahasiswaController extends Controller
                 'nilai_micro_teaching' => $nilaiMicroTeaching,
             ];
 
-            // Jika nilai micro teaching belum ada, jangan simpan session
-            // dan redirect balik ke halaman verifikasi dengan flash warning
+            // 1. Jika nilai micro teaching belum ada
             if (empty($nilaiMicroTeaching)) {
                 return redirect()
                     ->route('verifikasi.mahasiswa')
-                    ->with('micro_warning', true);
+                    ->with('micro_warning', [
+                        'type' => 'not_found',
+                        'is_mpi' => $isMpi,
+                    ]);
             }
 
-            // Nilai micro ada → simpan session dan lanjut ke registrasi
+            // 2. Jika nilai di bawah B-
+            $nilaiClean = strtoupper(trim($nilaiMicroTeaching));
+            $validGrades = ['A', 'A-', 'B+', 'B', 'B-'];
+            if (!in_array($nilaiClean, $validGrades)) {
+                return redirect()
+                    ->route('verifikasi.mahasiswa')
+                    ->with('micro_warning', [
+                        'type' => 'under_grade',
+                        'nilai' => $nilaiMicroTeaching,
+                        'is_mpi' => $isMpi,
+                    ]);
+            }
+
+            // Nilai micro ada dan sesuai syarat → simpan session dan lanjut ke registrasi
             session(['verified_mahasiswa' => $verifiedData]);
 
             return redirect()->route('registrasi.ppkpm');

@@ -836,7 +836,7 @@ export default function RegistrasiPPKPM({ verifiedData, list_prodi, base_url }) 
                         </Typography>
                         <ul className="list-decimal list-inside space-y-2 mt-2">
                             <li><Typography component="span" variant="body1">Berstatus sebagai mahasiswa aktif.</Typography></li>
-                            <li><Typography component="span" variant="body1">Telah lulus Mata Kuliah Microteaching dengan nilai minimal C.</Typography></li>
+                            <li><Typography component="span" variant="body1">Telah lulus Mata Kuliah Microteaching / Micro Profesi dengan nilai minimal B-.</Typography></li>
                             <li><Typography component="span" variant="body1">Apabila terdapat kesalahan data (misalnya alamat asal dan data pribadi lainnya), agar segera melakukan perbaikan melalui halaman profil pada akun SEVIMA masing-masing.</Typography></li>
                         </ul>
                     </Box>

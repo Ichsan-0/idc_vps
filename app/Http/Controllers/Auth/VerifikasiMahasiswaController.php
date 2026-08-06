@@ -166,6 +166,7 @@ class VerifikasiMahasiswaController extends Controller
             // Fetch transkrip data API
             $transkripResponse = $sevima->getTranskripMahasiswa($request->nim);
             $nilaiMicroTeaching = '';
+            $sksDiambil = 0;
 
             if ($transkripResponse->successful()) {
                 $transkripJson = $transkripResponse->json();
@@ -173,8 +174,14 @@ class VerifikasiMahasiswaController extends Controller
 
                 if (is_array($transkripData) && count($transkripData) > 0) {
                     foreach ($transkripData as $item) {
-                        if (isset($item['attributes']['nama_mata_kuliah'])) {
-                            $cleanedMk = strtolower(trim($item['attributes']['nama_mata_kuliah']));
+                        $attrs = $item['attributes'] ?? [];
+                        
+                        // Hitung total SKS diambil
+                        $sks = (float)($attrs['sks_mata_kuliah'] ?? $attrs['sks'] ?? 0);
+                        $sksDiambil += $sks;
+
+                        if (isset($attrs['nama_mata_kuliah']) && empty($nilaiMicroTeaching)) {
+                            $cleanedMk = strtolower(trim($attrs['nama_mata_kuliah']));
                             $cleanedMk = preg_replace('/\s+/', ' ', $cleanedMk);
 
                             $isMatch = false;
@@ -191,8 +198,7 @@ class VerifikasiMahasiswaController extends Controller
 
                             if ($isMatch) {
                                 // Defaulting to nilai_huruf, but fallback to nilai if it's named differently
-                                $nilaiMicroTeaching = $item['attributes']['nilai_huruf'] ?? $item['attributes']['nilai'] ?? '';
-                                break;
+                                $nilaiMicroTeaching = $attrs['nilai_huruf'] ?? $attrs['nilai'] ?? '';
                             }
                         }
                     }
@@ -216,6 +222,7 @@ class VerifikasiMahasiswaController extends Controller
                 'semester'       => $semesterPerwalian,
                 'ipk'            => $ipkPerwalian,
                 'nilai_micro_teaching' => $nilaiMicroTeaching,
+                'sks_diambil'    => $sksDiambil,
             ];
 
             // 1. Jika nilai micro teaching belum ada
@@ -225,6 +232,7 @@ class VerifikasiMahasiswaController extends Controller
                     ->with('micro_warning', [
                         'type' => 'not_found',
                         'is_mpi' => $isMpi,
+                        'sks_diambil' => $sksDiambil,
                     ]);
             }
 
@@ -237,6 +245,18 @@ class VerifikasiMahasiswaController extends Controller
                     ->with('micro_warning', [
                         'type' => 'under_grade',
                         'nilai' => $nilaiMicroTeaching,
+                        'is_mpi' => $isMpi,
+                        'sks_diambil' => $sksDiambil,
+                    ]);
+            }
+
+            // 3. Jika total SKS di bawah 132 SKS
+            if ($sksDiambil < 132) {
+                return redirect()
+                    ->route('verifikasi.mahasiswa')
+                    ->with('micro_warning', [
+                        'type' => 'insufficient_sks',
+                        'sks_diambil' => $sksDiambil,
                         'is_mpi' => $isMpi,
                     ]);
             }

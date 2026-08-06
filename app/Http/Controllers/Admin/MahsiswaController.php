@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Services\SevimaService;
 
 
 class MahsiswaController extends Controller
@@ -294,5 +295,25 @@ class MahsiswaController extends Controller
     {
         $idGelombang = $request->input('idGelombang');
         return Excel::download(new StudentExport($idGelombang), 'Mahasiswa PPKPM.xlsx');
+    }
+
+    public function getTranskrip(Request $request, SevimaService $sevima)
+    {
+        $nim = $request->query('nim');
+        if (!$nim) {
+            return response()->json(['error' => 'NIM wajib disertakan.'], 400);
+        }
+
+        try {
+            $response = $sevima->getTranskripMahasiswa($nim);
+
+            if ($response->failed()) {
+                return response()->json(['error' => 'Gagal menghubungi server Sevima.'], 500);
+            }
+
+            return response()->json($response->json());
+        } catch (Exception $e) {
+            return response()->json(['error' => 'Terjadi kesalahan sistem: ' . $e->getMessage()], 500);
+        }
     }
 }

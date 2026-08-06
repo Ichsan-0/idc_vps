@@ -2,14 +2,15 @@ import DynamicModal from "@/Components/DynamicModal";
 import PageBreadcrumb from "@/Components/PageBreadcrumb";
 import { useModal } from "@/Hooks/useModal";
 import AdminLayout from "@/Layouts/Admin/AdminLayout";
-import { Autocomplete, MenuItem, Select, TextField } from "@mui/material";
+import { Autocomplete, MenuItem, Select, TextField, Modal, Box, CircularProgress, IconButton, Typography, Divider } from "@mui/material";
 import { useState } from "react";
 import Button from "@/Components/Button";
 import MasterSekolahViewSkeleton from "@/Components/AdminNew/MasterSekolahViewSkeleton";
 import axios from "axios";
 import { config } from "@/config/config";
-import { useEffect } from "react";
-import { desa, kabupaten, kecamatan } from "daftar-wilayah-indonesia";
+import { useEffect, useMemo } from "react";
+import { provinsi, desa, kabupaten, kecamatan } from "daftar-wilayah-indonesia";
+import { FaTimes, FaEye } from "react-icons/fa";
 import LoaderOnButton from "@/Components/LoaderOnButtn";
 import { getMappingStatus } from "@/Utils/utils";
 
@@ -48,6 +49,57 @@ export default function DetailStudent({ id, base_url }) {
         { value: "rejected", label: "Ditolak" },
         { value: "revisi", label: "Revisi" }
     ]);
+    
+    // Transkrip states & logic
+    const [transkripOpen, setTranskripOpen] = useState(false);
+    const [transkripData, setTranskripData] = useState([]);
+    const [loadingTranskrip, setLoadingTranskrip] = useState(false);
+
+    const handleFetchTranskrip = async () => {
+        if (!formData?.nim) return;
+        setLoadingTranskrip(true);
+        setTranskripOpen(true);
+        try {
+            const response = await axios.get(
+                `${config.base_url}/api/admin/users/student/transkrip?nim=${formData.nim}`
+            );
+            setTranskripData(response.data.data || []);
+        } catch (error) {
+            console.error("Error fetching transkrip:", error);
+            alert(error.response?.data?.error || "Gagal memuat transkrip nilai.");
+            setTranskripOpen(false);
+        } finally {
+            setLoadingTranskrip(false);
+        }
+    };
+
+    const transkripStats = useMemo(() => {
+        let sksDiambil = 0;
+        let sksLulus = 0;
+        let totalMutu = 0;
+
+        transkripData.forEach((item) => {
+            const attrs = item.attributes || {};
+            const sks = parseFloat(attrs.sks_mata_kuliah || attrs.sks || 0);
+            const bobot = parseFloat(attrs.bobot_mata_kuliah || attrs.bobot || 0);
+            const lulus = attrs.is_lulus === "1" || attrs.is_lulus === true;
+
+            sksDiambil += sks;
+            if (lulus) {
+                sksLulus += sks;
+            }
+            totalMutu += bobot;
+        });
+
+        const calculatedIpk = sksDiambil > 0 ? (totalMutu / sksDiambil).toFixed(2) : "0.00";
+
+        return {
+            sksDiambil,
+            sksLulus,
+            totalMutu: totalMutu.toFixed(2),
+            ipk: calculatedIpk,
+        };
+    }, [transkripData]);
     
     const [dataKabupatenAsal, setDataKabupatenAsal] = useState([]);
     const [dataKecamatanAsal, setDataKecamatanAsal] = useState([]);
@@ -336,7 +388,7 @@ export default function DetailStudent({ id, base_url }) {
                                                     Provinsi
                                                 </p>
                                                 <p className="text-sm text-gray-800 dark:text-white/90">
-                                                    {getNamaWilayah(formData?.provinsi_asal, kabupaten("11"))}
+                                                     {getNamaWilayah(formData?.provinsi_asal, provinsi())}
                                                 </p>
                                             </div>
                                             <div>
@@ -377,7 +429,7 @@ export default function DetailStudent({ id, base_url }) {
                                                     Provinsi
                                                 </p>
                                                 <p className="text-sm text-gray-800 dark:text-white/90">
-                                                    {getNamaWilayah(formData?.provinsi_sekarang, kabupaten("11"))}
+                                                    {getNamaWilayah(formData?.provinsi_sekarang, provinsi())}
                                                 </p>
                                             </div>
                                             <div>
@@ -471,6 +523,36 @@ export default function DetailStudent({ id, base_url }) {
                             </div>
 
                             <div className="flex flex-col gap-3 w-full sm:flex-row lg:w-auto">
+                                <button
+                                    onClick={handleFetchTranskrip}
+                                    className="flex w-full items-center justify-center gap-2 rounded-full border border-blue-300 bg-white px-4 py-3 text-sm font-medium text-blue-600 shadow-theme-xs hover:bg-blue-50 hover:text-blue-700 dark:border-blue-700 dark:bg-gray-800 dark:text-blue-400 dark:hover:bg-blue-950/20 lg:inline-flex lg:w-auto"
+                                    disabled={loadingTranskrip}
+                                >
+                                    <svg
+                                        className="fill-none stroke-current"
+                                        width="18"
+                                        height="18"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                        <path
+                                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        />
+                                        <path
+                                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        />
+                                    </svg>
+                                    {loadingTranskrip ? "Memuat..." : "Lihat Transkrip Nilai"}
+                                </button>
                                 <button
                                     onClick={handleResetPassword}
                                     className="flex w-full items-center justify-center gap-2 rounded-full border border-red-300 bg-white px-4 py-3 text-sm font-medium text-red-600 shadow-theme-xs hover:bg-red-50 hover:text-red-700 dark:border-red-700 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-950/20 lg:inline-flex lg:w-auto"
@@ -704,6 +786,198 @@ export default function DetailStudent({ id, base_url }) {
                         </form>
                     </div>
                 </DynamicModal>
+
+                {/* Modal Transkrip Sementara */}
+                <Modal
+                    open={transkripOpen}
+                    onClose={() => setTranskripOpen(false)}
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backdropFilter: "blur(4px)",
+                    }}
+                >
+                    <Box
+                        sx={{
+                            width: "90%",
+                            maxWidth: 900,
+                            maxHeight: "90vh",
+                            bgcolor: "background.paper",
+                            borderRadius: 3,
+                            boxShadow: 24,
+                            p: 4,
+                            position: "relative",
+                            overflowY: "auto",
+                        }}
+                    >
+                        <IconButton
+                            onClick={() => setTranskripOpen(false)}
+                            sx={{ position: "absolute", right: 16, top: 16, color: "text.secondary" }}
+                        >
+                            <FaTimes />
+                        </IconButton>
+
+                        {loadingTranskrip ? (
+                            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", py: 8 }}>
+                                <CircularProgress color="primary" />
+                                <Typography sx={{ mt: 2 }}>Memuat Data Transkrip...</Typography>
+                            </Box>
+                        ) : (
+                            <div className="p-2 text-black bg-white" style={{ fontFamily: "serif" }}>
+                                {/* Kop Surat */}
+                                <div className="flex items-center justify-center border-b-4 border-double border-black pb-4 mb-4">
+                                    <img src="/Lambang_UIN_Ar-Raniry.png" className="w-16 h-16 mr-4" alt="Logo UIN" />
+                                    <div className="text-center text-black">
+                                        <h1 className="text-xl font-bold tracking-wide uppercase">UIN Ar-Raniry Banda Aceh</h1>
+                                        <p className="text-xs">Jalan Lingkar Kampus UIN Ar-Raniry, Kota Pelajar Mahasiswa, Darussalam, Banda Aceh</p>
+                                        <p className="text-xs">Website: http://ar-raniry.ac.id / e-Mail: uin@ar-raniry.ac.id / Telepon: 0651-7552921</p>
+                                    </div>
+                                </div>
+
+                                {/* Judul Dokumen */}
+                                <div className="text-center mb-6">
+                                    <h2 className="text-lg font-bold uppercase tracking-widest border-b border-black pb-1 inline-block text-black">
+                                        TRANSKRIP SEMENTARA
+                                    </h2>
+                                </div>
+
+                                {/* Data Mahasiswa */}
+                                <div className="grid grid-cols-2 gap-x-8 gap-y-1 text-sm mb-6 text-black">
+                                    <div className="flex">
+                                        <span className="w-32 font-bold">Program Studi</span>
+                                        <span className="mr-2">:</span>
+                                        <span>{formData?.nama_prodi || "-"}</span>
+                                    </div>
+                                    <div className="flex">
+                                        <span className="w-36 font-bold">Jenjang Pendidikan</span>
+                                        <span className="mr-2">:</span>
+                                        <span>Strata 1 (S1)</span>
+                                    </div>
+                                    <div className="flex">
+                                        <span className="w-32 font-bold">NIM</span>
+                                        <span className="mr-2">:</span>
+                                        <span>{formData?.nim || "-"}</span>
+                                    </div>
+                                    <div className="flex">
+                                        <span className="w-36 font-bold">Nama</span>
+                                        <span className="mr-2">:</span>
+                                        <span className="uppercase">{formData?.name || "-"}</span>
+                                    </div>
+                                    <div className="flex">
+                                        <span className="w-32 font-bold">Tempat Lahir</span>
+                                        <span className="mr-2">:</span>
+                                        <span className="uppercase">{formData?.tempat_lahir || "-"}</span>
+                                    </div>
+                                    <div className="flex">
+                                        <span className="w-36 font-bold">Tahun Masuk</span>
+                                        <span className="mr-2">:</span>
+                                        <span>{formData?.nim && formData?.nim.length >= 2 && !isNaN(formData?.nim.substring(0, 2)) ? "20" + formData?.nim.substring(0, 2) : "-"}</span>
+                                    </div>
+                                    <div className="flex">
+                                        <span className="w-32 font-bold">Tanggal Lahir</span>
+                                        <span className="mr-2">:</span>
+                                        <span>
+                                            {formData?.tanggal_lahir
+                                                ? new Date(formData?.tanggal_lahir).toLocaleDateString("id-ID", {
+                                                    day: "numeric",
+                                                    month: "long",
+                                                    year: "numeric",
+                                                })
+                                                : "-"}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Tabel Transkrip */}
+                                <table className="w-full border-collapse border border-black text-xs mb-6 text-black">
+                                    <thead>
+                                        <tr className="bg-gray-100">
+                                            <th className="border border-black px-2 py-1 text-center w-8">NO</th>
+                                            <th className="border border-black px-2 py-1 text-center w-24">KODE</th>
+                                            <th className="border border-black px-2 py-1 text-left">MATA KULIAH</th>
+                                            <th className="border border-black px-2 py-1 text-center w-16">NILAI</th>
+                                            <th className="border border-black px-2 py-1 text-center w-16">A.M</th>
+                                            <th className="border border-black px-2 py-1 text-center w-12">SKS</th>
+                                            <th className="border border-black px-2 py-1 text-center w-16">BOBOT</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {transkripData.length > 0 ? (
+                                            transkripData.map((item, index) => {
+                                                const attrs = item.attributes || {};
+                                                return (
+                                                    <tr key={item.id || index} className="hover:bg-gray-50">
+                                                        <td className="border border-black px-2 py-1 text-center">{index + 1}</td>
+                                                        <td className="border border-black px-2 py-1 text-center font-mono">{attrs.kode_mata_kuliah || "-"}</td>
+                                                        <td className="border border-black px-2 py-1">{attrs.nama_mata_kuliah || "-"}</td>
+                                                        <td className="border border-black px-2 py-1 text-center">{attrs.nilai_huruf || "-"}</td>
+                                                        <td className="border border-black px-2 py-1 text-center">
+                                                            {parseFloat(attrs.nilai_angka || 0).toFixed(2)}
+                                                        </td>
+                                                        <td className="border border-black px-2 py-1 text-center">{attrs.sks_mata_kuliah || 0}</td>
+                                                        <td className="border border-black px-2 py-1 text-center">
+                                                            {parseFloat(attrs.bobot_mata_kuliah || 0).toFixed(2)}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })
+                                        ) : (
+                                            <tr>
+                                                <td colSpan="7" className="border border-black px-2 py-8 text-center text-gray-500">
+                                                    Tidak ada data transkrip nilai.
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+
+                                {/* Keterangan & Summary */}
+                                <div className="grid grid-cols-2 text-xs border-t border-black pt-4 text-black">
+                                    <div>
+                                        <p className="font-bold mb-1">KETERANGAN</p>
+                                        <div className="grid grid-cols-[40px_10px_1fr] gap-y-0.5">
+                                            <span>SKS</span>
+                                            <span>:</span>
+                                            <span>Satuan Kredit Semester</span>
+
+                                            <span>HM</span>
+                                            <span>:</span>
+                                            <span>Huruf Mutu</span>
+
+                                            <span>AM</span>
+                                            <span>:</span>
+                                            <span>Angka Mutu</span>
+
+                                            <span>M</span>
+                                            <span>:</span>
+                                            <span>Mutu</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col items-end">
+                                        <div className="grid grid-cols-[200px_10px_50px] gap-y-1">
+                                            <span>Jumlah SKS Yang Diambil</span>
+                                            <span>:</span>
+                                            <span className="text-right font-bold">{transkripStats.sksDiambil}</span>
+
+                                            <span>Jumlah SKS Yang Lulus</span>
+                                            <span>:</span>
+                                            <span className="text-right font-bold">{transkripStats.sksLulus}</span>
+
+                                            <span>Jumlah Mutu</span>
+                                            <span>:</span>
+                                            <span className="text-right font-bold">{transkripStats.totalMutu}</span>
+
+                                            <span>Index Prestasi Kumulatif (IPK)</span>
+                                            <span>:</span>
+                                            <span className="text-right font-bold">{transkripStats.ipk}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </Box>
+                </Modal>
             </div>
         </AdminLayout>
     );

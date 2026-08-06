@@ -188,6 +188,7 @@ export default function VerifikasiMahasiswa() {
                 const isMpi = warningData?.is_mpi || false;
                 const warningType = warningData?.type || (warningData === true ? 'not_found' : '');
                 const userGrade = warningData?.nilai || '';
+                const sksDiambil = warningData?.sks_diambil || 0;
 
                 const courseName = isMpi 
                     ? "Micro Profesi / Program Latihan Profesi (PLP) I" 
@@ -203,6 +204,11 @@ export default function VerifikasiMahasiswa() {
                     messageTitle = `Nilai ${courseName} Anda (${userGrade}) di bawah batas minimal B-.`;
                     messageContent = `Berdasarkan persyaratan pendaftaran, nilai mata kuliah ${courseName} minimal harus mendapatkan indeks nilai B-. Nilai Anda saat ini (${userGrade}) tidak diizinkan untuk mendaftar.`;
                     footerMessage = `Pendaftaran tidak dapat dilanjutkan karena nilai ${courseName} Anda tidak memenuhi syarat minimal B-.`;
+                } else if (warningType === 'insufficient_sks') {
+                    dialogTitle = `Jumlah SKS Belum Memenuhi Syarat`;
+                    messageTitle = `Jumlah SKS yang ditempuh belum mencukupi.`;
+                    messageContent = `Berdasarkan persyaratan pendaftaran, Anda wajib sudah menempuh minimal 132 SKS. Saat ini Anda baru menempuh ${sksDiambil} SKS.`;
+                    footerMessage = `Pendaftaran tidak dapat dilanjutkan karena jumlah SKS Anda belum memenuhi syarat minimal 132 SKS.`;
                 }
 
                 return (
@@ -246,9 +252,17 @@ export default function VerifikasiMahasiswa() {
                                 <p style={{ margin: 0, color: "#78350f", fontWeight: 600, marginBottom: "6px" }}>
                                     {messageTitle}
                                 </p>
-                                <p style={{ margin: 0, color: "#92400e", fontSize: "0.9rem", lineHeight: 1.6 }}>
+                                <p style={{ margin: 0, color: "#92400e", fontSize: "0.9rem", lineHeight: 1.6, marginBottom: "12px" }}>
                                     {messageContent}
                                 </p>
+                                <div style={{ borderTop: "1px dashed #fde68a", paddingTop: "8px", marginTop: "8px", fontSize: "0.9rem", color: "#78350f" }}>
+                                    <strong>Status SKS Anda:</strong> {sksDiambil} SKS diambil (Syarat wajib: 132 SKS)
+                                    {sksDiambil >= 132 ? (
+                                        <span style={{ color: "#16a34a", marginLeft: "6px", fontWeight: "bold" }}>✓ Memenuhi Syarat</span>
+                                    ) : (
+                                        <span style={{ color: "#dc2626", marginLeft: "6px", fontWeight: "bold" }}>✗ Belum Memenuhi Syarat</span>
+                                    )}
+                                </div>
                             </div>
                             <p style={{ margin: 0, color: "#6b7280", fontSize: "0.85rem" }}>
                                 {footerMessage}

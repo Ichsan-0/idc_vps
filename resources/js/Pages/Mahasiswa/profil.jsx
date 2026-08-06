@@ -1047,8 +1047,8 @@ const Profil = ({
                                             >
                                                 {file
                                                     ? `Ukuran: ${(
-                                                          file.size / 1024
-                                                      ).toFixed(2)} KB`
+                                                        file.size / 1024
+                                                    ).toFixed(2)} KB`
                                                     : "File tersimpan di server"}
                                             </Typography>
                                         </Box>
@@ -1214,10 +1214,10 @@ const Profil = ({
                                     {...params}
                                     sx={{
                                         "& .MuiOutlinedInput-root.Mui-focused":
-                                            {
-                                                outline: "none",
-                                                boxShadow: "none",
-                                            },
+                                        {
+                                            outline: "none",
+                                            boxShadow: "none",
+                                        },
                                         "& .MuiInputBase-input:focus": {
                                             outline: "none",
                                             boxShadow: "none",
@@ -1249,10 +1249,10 @@ const Profil = ({
                                 <TextField
                                     sx={{
                                         "& .MuiOutlinedInput-root.Mui-focused":
-                                            {
-                                                outline: "none",
-                                                boxShadow: "none",
-                                            },
+                                        {
+                                            outline: "none",
+                                            boxShadow: "none",
+                                        },
                                         "& .MuiInputBase-input:focus": {
                                             outline: "none",
                                             boxShadow: "none",
@@ -1284,10 +1284,10 @@ const Profil = ({
                                     {...params}
                                     sx={{
                                         "& .MuiOutlinedInput-root.Mui-focused":
-                                            {
-                                                outline: "none",
-                                                boxShadow: "none",
-                                            },
+                                        {
+                                            outline: "none",
+                                            boxShadow: "none",
+                                        },
                                         "& .MuiInputBase-input:focus": {
                                             outline: "none",
                                             boxShadow: "none",
@@ -1322,10 +1322,10 @@ const Profil = ({
                                     {...params}
                                     sx={{
                                         "& .MuiOutlinedInput-root.Mui-focused":
-                                            {
-                                                outline: "none",
-                                                boxShadow: "none",
-                                            },
+                                        {
+                                            outline: "none",
+                                            boxShadow: "none",
+                                        },
                                         "& .MuiInputBase-input:focus": {
                                             outline: "none",
                                             boxShadow: "none",
@@ -1588,6 +1588,26 @@ const Profil = ({
                 <div className="w-full max-w-6xl">
 
                     {/* Header */}
+                    {/* Link Grup WA */}
+                    {link_grup && (
+                        <Paper elevation={0} sx={{ mb: 3, p: 3, borderRadius: 3, border: "1px solid", borderColor: "success.light", borderLeft: "6px solid", borderLeftColor: "success.main", backgroundColor: "#f0fdf4" }}>
+                            <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, alignItems: "center", justifyContent: "space-between", gap: 2 }}>
+                                <Box>
+                                    <Typography variant="h6" sx={{ fontWeight: 600, color: "success.main", display: "flex", alignItems: "center", gap: 1 }}>
+                                        <FaWhatsapp style={{ fontSize: "1.4rem" }} /> Grup WhatsApp
+                                    </Typography>
+                                    <Typography variant="body2" color="text.secondary">
+                                        Silakan bergabung ke grup WhatsApp untuk koordinasi dan informasi lebih lanjut.
+                                    </Typography>
+                                </Box>
+                                <Button component="a" href={link_grup} target="_blank" rel="noopener noreferrer" variant="contained"
+                                    startIcon={<FaWhatsapp />}
+                                    sx={{ bgcolor: "success.main", "&:hover": { bgcolor: "success.dark" }, fontWeight: 600, px: 3, py: 1.5, borderRadius: 2, whiteSpace: "nowrap" }}>
+                                    Gabung Grup
+                                </Button>
+                            </Box>
+                        </Paper>
+                    )}
                     <Box sx={{ mb: 4 }}>
                         <Paper elevation={0} sx={{ p: 4, borderRadius: 3, background: "#ffffff", border: "1px solid #e5e7eb" }}>
                             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
@@ -1601,9 +1621,9 @@ const Profil = ({
                                 {(() => {
                                     const statusConfig = {
                                         submitted: { label: "Sedang Direview", color: "#ed6c02" },
-                                        rejected:  { label: "Ditolak", color: "#d32f2f" },
-                                        accepted:  { label: "Diterima ✓", color: "#2e7d32" },
-                                        revisi:    { label: "Perlu Revisi", color: "#ed6c02" },
+                                        rejected: { label: "Ditolak", color: "#d32f2f" },
+                                        accepted: { label: "Diterima ✓", color: "#2e7d32" },
+                                        revisi: { label: "Perlu Revisi", color: "#ed6c02" },
                                     };
                                     const cfg = statusConfig[mahasiswa?.data_mahasiswa?.status];
                                     return cfg ? (
@@ -1633,26 +1653,7 @@ const Profil = ({
                         </Alert>
                     )}
 
-                    {/* Link Grup WA */}
-                    {link_grup && (
-                        <Paper elevation={0} sx={{ mb: 3, p: 3, borderRadius: 3, border: "1px solid", borderColor: "success.light", borderLeft: "6px solid", borderLeftColor: "success.main", backgroundColor: "#f0fdf4" }}>
-                            <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, alignItems: "center", justifyContent: "space-between", gap: 2 }}>
-                                <Box>
-                                    <Typography variant="h6" sx={{ fontWeight: 600, color: "success.main", display: "flex", alignItems: "center", gap: 1 }}>
-                                        <FaWhatsapp style={{ fontSize: "1.4rem" }} /> Grup WhatsApp
-                                    </Typography>
-                                    <Typography variant="body2" color="text.secondary">
-                                        Silakan bergabung ke grup WhatsApp untuk koordinasi dan informasi lebih lanjut.
-                                    </Typography>
-                                </Box>
-                                <Button component="a" href={link_grup} target="_blank" rel="noopener noreferrer" variant="contained"
-                                    startIcon={<FaWhatsapp />}
-                                    sx={{ bgcolor: "success.main", "&:hover": { bgcolor: "success.dark" }, fontWeight: 600, px: 3, py: 1.5, borderRadius: 2, whiteSpace: "nowrap" }}>
-                                    Gabung Grup
-                                </Button>
-                            </Box>
-                        </Paper>
-                    )}
+
 
                     {/* Main Form */}
                     <form onSubmit={onSubmit}>
@@ -1939,11 +1940,13 @@ const Profil = ({
                                         </Typography>
                                         <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
                                             {[
-                                                { label: "Status Pendaftaran", value: mahasiswa?.data_mahasiswa?.status === "submitted" ? "Sedang Direview"
-                                                    : mahasiswa?.data_mahasiswa?.status === "accepted" ? "✓ Diterima"
-                                                    : mahasiswa?.data_mahasiswa?.status === "rejected" ? "✗ Ditolak"
-                                                    : mahasiswa?.data_mahasiswa?.status === "revisi" ? "⚠ Perlu Revisi"
-                                                    : "Belum Lengkap" },
+                                                {
+                                                    label: "Status Pendaftaran", value: mahasiswa?.data_mahasiswa?.status === "submitted" ? "Sedang Direview"
+                                                        : mahasiswa?.data_mahasiswa?.status === "accepted" ? "✓ Diterima"
+                                                            : mahasiswa?.data_mahasiswa?.status === "rejected" ? "✗ Ditolak"
+                                                                : mahasiswa?.data_mahasiswa?.status === "revisi" ? "⚠ Perlu Revisi"
+                                                                    : "Belum Lengkap"
+                                                },
                                                 { label: "Gelombang", value: mahasiswa?.data_mahasiswa?.gelombang?.name || "-" },
                                                 { label: "Cluster", value: clusterKegiatan || "-" },
                                             ].map((item) => (

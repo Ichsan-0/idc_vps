@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Models\DispensasiSyarat;
 
 class VerifikasiMahasiswaController extends Controller
 {
@@ -225,21 +226,29 @@ class VerifikasiMahasiswaController extends Controller
                 'sks_diambil'    => $sksDiambil,
             ];
 
+            $dispensasi = DispensasiSyarat::where('nim', $request->nim)->first();
+            $hasDispensasiRecord = $dispensasi ? true : false;
+            $skipMicroteaching = $dispensasi ? $dispensasi->skip_microteaching : false;
+            $skipSks = $dispensasi ? $dispensasi->skip_sks : false;
+
             // 1. Jika nilai micro teaching belum ada
-            if (empty($nilaiMicroTeaching)) {
+            if (!$skipMicroteaching && empty($nilaiMicroTeaching)) {
                 return redirect()
                     ->route('verifikasi.mahasiswa')
                     ->with('micro_warning', [
                         'type' => 'not_found',
                         'is_mpi' => $isMpi,
                         'sks_diambil' => $sksDiambil,
+                        'nim' => $attributes['nim'] ?? $request->nim,
+                        'nama' => $attributes['nama'] ?? $attributes['name'] ?? '',
+                        'has_dispensasi' => $hasDispensasiRecord,
                     ]);
             }
 
             // 2. Jika nilai di bawah B-
             $nilaiClean = strtoupper(trim($nilaiMicroTeaching));
             $validGrades = ['A', 'A-', 'B+', 'B', 'B-'];
-            if (!in_array($nilaiClean, $validGrades)) {
+            if (!$skipMicroteaching && !in_array($nilaiClean, $validGrades)) {
                 return redirect()
                     ->route('verifikasi.mahasiswa')
                     ->with('micro_warning', [
@@ -247,21 +256,28 @@ class VerifikasiMahasiswaController extends Controller
                         'nilai' => $nilaiMicroTeaching,
                         'is_mpi' => $isMpi,
                         'sks_diambil' => $sksDiambil,
+                        'nim' => $attributes['nim'] ?? $request->nim,
+                        'nama' => $attributes['nama'] ?? $attributes['name'] ?? '',
+                        'has_dispensasi' => $hasDispensasiRecord,
                     ]);
             }
 
             // 3. Jika total SKS di bawah 132 SKS
-            if ($sksDiambil < 132) {
+            if (!$skipSks && $sksDiambil < 132) {
                 return redirect()
                     ->route('verifikasi.mahasiswa')
                     ->with('micro_warning', [
                         'type' => 'insufficient_sks',
                         'sks_diambil' => $sksDiambil,
+                        'nilai' => $nilaiMicroTeaching,
                         'is_mpi' => $isMpi,
+                        'nim' => $attributes['nim'] ?? $request->nim,
+                        'nama' => $attributes['nama'] ?? $attributes['name'] ?? '',
+                        'has_dispensasi' => $hasDispensasiRecord,
                     ]);
             }
 
-            // Nilai micro ada dan sesuai syarat → simpan session dan lanjut ke registrasi
+            // Nilai micro ada dan sesuai syarat (atau dispen) → simpan session dan lanjut ke registrasi
             session(['verified_mahasiswa' => $verifiedData]);
 
             return redirect()->route('registrasi.ppkpm');
@@ -285,6 +301,64 @@ class VerifikasiMahasiswaController extends Controller
             return back()->withErrors([
                 'nim' => 'Terjadi kesalahan pada sistem: ' . $e->getMessage(),
             ]);
+        }
+    }
+
+    public function ajukanPertimbangan(Request $request)
+    {
+        $request->validate([
+            'nim' => 'required|string',
+            'nama' => 'required|string',
+            'alasan' => 'required|string',
+            'sks_diambil' => 'nullable|integer',
+            'nilai_microteaching' => 'nullable|string',
+        ]);
+
+        try {
+            $existing = DispensasiSyarat::where('nim', $request->nim)->first();
+
+            // Fetch current active gelombang
+            $activeGelombang = \App\Models\Gelombang::where('active', true)->first() 
+                ?? \App\Models\Gelombang::latest()->first();
+            $idGelombang = $activeGelombang ? $activeGelombang->id : null;
+
+            if ($existing) {
+                $existing->update([
+                    'nama' => $request->nama,
+                    'id_gelombang' => $idGelombang ?? $existing->id_gelombang,
+                    'alasan' => $request->alasan,
+                    'sks_diambil' => $request->sks_diambil ?? $existing->sks_diambil,
+                    'nilai_microteaching' => $request->nilai_microteaching ?? $existing->nilai_microteaching,
+                    'status' => 'pending',
+                ]);
+            } else {
+                DispensasiSyarat::create([
+                    'nim' => $request->nim,
+                    'nama' => $request->nama,
+                    'id_gelombang' => $idGelombang,
+                    'alasan' => $request->alasan,
+                    'sks_diambil' => $request->sks_diambil ?? 0,
+                    'nilai_microteaching' => $request->nilai_microteaching ?? '-',
+                    'skip_microteaching' => false,
+                    'skip_sks' => false,
+                    'status' => 'pending',
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Permohonan pertimbangan dispensasi berhasil diajukan. Silakan tunggu peninjauan dari admin.'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('[Verifikasi] Gagal mengajukan pertimbangan', [
+                'message' => $e->getMessage(),
+                'nim' => $request->nim,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan sistem saat mengajukan pertimbangan: ' . $e->getMessage()
+            ], 500);
         }
     }
 }

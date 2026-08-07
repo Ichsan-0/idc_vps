@@ -310,6 +310,16 @@ const Sidebar = ({ tabId }) => {
                                         className="w-full"
                                         onClick={() => {
                                             router.visit(
+                                                "/admin/users/dispensasi-syarat"
+                                            );
+                                        }}
+                                    >
+                                        Dispensasi Syarat
+                                    </Button>
+                                    <Button
+                                        className="w-full"
+                                        onClick={() => {
+                                            router.visit(
                                                 "/admin/admin-sekolah/list"
                                             );
                                         }}

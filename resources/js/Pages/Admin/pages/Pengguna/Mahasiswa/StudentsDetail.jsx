@@ -41,7 +41,7 @@ export default function DetailStudent({ id, base_url }) {
         semester: "",
         keterangan: ""
     });
-    
+
     const [originalFormData, setOriginalFormData] = useState({});
     const [statusOptions] = useState([
         { value: "submitted", label: "Pending" },
@@ -49,7 +49,7 @@ export default function DetailStudent({ id, base_url }) {
         { value: "rejected", label: "Ditolak" },
         { value: "revisi", label: "Revisi" }
     ]);
-    
+
     // Transkrip states & logic
     const [transkripOpen, setTranskripOpen] = useState(false);
     const [transkripData, setTranskripData] = useState([]);
@@ -100,15 +100,15 @@ export default function DetailStudent({ id, base_url }) {
             ipk: calculatedIpk,
         };
     }, [transkripData]);
-    
+
     const [dataKabupatenAsal, setDataKabupatenAsal] = useState([]);
     const [dataKecamatanAsal, setDataKecamatanAsal] = useState([]);
     const [dataDesaAsal, setDataDesaAsal] = useState([]);
-    
+
     const [dataKabupatenSekarang, setDataKabupatenSekarang] = useState([]);
     const [dataKecamatanSekarang, setDataKecamatanSekarang] = useState([]);
     const [dataDesaSekarang, setDataDesaSekarang] = useState([]);
-    
+
     const [loading, setLoading] = useState(false);
     const [resetLoading, setResetLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -143,10 +143,10 @@ export default function DetailStudent({ id, base_url }) {
             const data = response.data.data;
             setFormData(data);
             setOriginalFormData(data);
-            
+
             // Load wilayah data
             await loadWilayahData(data);
-            
+
         } catch (error) {
             console.error("Error fetching data:", error);
         } finally {
@@ -159,27 +159,27 @@ export default function DetailStudent({ id, base_url }) {
         if (data.provinsi_asal) {
             const kabAsal = kabupaten(data.provinsi_asal);
             setDataKabupatenAsal(kabAsal);
-            
+
             if (data.kabupaten_asal) {
                 const kecAsal = kecamatan(data.kabupaten_asal);
                 setDataKecamatanAsal(kecAsal);
-                
+
                 if (data.kecamatan_asal) {
                     const desaAsal = desa(data.kecamatan_asal);
                     setDataDesaAsal(desaAsal);
                 }
             }
         }
-        
+
         // Load data wilayah sekarang
         if (data.provinsi_sekarang) {
             const kabSekarang = kabupaten(data.provinsi_sekarang);
             setDataKabupatenSekarang(kabSekarang);
-            
+
             if (data.kabupaten_sekarang) {
                 const kecSekarang = kecamatan(data.kabupaten_sekarang);
                 setDataKecamatanSekarang(kecSekarang);
-                
+
                 if (data.kecamatan_sekarang) {
                     const desaSekarang = desa(data.kecamatan_sekarang);
                     setDataDesaSekarang(desaSekarang);
@@ -297,9 +297,9 @@ export default function DetailStudent({ id, base_url }) {
                                             Jenis Kelamin
                                         </p>
                                         <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                                            {formData?.gender === "Wanita" ? "Perempuan" : 
-                                             formData?.gender === "Pria" ? "Laki-laki" : 
-                                             formData?.gender || "-"}
+                                            {formData?.gender === "Wanita" ? "Perempuan" :
+                                                formData?.gender === "Pria" ? "Laki-laki" :
+                                                    formData?.gender || "-"}
                                         </p>
                                     </div>
                                     <div>
@@ -358,14 +358,13 @@ export default function DetailStudent({ id, base_url }) {
                                         <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
                                             Status
                                         </p>
-                                        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                                            formData?.status === "accepted" ? "bg-green-100 text-green-800" :
-                                            formData?.status === "rejected" ? "bg-red-100 text-red-800" :
-                                            formData?.status === "revisi" ? "bg-yellow-100 text-yellow-800" :
-                                            "bg-blue-100 text-blue-800"
-                                        }`}>
-                                            
-                                             {getMappingStatus(formData?.status)}
+                                        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${formData?.status === "accepted" ? "bg-green-100 text-green-800" :
+                                                formData?.status === "rejected" ? "bg-red-100 text-red-800" :
+                                                    formData?.status === "revisi" ? "bg-yellow-100 text-yellow-800" :
+                                                        "bg-blue-100 text-blue-800"
+                                            }`}>
+
+                                            {getMappingStatus(formData?.status)}
                                         </span>
                                     </div>
                                     <div>
@@ -388,7 +387,7 @@ export default function DetailStudent({ id, base_url }) {
                                                     Provinsi
                                                 </p>
                                                 <p className="text-sm text-gray-800 dark:text-white/90">
-                                                     {getNamaWilayah(formData?.provinsi_asal, provinsi())}
+                                                    {getNamaWilayah(formData?.provinsi_asal, provinsi())}
                                                 </p>
                                             </div>
                                             <div>
@@ -470,9 +469,9 @@ export default function DetailStudent({ id, base_url }) {
                                                     <p className="mb-1 text-xs text-gray-500 dark:text-gray-400">
                                                         Transkrip Nilai
                                                     </p>
-                                                    <a 
-                                                        href={base_url + '/storage/' + formData.link_transkrip_nilai} 
-                                                        target="_blank" 
+                                                    <a
+                                                        href={base_url + '/storage/' + formData.link_transkrip_nilai}
+                                                        target="_blank"
                                                         rel="noopener noreferrer"
                                                         className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400"
                                                     >
@@ -485,9 +484,9 @@ export default function DetailStudent({ id, base_url }) {
                                                     <p className="mb-1 text-xs text-gray-500 dark:text-gray-400">
                                                         Surat Pernyataan
                                                     </p>
-                                                    <a 
-                                                        href={base_url + '/storage/' + formData.link_surat_pernyataan} 
-                                                        target="_blank" 
+                                                    <a
+                                                        href={base_url + '/storage/' + formData.link_surat_pernyataan}
+                                                        target="_blank"
                                                         rel="noopener noreferrer"
                                                         className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400"
                                                     >
@@ -500,9 +499,9 @@ export default function DetailStudent({ id, base_url }) {
                                                     <p className="mb-1 text-xs text-gray-500 dark:text-gray-400">
                                                         Surat Kesiapan
                                                     </p>
-                                                    <a 
-                                                        href={base_url + '/storage/' +  formData.link_surat_kesiapan} 
-                                                        target="_blank" 
+                                                    <a
+                                                        href={base_url + '/storage/' + formData.link_surat_kesiapan}
+                                                        target="_blank"
                                                         rel="noopener noreferrer"
                                                         className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400"
                                                     >
@@ -510,13 +509,13 @@ export default function DetailStudent({ id, base_url }) {
                                                     </a>
                                                 </div>
                                             )}
-                                            {!formData?.link_transkrip_nilai && 
-                                             !formData?.link_surat_pernyataan && 
-                                             !formData?.link_surat_kesiapan && (
-                                                <p className="text-sm text-gray-500 dark:text-gray-400">
-                                                    Tidak ada dokumen yang diunggah
-                                                </p>
-                                            )}
+                                            {!formData?.link_transkrip_nilai &&
+                                                !formData?.link_surat_pernyataan &&
+                                                !formData?.link_surat_kesiapan && (
+                                                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                                                        Tidak ada dokumen yang diunggah
+                                                    </p>
+                                                )}
                                         </div>
                                     </div>
                                 </div>

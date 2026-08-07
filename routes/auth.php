@@ -25,6 +25,8 @@ Route::middleware('guest')->group(function () {
                 ->name('verifikasi.mahasiswa');
     Route::post('verifikasi-mahasiswa', [VerifikasiMahasiswaController::class, 'check'])
                 ->name('verifikasi.mahasiswa.check');
+    Route::post('verifikasi-mahasiswa/pertimbangan', [VerifikasiMahasiswaController::class, 'ajukanPertimbangan'])
+                ->name('verifikasi.mahasiswa.pertimbangan');
 
     Route::get('registrasi-ppkpm', [RegistrasiPPKPMController::class, 'create'])
                 ->name('registrasi.ppkpm');

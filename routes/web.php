@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\MahasiswaKPMController;
 use App\Http\Controllers\Admin\MahasiswaPPKPMController;
 use App\Http\Controllers\Admin\MahasiswaPPLContoller;
 use App\Http\Controllers\Admin\MahsiswaController;
+use App\Http\Controllers\Admin\DispensasiSyaratController;
 use App\Http\Controllers\Admin\PPL\TempatPPLController as PPLTempatPPLController;
 use App\Http\Controllers\Admin\ProdiController;
 use App\Http\Controllers\Admin\SekolahController;
@@ -183,6 +184,14 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('admin/mahasiswa/edit/{nim}', [MahsiswaController::class, 'edit'])->name('admin.mahasiswa.edit');
     Route::get('/admin/users/student', [MahsiswaController::class, 'index'])->name("admin.daftarmahasiswa");
     Route::get('/admin/users/student/detail', [MahsiswaController::class, 'getMahasiswaByEmailPage']);
+    
+    // Dispensasi Syarat Routes
+    Route::get('/admin/users/dispensasi-syarat', [DispensasiSyaratController::class, 'index'])->name('admin.dispensasi_syarat.index');
+    Route::post('/admin/users/dispensasi-syarat', [DispensasiSyaratController::class, 'store'])->name('admin.dispensasi_syarat.store');
+    Route::post('/admin/users/dispensasi-syarat/toggle', [DispensasiSyaratController::class, 'toggleRequirement'])->name('admin.dispensasi_syarat.toggle');
+    Route::delete('/admin/users/dispensasi-syarat/{nim}', [DispensasiSyaratController::class, 'destroy'])->name('admin.dispensasi_syarat.destroy');
+    Route::get('/admin/users/dispensasi-syarat/check-nim', [DispensasiSyaratController::class, 'checkNim'])->name('admin.dispensasi_syarat.check_nim');
+    Route::get('/admin/users/dispensasi-syarat/transkrip', [DispensasiSyaratController::class, 'getTranskrip'])->name('admin.dispensasi_syarat.transkrip');
     Route::post('/admin/importmahasiswa', [MahsiswaController::class, 'importmahasiswa'])->name("admin.importmahasiswa");
 
     Route::get('/admin/addmahasiswa', [MahsiswaController::class, 'add'])->name("admin.addmahasiswa");

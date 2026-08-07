@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import axios from "axios";
 import { Head, useForm, usePage } from "@inertiajs/react";
 import { Alert, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Snackbar, TextField } from "@mui/material";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
@@ -69,6 +70,12 @@ export default function VerifikasiMahasiswa() {
     const [dateValue, setDateValue] = useState(data.tanggal_lahir ? dayjs(data.tanggal_lahir) : null);
     const [microWarningOpen, setMicroWarningOpen] = useState(false);
     const [warningData, setWarningData] = useState(null);
+    const [showFormPertimbangan, setShowFormPertimbangan] = useState(false);
+    const [alasanPertimbangan, setAlasanPertimbangan] = useState("");
+    const [loadingPertimbangan, setLoadingPertimbangan] = useState(false);
+    const [statusMessage, setStatusMessage] = useState("");
+    const [statusType, setStatusType] = useState("success");
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
 
     useEffect(() => {
         if (errors.nim || errors.tanggal_lahir) {
@@ -81,8 +88,51 @@ export default function VerifikasiMahasiswa() {
         if (flash?.micro_warning) {
             setWarningData(flash.micro_warning);
             setMicroWarningOpen(true);
+            setShowFormPertimbangan(false); // Reset form status when opening new warning
         }
     }, [flash?.micro_warning]);
+
+    const handleKirimPertimbangan = async () => {
+        if (!alasanPertimbangan.trim()) {
+            setStatusMessage("Alasan pertimbangan harus diisi.");
+            setStatusType("error");
+            setSnackbarOpen(true);
+            return;
+        }
+
+        try {
+            setLoadingPertimbangan(true);
+            const res = await axios.post(route("verifikasi.mahasiswa.pertimbangan"), {
+                nim: warningData?.nim,
+                nama: warningData?.nama,
+                alasan: alasanPertimbangan,
+                sks_diambil: warningData?.sks_diambil,
+                nilai_microteaching: warningData?.nilai || '-',
+            });
+
+            if (res.data.success) {
+                setStatusMessage(res.data.message);
+                setStatusType("success");
+                setSnackbarOpen(true);
+                setShowFormPertimbangan(false);
+                setAlasanPertimbangan("");
+                setTimeout(() => {
+                    setMicroWarningOpen(false);
+                }, 2000);
+            } else {
+                setStatusMessage(res.data.message || "Gagal mengajukan pertimbangan.");
+                setStatusType("error");
+                setSnackbarOpen(true);
+            }
+        } catch (error) {
+            console.error(error);
+            setStatusMessage(error.response?.data?.message || "Terjadi kesalahan sistem.");
+            setStatusType("error");
+            setSnackbarOpen(true);
+        } finally {
+            setLoadingPertimbangan(false);
+        }
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -211,6 +261,102 @@ export default function VerifikasiMahasiswa() {
                     footerMessage = `Pendaftaran tidak dapat dilanjutkan karena jumlah SKS Anda belum memenuhi syarat minimal 132 SKS.`;
                 }
 
+                if (showFormPertimbangan) {
+                    return (
+                        <Dialog
+                            open={microWarningOpen}
+                            onClose={() => setMicroWarningOpen(false)}
+                            maxWidth="sm"
+                            fullWidth
+                            PaperProps={{
+                                style: {
+                                    borderRadius: "16px",
+                                    padding: "8px",
+                                },
+                            }}
+                        >
+                            <DialogTitle
+                                sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 1.5,
+                                    fontWeight: 700,
+                                    fontSize: "1.15rem",
+                                    color: "#1e3a8a",
+                                    pb: 0,
+                                }}
+                            >
+                                <span style={{ fontSize: "1.5rem" }}>📝</span>
+                                Ajukan Pertimbangan Pendaftaran
+                            </DialogTitle>
+
+                            <DialogContent sx={{ pt: 2 }}>
+                                <p style={{ margin: 0, color: "#4b5563", fontSize: "0.9rem", lineHeight: 1.6, marginBottom: "12px" }}>
+                                    Masukkan alasan pertimbangan Anda agar admin dapat meninjau persyaratan pendaftaran secara manual.
+                                </p>
+                                <div style={{ marginTop: "16px" }} className="space-y-2">
+                                    <p style={{ margin: 0, fontSize: "0.85rem", color: "#6b7280" }}>
+                                        <strong>Nama:</strong> {warningData?.nama} <br />
+                                        <strong>NIM:</strong> {warningData?.nim}
+                                    </p>
+                                    <TextField
+                                        label="Alasan Pertimbangan"
+                                        multiline
+                                        rows={4}
+                                        fullWidth
+                                        value={alasanPertimbangan}
+                                        onChange={(e) => setAlasanPertimbangan(e.target.value)}
+                                        placeholder="Tuliskan alasan/keterangan pertimbangan Anda (misal: SKS kurang karena konversi mata kuliah, nilai micro teaching masih proses input, dll.)"
+                                        disabled={loadingPertimbangan}
+                                        sx={{
+                                            mt: 2,
+                                            "& .MuiOutlinedInput-root.Mui-focused": {
+                                                outline: "none",
+                                                boxShadow: "none",
+                                            },
+                                        }}
+                                    />
+                                </div>
+                            </DialogContent>
+
+                            <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+                                <Button
+                                    onClick={() => setShowFormPertimbangan(false)}
+                                    variant="outlined"
+                                    disabled={loadingPertimbangan}
+                                    sx={{
+                                        borderRadius: "10px",
+                                        textTransform: "none",
+                                        fontWeight: 600,
+                                        borderColor: "#d1d5db",
+                                        color: "#374151",
+                                        "&:hover": { borderColor: "#9ca3af", backgroundColor: "#f9fafb" },
+                                        px: 3,
+                                    }}
+                                >
+                                    Batal
+                                </Button>
+                                <Button
+                                    onClick={handleKirimPertimbangan}
+                                    variant="contained"
+                                    disabled={loadingPertimbangan}
+                                    sx={{
+                                        borderRadius: "10px",
+                                        textTransform: "none",
+                                        fontWeight: 600,
+                                        backgroundColor: "#3b82f6",
+                                        "&:hover": { backgroundColor: "#2563eb" },
+                                        boxShadow: "none",
+                                        px: 3,
+                                    }}
+                                >
+                                    {loadingPertimbangan ? <CircularProgress size={20} color="inherit" /> : "Kirim Permohonan"}
+                                </Button>
+                            </DialogActions>
+                        </Dialog>
+                    );
+                }
+
                 return (
                     <Dialog
                         open={microWarningOpen}
@@ -269,26 +415,64 @@ export default function VerifikasiMahasiswa() {
                             </p>
                         </DialogContent>
 
-                        <DialogActions sx={{ px: 3, pb: 2.5, justifyContent: "center" }}>
-                            <Button
-                                onClick={() => setMicroWarningOpen(false)}
-                                variant="contained"
-                                sx={{
-                                    borderRadius: "10px",
-                                    textTransform: "none",
-                                    fontWeight: 600,
-                                    backgroundColor: "#eab308",
-                                    "&:hover": { backgroundColor: "#ca8a04" },
-                                    boxShadow: "none",
-                                    px: 4,
-                                }}
-                            >
-                                Tutup
-                            </Button>
+                        <DialogActions sx={{ px: 3, pb: 2.5, justifyContent: "space-between", alignItems: "center" }}>
+                            <div style={{ fontSize: "0.85rem" }}>
+                                {warningData?.has_dispensasi && (
+                                    <span style={{ color: "#2563eb", fontWeight: "600" }}>
+                                        ℹ️ Pertimbangan Sedang Ditinjau Admin
+                                    </span>
+                                )}
+                            </div>
+                            <div style={{ display: "flex", gap: "8px" }}>
+                                {!warningData?.has_dispensasi && (
+                                    <Button
+                                        onClick={() => setShowFormPertimbangan(true)}
+                                        variant="contained"
+                                        sx={{
+                                            borderRadius: "10px",
+                                            textTransform: "none",
+                                            fontWeight: 600,
+                                            px: 3,
+                                            boxShadow: "none",
+                                            backgroundColor: "#2563eb",
+                                            color: "#ffffff",
+                                            "&:hover": { backgroundColor: "#1d4ed8" },
+                                        }}
+                                    >
+                                        Ajukan Pertimbangan
+                                    </Button>
+                                )}
+                                <Button
+                                    onClick={() => setMicroWarningOpen(false)}
+                                    variant="outlined"
+                                    sx={{
+                                        borderRadius: "10px",
+                                        textTransform: "none",
+                                        fontWeight: 600,
+                                        borderColor: "#eab308",
+                                        color: "#eab308",
+                                        "&:hover": { borderColor: "#ca8a04", backgroundColor: "#fefce8" },
+                                        px: 4,
+                                    }}
+                                >
+                                    Tutup
+                                </Button>
+                            </div>
                         </DialogActions>
                     </Dialog>
                 );
             })()}
+            
+            <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={6000}
+                onClose={() => setSnackbarOpen(false)}
+                anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+            >
+                <Alert onClose={() => setSnackbarOpen(false)} severity={statusType} sx={{ width: "100%" }}>
+                    {statusMessage}
+                </Alert>
+            </Snackbar>
         </ThemeProvider>
     );
 }

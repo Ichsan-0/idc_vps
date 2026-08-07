@@ -968,6 +968,21 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                                                     </li>
                                                     <li>
                                                         <NavLink
+                                                            href="/admin/users/dispensasi-syarat"
+                                                            className={`group relative flex items-center gap-2.5 rounded-md px-4 font-medium duration-300 ease-in-out hover:text-white ${
+                                                                (pathname ===
+                                                                    "/admin/users/dispensasi-syarat" ||
+                                                                    pathname.includes(
+                                                                        "/admin/users/dispensasi-syarat"
+                                                                    )) &&
+                                                                "!text-white"
+                                                            }`}
+                                                        >
+                                                            Dispensasi Syarat
+                                                        </NavLink>
+                                                    </li>
+                                                    <li>
+                                                        <NavLink
                                                             href="/admin/users/admin-sekolah/list"
                                                             className={`group relative flex items-center gap-2.5 rounded-md px-4 font-medium duration-300 ease-in-out hover:text-white ${
                                                                 (pathname ===

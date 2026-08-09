@@ -14,6 +14,7 @@ class DispensasiSyarat extends Model
     protected $fillable = [
         'nim',
         'nama',
+        'program_studi',
         'id_gelombang',
         'sks_diambil',
         'nilai_microteaching',

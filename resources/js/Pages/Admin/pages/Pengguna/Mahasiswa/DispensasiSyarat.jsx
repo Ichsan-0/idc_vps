@@ -160,6 +160,7 @@ export default function DispensasiSyarat({ dispensations, filters = {} }) {
                 skip_sks: skipSks,
                 sks_diambil: searchedStudent.sks_diambil,
                 nilai_microteaching: searchedStudent.nilai_microteaching,
+                program_studi: searchedStudent.program_studi,
             }, {
                 onSuccess: () => {
                     showToast("Dispensasi syarat berhasil ditambahkan.");
@@ -468,7 +469,7 @@ export default function DispensasiSyarat({ dispensations, filters = {} }) {
                     {currentSelectedDisp && (
                         <div className="space-y-4 mt-2">
                             <div className="grid grid-cols-2 gap-4 bg-[#f8fafc] p-4 rounded-xl border border-gray-100">
-                                <div className="space-y-0.5">
+                                <div className="space-y-0.5 col-span-2">
                                     <Typography variant="caption" className="text-gray-400 block">Nama Mahasiswa</Typography>
                                     <Typography variant="subtitle2" className="font-bold text-gray-800 uppercase">
                                         {currentSelectedDisp.nama}
@@ -478,6 +479,12 @@ export default function DispensasiSyarat({ dispensations, filters = {} }) {
                                     <Typography variant="caption" className="text-gray-400 block">NIM</Typography>
                                     <Typography variant="subtitle2" className="font-semibold text-gray-700 font-mono">
                                         {currentSelectedDisp.nim}
+                                    </Typography>
+                                </div>
+                                <div className="space-y-0.5">
+                                    <Typography variant="caption" className="text-gray-400 block">Program Studi</Typography>
+                                    <Typography variant="subtitle2" className="font-semibold text-gray-700">
+                                        {currentSelectedDisp.program_studi || "-"}
                                     </Typography>
                                 </div>
                                 <div className="space-y-0.5">
@@ -557,7 +564,7 @@ export default function DispensasiSyarat({ dispensations, filters = {} }) {
                                 variant="outlined"
                                 color="primary"
                                 fullWidth
-                                onClick={() => handleViewTranscript(currentSelectedDisp.nim, currentSelectedDisp.nama, "")}
+                                onClick={() => handleViewTranscript(currentSelectedDisp.nim, currentSelectedDisp.nama, currentSelectedDisp.program_studi)}
                                 className="flex items-center justify-center gap-2"
                                 sx={{ textTransform: "none", py: 1, borderRadius: "10px", fontWeight: "semibold" }}
                             >

@@ -241,6 +241,7 @@ class VerifikasiMahasiswaController extends Controller
                         'sks_diambil' => $sksDiambil,
                         'nim' => $attributes['nim'] ?? $request->nim,
                         'nama' => $attributes['nama'] ?? $attributes['name'] ?? '',
+                        'program_studi' => $attributes['program_studi'] ?? null,
                         'has_dispensasi' => $hasDispensasiRecord,
                     ]);
             }
@@ -258,6 +259,7 @@ class VerifikasiMahasiswaController extends Controller
                         'sks_diambil' => $sksDiambil,
                         'nim' => $attributes['nim'] ?? $request->nim,
                         'nama' => $attributes['nama'] ?? $attributes['name'] ?? '',
+                        'program_studi' => $attributes['program_studi'] ?? null,
                         'has_dispensasi' => $hasDispensasiRecord,
                     ]);
             }
@@ -273,6 +275,7 @@ class VerifikasiMahasiswaController extends Controller
                         'is_mpi' => $isMpi,
                         'nim' => $attributes['nim'] ?? $request->nim,
                         'nama' => $attributes['nama'] ?? $attributes['name'] ?? '',
+                        'program_studi' => $attributes['program_studi'] ?? null,
                         'has_dispensasi' => $hasDispensasiRecord,
                     ]);
             }
@@ -312,6 +315,7 @@ class VerifikasiMahasiswaController extends Controller
             'alasan' => 'required|string',
             'sks_diambil' => 'nullable|integer',
             'nilai_microteaching' => 'nullable|string',
+            'program_studi' => 'nullable|string',
         ]);
 
         try {
@@ -325,6 +329,7 @@ class VerifikasiMahasiswaController extends Controller
             if ($existing) {
                 $existing->update([
                     'nama' => $request->nama,
+                    'program_studi' => $request->program_studi ?? $existing->program_studi,
                     'id_gelombang' => $idGelombang ?? $existing->id_gelombang,
                     'alasan' => $request->alasan,
                     'sks_diambil' => $request->sks_diambil ?? $existing->sks_diambil,
@@ -335,6 +340,7 @@ class VerifikasiMahasiswaController extends Controller
                 DispensasiSyarat::create([
                     'nim' => $request->nim,
                     'nama' => $request->nama,
+                    'program_studi' => $request->program_studi,
                     'id_gelombang' => $idGelombang,
                     'alasan' => $request->alasan,
                     'sks_diambil' => $request->sks_diambil ?? 0,

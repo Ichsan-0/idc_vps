@@ -29,7 +29,19 @@ class DispensasiSyaratController extends Controller
             });
         }
         
-        $dispensations = $query->get();
+        $dispensations = $query->get()->map(function ($disp) {
+            if (empty($disp->program_studi)) {
+                $mahasiswa = \DB::table('mahasiswa_tbl')
+                    ->join('prodi_tbl', 'mahasiswa_tbl.id_prodi', '=', 'prodi_tbl.id')
+                    ->where('mahasiswa_tbl.nim', $disp->nim)
+                    ->select('prodi_tbl.name')
+                    ->first();
+                if ($mahasiswa) {
+                    $disp->program_studi = $mahasiswa->name;
+                }
+            }
+            return $disp;
+        });
 
         return Inertia::render('Admin/pages/Pengguna/Mahasiswa/DispensasiSyarat', [
             'dispensations' => $dispensations,
@@ -123,6 +135,7 @@ class DispensasiSyaratController extends Controller
             'skip_sks' => 'boolean',
             'sks_diambil' => 'nullable|integer',
             'nilai_microteaching' => 'nullable|string',
+            'program_studi' => 'nullable|string',
         ]);
 
         $activeGelombang = \App\Models\Gelombang::where('active', true)->first() 
@@ -133,6 +146,7 @@ class DispensasiSyaratController extends Controller
             ['nim' => $request->nim],
             [
                 'nama' => $request->nama,
+                'program_studi' => $request->program_studi,
                 'id_gelombang' => $idGelombang,
                 'alasan' => $request->alasan,
                 'sks_diambil' => $request->sks_diambil ?? 0,

@@ -1,1 +1,0 @@
-import{j as r}from"./app-BITdMS6O.js";import{O as o}from"./OperatorSekolahLayout-BAF42Kcs.js";import"./Lambang_UIN_Ar-Raniry-rnlacl8Y.js";import"./NavLink-Z-5_-IBG.js";function i(){return r.jsx(o,{children:"Dashboard"})}export{i as default};

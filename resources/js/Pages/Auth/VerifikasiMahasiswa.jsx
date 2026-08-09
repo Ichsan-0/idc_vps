@@ -108,6 +108,7 @@ export default function VerifikasiMahasiswa() {
                 alasan: alasanPertimbangan,
                 sks_diambil: warningData?.sks_diambil,
                 nilai_microteaching: warningData?.nilai || '-',
+                program_studi: warningData?.program_studi,
             });
 
             if (res.data.success) {

@@ -69,8 +69,8 @@ class ExportNilaiPPL implements FromCollection, WithHeadings, WithMapping
             $row->nama_supervisor,
             $row->nilai_pamong,
             $row->nilai_supervisor_ppl,
-            $row->link_laporan,
-            $row->link_instrument_penilaian ? url('/') . "/storage/" . str_replace('public/', '', $row->link_instrument_penilaian) : ""
+            $row->link_instrument_penilaian ? url('/') . "/storage/" . str_replace('public/', '', $row->link_instrument_penilaian) : "",
+            $row->link_laporan
 
         ];
     }

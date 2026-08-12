@@ -7,6 +7,8 @@ import { useEffect } from "react";
 import { useRef } from "react";
 import { ThreeDot } from "react-loading-indicators";
 import AdminLayout from "@/Layouts/Admin/AdminLayout";
+import axios from "axios";
+import { downloadExcel } from "@/Utils/downloadExcel";
 import {
 
     OpenInNewRounded,
@@ -110,54 +112,21 @@ const RekapNilaiPPKPM = ({ flash, base_url }) => {
         setError(null);
 
         try {
-            const response = await axios.post(
-                `${base_url}/api/admin/certificate/nilai-ppkpm/export`,
-                {id_prodi : prodi?.id, id_gelombang: selectedGelombang},
-
-                {
-                    responseType: "blob", // Set responseType in Axios config
-                }
-            );
-
-            const blob = new Blob([response.data], {
-                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            });
-
-            const downloadUrl = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = downloadUrl;
-
-            const contentDisposition = response.headers["content-disposition"];
             const now = new Date();
-            const jakartaTime = new Date(now.getTime() + 7 * 60 * 60 * 1000); // Convert to UTC+7
+            const jakartaTime = new Date(now.getTime() + 7 * 60 * 60 * 1000);
             const formattedDate = jakartaTime
                 .toISOString()
                 .slice(0, 19)
                 .replace("T", "_")
                 .replace(/:/g, "-");
 
-            let filename = `Nilai PPKPM_${formattedDate}.xlsx`;
-
-            if (contentDisposition) {
-                const match = contentDisposition.match(/filename="?([^"]+)"?/);
-                console.log("match ", match);
-                if (match) {
-                    filename = match[1];
-                }
-            }
-
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(downloadUrl);
-            console.log(response);
+            await downloadExcel({
+                url: `${base_url}/api/admin/certificate/nilai-ppkpm/export`,
+                data: { id_prodi: prodi?.id, id_gelombang: selectedGelombang },
+                filename: `Nilai_PPKPM_${formattedDate}.xlsx`,
+            });
         } catch (err) {
-            setError(err.response?.data?.message || "Something went wrong.");
-            if (err.response && err.response.data) {
-                const errorText = new TextDecoder().decode(err.response.data);
-                console.error("Error response text:", errorText);
-            }
+            setError(err.message || "Something went wrong.");
         } finally {
             setLoading(false);
         }

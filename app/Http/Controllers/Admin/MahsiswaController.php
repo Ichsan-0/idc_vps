@@ -294,7 +294,11 @@ class MahsiswaController extends Controller
     public function exportData(Request $request)
     {
         $idGelombang = $request->input('idGelombang');
-        return Excel::download(new StudentExport($idGelombang), 'Mahasiswa PPKPM.xlsx');
+        $search = $request->input('search');
+        $status = $request->input('status');
+        $sortBy = $request->input('sortBy');
+        $sortOrder = $request->input('sortOrder');
+        return Excel::download(new StudentExport($idGelombang, $search, $status, $sortBy, $sortOrder), 'Mahasiswa PPKPM.xlsx');
     }
 
     public function getTranskrip(Request $request, SevimaService $sevima)

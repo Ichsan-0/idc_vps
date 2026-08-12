@@ -7,14 +7,24 @@ use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
+use Maatwebsite\Excel\Concerns\WithColumnFormatting;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 
-class StudentExport implements FromCollection, WithHeadings, WithMapping
+class StudentExport implements FromCollection, WithHeadings, WithMapping, WithColumnFormatting
 {
     private $idGelombang;
+    private $search;
+    private $status;
+    private $sortBy;
+    private $sortOrder;
 
-    public function __construct($idGelombang = null)
+    public function __construct($idGelombang = null, $search = null, $status = null, $sortBy = null, $sortOrder = null)
     {
         $this->idGelombang = $idGelombang;
+        $this->search = $search;
+        $this->status = $status;
+        $this->sortBy = $sortBy;
+        $this->sortOrder = $sortOrder;
     }
 
     public function collection()
@@ -50,6 +60,31 @@ class StudentExport implements FromCollection, WithHeadings, WithMapping
 
         if ($this->idGelombang) {
             $query->where('mahasiswa.id_gelombang', $this->idGelombang);
+        }
+
+        if ($this->search) {
+            $query->where(function ($q) {
+                $q->where('mahasiswa.nama_mahasiswa', 'like', "%{$this->search}%")
+                    ->orWhere('mahasiswa.nim', 'like', "%{$this->search}%")
+                    ->orWhere('mahasiswa.email', 'like', "%{$this->search}%");
+            });
+        }
+
+        if (!empty($this->status)) {
+            $query->where('mahasiswa.status', $this->status);
+        }
+
+        if ($this->sortBy && $this->sortOrder) {
+            $columnMap = [
+                'name' => 'mahasiswa.nama_mahasiswa',
+                'nim' => 'mahasiswa.nim',
+                'email' => 'mahasiswa.email',
+                'status' => 'mahasiswa.status',
+            ];
+            $dbCol = $columnMap[$this->sortBy] ?? 'mahasiswa.nim';
+            $query->orderBy($dbCol, $this->sortOrder);
+        } else {
+            $query->orderBy('mahasiswa.status', 'desc');
         }
 
         return $query->get();
@@ -102,9 +137,9 @@ class StudentExport implements FromCollection, WithHeadings, WithMapping
 
         return [
             $row->nama_mahasiswa ?? '-',
-            $row->nim ?? '-',
+            "'" . ($row->nim ?? '-'),
             $row->email ?? '-',
-            $row->no_hp_wa ?? '-',
+            "'" . ($row->no_hp_wa ?? '-'),
             $getWilayahNama($row->provinsi_asal ?? null, 'provinsi'),
             $getWilayahNama($row->kabupaten_asal ?? null, 'kabupaten'),
             $getWilayahNama($row->kecamatan_asal ?? null, 'kecamatan'),
@@ -122,6 +157,16 @@ class StudentExport implements FromCollection, WithHeadings, WithMapping
             $this->getStatusText($row->status ?? ''),
             $row->keterangan ?? '-'
         ];
+    }
+
+    public function columnFormats(): array
+    {
+        $columns = range('A', 'Z');
+        $formats = [];
+        foreach ($columns as $column) {
+            $formats[$column] = NumberFormat::FORMAT_TEXT;
+        }
+        return $formats;
     }
 
     private function getStatusText($status)

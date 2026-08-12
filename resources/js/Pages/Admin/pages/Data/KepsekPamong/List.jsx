@@ -18,6 +18,7 @@ import { ThreeDot } from "react-loading-indicators";
 import AdminLayout from "@/Layouts/Admin/AdminLayout";
 import axios from "axios";
 import { config } from "@/config/config";
+import { downloadExcel } from "@/Utils/downloadExcel";
 
 const List = ({ daftarprodi, flash, message, base_url }) => {
     const [openDialog, setOpenDialog] = useState(false);
@@ -126,52 +127,23 @@ const List = ({ daftarprodi, flash, message, base_url }) => {
         setError(null);
 
         try {
-            const response = await axios.post(
-                `${base_url}/api/admin/data/kepsek-pamong/export`,
-                {
+            const gelombangName = selectedGelombang
+                ? selectedGelombang.name.replace(/\s+/g, "_")
+                : "";
+            const defaultFilename = gelombangName
+                ? `pamong_kepsek_${gelombangName}.xlsx`
+                : "pamong_kepsek.xlsx";
+
+            await downloadExcel({
+                url: `${base_url}/api/admin/data/kepsek-pamong/export`,
+                data: {
                     id_gelombang: selectedGelombang?.id || null,
-                    search_key: searchKey
+                    search_key: searchKey,
                 },
-                {
-                    responseType: "blob",
-                }
-            );
-
-            const blob = new Blob([response.data], {
-                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                filename: defaultFilename,
             });
-
-            const downloadUrl = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = downloadUrl;
-
-            const contentDisposition = response.headers["content-disposition"];
-            
-            // Buat nama file berdasarkan gelombang
-            let filename = "pamong_kepsek.xlsx";
-            if (selectedGelombang) {
-                const gelombangName = selectedGelombang.name.replace(/\s+/g, '_');
-                filename = `pamong_kepsek_${gelombangName}.xlsx`;
-            }
-
-            if (contentDisposition) {
-                const match = contentDisposition.match(/filename="(.+)"/);
-                if (match && match[1]) {
-                    filename = match[1];
-                }
-            }
-
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(downloadUrl);
         } catch (err) {
-            setError(err.response?.data?.message || "Something went wrong.");
-            if (err.response && err.response.data) {
-                const errorText = new TextDecoder().decode(err.response.data);
-                console.error("Error response text:", errorText);
-            }
+            setError(err.message || "Something went wrong.");
         } finally {
             setExportLoading(false);
         }

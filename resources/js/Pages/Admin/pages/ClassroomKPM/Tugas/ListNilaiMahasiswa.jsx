@@ -16,6 +16,7 @@ import { ThreeDot } from "react-loading-indicators";
 import AdminLayout from "@/Layouts/Admin/AdminLayout";
 import { config } from "@/config/config";
 import axios from "axios";
+import { downloadExcel } from "@/Utils/downloadExcel";
 
 const ListNilaiMahasiswa = ({ flash, base_url }) => {
     const [openDialog, setOpenDialog] = useState(false);
@@ -123,47 +124,13 @@ const ListNilaiMahasiswa = ({ flash, base_url }) => {
         setError(null);
 
         try {
-            const response = await axios.post(
-                `${base_url}/api/admin/classroom-kpm/nilai/export`,
-                {
-                   
-                    gelombang: selectedGelombangData.id,
-                   
-                }, // Pass the request body here
-                {
-                    responseType: "blob", // Set responseType in Axios config
-                }
-            );
-
-            const blob = new Blob([response.data], {
-                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            await downloadExcel({
+                url: `${base_url}/api/admin/classroom-kpm/nilai/export`,
+                data: { gelombang: selectedGelombangData?.id },
+                filename: "nilai_kpm.xlsx",
             });
-
-            const downloadUrl = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = downloadUrl;
-
-            const contentDisposition = response.headers["content-disposition"];
-            let filename = "camat_keuchik.xlsx";
-            if (contentDisposition) {
-                const match = contentDisposition.match(/filename="(.+)"/);
-                if (match && match[1]) {
-                    filename = match[1];
-                }
-            }
-
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(downloadUrl);
-            console.log(response);
         } catch (err) {
-            setError(err.response?.data?.message || "Something went wrong.");
-            if (err.response && err.response.data) {
-                const errorText = new TextDecoder().decode(err.response.data);
-                console.error("Error response text:", errorText);
-            }
+            setError(err.message || "Something went wrong.");
         } finally {
             setLoading(false);
         }

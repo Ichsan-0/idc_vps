@@ -20,6 +20,7 @@ import { Autocomplete, TextField, Select as MuiSelect, MenuItem } from "@mui/mat
 import { Link } from "@inertiajs/react";
 import { Eye, Download } from "lucide-react";
 import { getMappingStatus, getStatusColor } from "@/Utils/utils";
+import { downloadExcel } from "@/Utils/downloadExcel";
 
 const StudentListTable = () => {
     const [loading, setLoading] = useState(false);
@@ -190,29 +191,6 @@ const StudentListTable = () => {
     const handleExportExcel = async () => {
         setExportLoading(true);
         try {
-            const response = await axios.post(
-                `${config.base_url}/api/admin/users/student/export`,
-                {
-                    search: searchKey,
-                    idGelombang: selectedGelombangData?.id,
-                    status: statusFilter,
-                    sortBy: sortKey ?? "id",
-                    sortOrder: (sortDir ?? "asc").toUpperCase(),
-                },
-                {
-                    responseType: "blob",
-                }
-            );
-
-            const blob = new Blob([response.data], {
-                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            });
-
-            const downloadUrl = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = downloadUrl;
-
-            const contentDisposition = response.headers["content-disposition"];
             const now = new Date();
             const jakartaTime = new Date(now.getTime() + 7 * 60 * 60 * 1000);
             const formattedDate = jakartaTime
@@ -221,26 +199,19 @@ const StudentListTable = () => {
                 .replace("T", "_")
                 .replace(/:/g, "-");
 
-            let filename = `Mahasiswa_${formattedDate}.xlsx`;
-
-            if (contentDisposition) {
-                const match = contentDisposition.match(/filename="(.+)"/);
-                if (match && match[1]) {
-                    filename = match[1];
-                }
-            }
-
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(downloadUrl);
+            await downloadExcel({
+                url: `${config.base_url}/api/admin/users/student/export`,
+                data: {
+                    search: searchKey,
+                    idGelombang: selectedGelombangData?.id,
+                    status: statusFilter,
+                    sortBy: sortKey ?? "id",
+                    sortOrder: (sortDir ?? "asc").toUpperCase(),
+                },
+                filename: `Mahasiswa_${formattedDate}.xlsx`,
+            });
         } catch (err) {
-            console.error("Export error:", err);
-            if (err.response && err.response.data) {
-                const errorText = new TextDecoder().decode(err.response.data);
-                console.error("Error response text:", errorText);
-            }
+            setValidationError(err.message || "Gagal mengekspor data.");
         } finally {
             setExportLoading(false);
         }

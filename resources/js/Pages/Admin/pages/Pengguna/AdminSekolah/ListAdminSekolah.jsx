@@ -15,6 +15,7 @@ import { useEffect } from "react";
 import { ThreeDot } from "react-loading-indicators";
 import { useRef } from "react";
 import axios from "axios";
+import { downloadExcel } from "@/Utils/downloadExcel";
 import AdminLayout from "@/Layouts/Admin/AdminLayout";
 
 const ListMahsiswa = ({ daftarmahasiswa, message, base_url, flash }) => {
@@ -118,43 +119,12 @@ const ListMahsiswa = ({ daftarmahasiswa, message, base_url, flash }) => {
         setError(null);
 
         try {
-            const response = await axios.post(
-                `${base_url}/api/admin/oprator-sekolah/export`,
-                {}, // Pass the request body here
-                {
-                    responseType: "blob", // Set responseType in Axios config
-                }
-            );
-
-            const blob = new Blob([response.data], {
-                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            await downloadExcel({
+                url: `${base_url}/api/admin/oprator-sekolah/export`,
+                filename: "Kredentials_Admin_sekolah.xlsx",
             });
-
-            const downloadUrl = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = downloadUrl;
-
-            const contentDisposition = response.headers["content-disposition"];
-            let filename = "exported_data.xlsx";
-            if (contentDisposition) {
-                const match = contentDisposition.match(/filename="(.+)"/);
-                if (match && match[1]) {
-                    filename = match[1];
-                }
-            }
-
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(downloadUrl);
-            console.log(response);
         } catch (err) {
-            setError(err.response?.data?.message || "Something went wrong.");
-            if (err.response && err.response.data) {
-                const errorText = new TextDecoder().decode(err.response.data);
-                console.error("Error response text:", errorText);
-            }
+            setError(err.message || "Something went wrong.");
         } finally {
             setLoading(false);
         }

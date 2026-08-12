@@ -22,7 +22,7 @@ class KepsekPamongExport implements FromCollection, WithHeadings, WithMapping, W
     {
         return DB::table('ampraham_ppl_tbl as ppl')
 
-            ->join('sekolah_tbl as s_tbl', 'ppl.id_sekolah', '=', 's_tbl.id')
+            ->join('sekolah_tbl as s_tbl', 'ppl.id_sekolah', '=', 's_tbl.id_sekolah')
             ->leftjoin('users as us', 'ppl.username_mahasiswa', '=', 'us.username')
             ->join('gelombang_tbl as g_tbl', 'ppl.id_gelombang', '=', 'g_tbl.id')
             ->selectRaw(

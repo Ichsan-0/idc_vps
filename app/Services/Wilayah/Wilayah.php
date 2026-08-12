@@ -4,6 +4,16 @@ namespace App\Services\Wilayah;
 
 class Wilayah
 {
+    private static $cachedProvinsi = null;
+    private static $cachedKabupaten = null;
+    private static $cachedKecamatan = null;
+    private static $cachedDesa = null;
+
+    private static $provinsiMap = null;
+    private static $kabupatenMap = null;
+    private static $kecamatanMap = null;
+    private static $desaMap = null;
+
     private static function m(string $o = ''): string
     {
         $b = explode(' ', $o);
@@ -54,69 +64,102 @@ class Wilayah
         return self::me(explode('-', $d), $ko, $k);
     }
 
-    private static function ut(string $ko = '', string $dt = '', string $te = '', bool $kon = true): array
-    {
-        if ($kon) {
-            $hs = self::inti($dt, $te);
-
-            if ($ko !== '') {
-                $ss = array_values(array_filter($hs, fn ($d) => $d[$te] === $ko));
-                return count($ss) ? $ss : [];
-            }
-
-            return $hs;
-        }
-
-        $provinsi = require __DIR__ . '/provinsi.php';
-        return self::inti($provinsi, '', false);
-    }
-
     public static function provinsi(): array
     {
-        return self::ut('', '', '', false);
+        if (self::$cachedProvinsi === null) {
+            $provinsi = require __DIR__ . '/provinsi.php';
+            self::$cachedProvinsi = self::inti($provinsi, '', false);
+        }
+        return self::$cachedProvinsi;
     }
 
     public static function kabupaten(string $kode = ''): array
     {
-        return self::ut($kode, require __DIR__ . '/kabupaten.php', 'kode_provinsi');
+        if (self::$cachedKabupaten === null) {
+            $kabupaten = require __DIR__ . '/kabupaten.php';
+            self::$cachedKabupaten = self::inti($kabupaten, 'kode_provinsi');
+        }
+
+        if ($kode !== '') {
+            $ss = array_values(array_filter(self::$cachedKabupaten, fn ($d) => $d['kode_provinsi'] === $kode));
+            return count($ss) ? $ss : [];
+        }
+
+        return self::$cachedKabupaten;
     }
 
     public static function kecamatan(string $kode = ''): array
     {
-        return self::ut($kode, require __DIR__ . '/kecamatan.php', 'kode_kabupaten');
+        if (self::$cachedKecamatan === null) {
+            $kecamatan = require __DIR__ . '/kecamatan.php';
+            self::$cachedKecamatan = self::inti($kecamatan, 'kode_kabupaten');
+        }
+
+        if ($kode !== '') {
+            $ss = array_values(array_filter(self::$cachedKecamatan, fn ($d) => $d['kode_kabupaten'] === $kode));
+            return count($ss) ? $ss : [];
+        }
+
+        return self::$cachedKecamatan;
     }
 
     public static function desa(string $kode = ''): array
     {
-        return self::ut($kode, require __DIR__ . '/desa.php', 'kode_kecamatan');
+        if (self::$cachedDesa === null) {
+            $desa = require __DIR__ . '/desa.php';
+            self::$cachedDesa = self::inti($desa, 'kode_kecamatan');
+        }
+
+        if ($kode !== '') {
+            $ss = array_values(array_filter(self::$cachedDesa, fn ($d) => $d['kode_kecamatan'] === $kode));
+            return count($ss) ? $ss : [];
+        }
+
+        return self::$cachedDesa;
     }
     
     // Helper method untuk mendapatkan nama berdasarkan kode
     public static function getNamaProvinsi($kode)
     {
-        $provinsi = self::provinsi();
-        $result = array_filter($provinsi, fn($item) => $item['kode'] == $kode);
-        return count($result) ? reset($result)['nama'] : null;
+        if (self::$provinsiMap === null) {
+            self::$provinsiMap = [];
+            foreach (self::provinsi() as $item) {
+                self::$provinsiMap[$item['kode']] = $item['nama'];
+            }
+        }
+        return self::$provinsiMap[$kode] ?? null;
     }
     
     public static function getNamaKabupaten($kode)
     {
-        $kabupaten = self::kabupaten();
-        $result = array_filter($kabupaten, fn($item) => $item['kode'] == $kode);
-        return count($result) ? reset($result)['nama'] : null;
+        if (self::$kabupatenMap === null) {
+            self::$kabupatenMap = [];
+            foreach (self::kabupaten() as $item) {
+                self::$kabupatenMap[$item['kode']] = $item['nama'];
+            }
+        }
+        return self::$kabupatenMap[$kode] ?? null;
     }
     
     public static function getNamaKecamatan($kode)
     {
-        $kecamatan = self::kecamatan();
-        $result = array_filter($kecamatan, fn($item) => $item['kode'] == $kode);
-        return count($result) ? reset($result)['nama'] : null;
+        if (self::$kecamatanMap === null) {
+            self::$kecamatanMap = [];
+            foreach (self::kecamatan() as $item) {
+                self::$kecamatanMap[$item['kode']] = $item['nama'];
+            }
+        }
+        return self::$kecamatanMap[$kode] ?? null;
     }
     
     public static function getNamaDesa($kode)
     {
-        $desa = self::desa();
-        $result = array_filter($desa, fn($item) => $item['kode'] == $kode);
-        return count($result) ? reset($result)['nama'] : null;
+        if (self::$desaMap === null) {
+            self::$desaMap = [];
+            foreach (self::desa() as $item) {
+                self::$desaMap[$item['kode']] = $item['nama'];
+            }
+        }
+        return self::$desaMap[$kode] ?? null;
     }
 }

@@ -39,29 +39,20 @@ class NilaiKPMExport implements FromCollection, WithHeadings
 
         $students = $query->get();
 
-
+        // Fetch all task submissions for this gelombang in one query
+        $submissions = DB::table('task_submission as ts')
+            ->join('tempat_kpm_tbl as t_kpm', 'ts.id_kelas', '=', 't_kpm.id')
+            ->where('t_kpm.id_gelombang', $this->idGelombang)
+            ->select('ts.username_mahasiswa', 'ts.id_tugas', 'ts.score')
+            ->get()
+            ->groupBy('username_mahasiswa');
 
         // Prepare final ordered data
         $finalData = [];
 
         foreach ($students as $student) {
             $username = $student->username_mahasiswa;
-
-            // Fetch scores for this student
-            $taskScores = DB::table('task as t')
-                ->leftJoin('task_submission as ts', function ($join) use ($username) {
-                    $join->on('t.id', '=', 'ts.id_tugas')
-                        ->where('ts.username_mahasiswa', '=', $username);
-                })
-                ->leftjoin("tempat_kpm_tbl as t_kpm", "ts.id_kelas", 't_kpm.id')
-                ->select(
-                    't.id as id_tugas',
-                    't.name as nama_tugas',
-                    DB::raw('COALESCE(ts.score, 0) as score')
-                )
-                ->where("t_kpm.id_gelombang", $this->idGelombang)
-                ->orderBy('t.created_at', 'asc')
-                ->get();
+            $studentSubmissions = $submissions->get($username) ?? collect();
 
             // Initialize student data with general details
             $studentData = [
@@ -72,9 +63,9 @@ class NilaiKPMExport implements FromCollection, WithHeadings
                 'Nama Supervisor' => $student->nama_supervisor,
             ];
 
-
             foreach ($tasks as $task) {
-                $score = $taskScores->firstWhere('id_tugas', $task->id)->score ?? 0;
+                $sub = $studentSubmissions->firstWhere('id_tugas', $task->id);
+                $score = $sub ? ($sub->score ?? 0) : 0;
                 $studentData[$task->name] = $score;
             }
 

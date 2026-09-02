@@ -41,5 +41,21 @@ class SupervisorKPMController extends Controller
         ]);
     }
 
-    
+    public function all()
+    {
+        try {
+            $data = \App\Models\User::whereIn('role', ['supervisor_kpm', 'supervisor', 'Supervisor_KPM'])->get();
+            return response()->json([
+                'status' => true,
+                'message' => 'Data Supervisor KPM',
+                'data' => $data
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
 }
+

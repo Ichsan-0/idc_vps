@@ -388,7 +388,7 @@ class TempatKPM extends Controller
     {
         $search = $request->input('search');
         try {
-            $data = ModelsUser::where('role', 'supervisor_kpm')->get();
+            $data = ModelsUser::whereIn('role', ['supervisor_kpm', 'supervisor', 'Supervisor_KPM'])->get();
 
             return response()->json($data);
         } catch (Exception $e) {
@@ -399,3 +399,4 @@ class TempatKPM extends Controller
         }
     }
 }
+

@@ -16,7 +16,7 @@ class SupervisorController extends Controller
 {
     public function index(Request $request)
     {
-        $query = User::where('role', 'supervisor_kpm');
+        $query = User::whereIn('role', ['supervisor_kpm', 'supervisor', 'Supervisor_KPM']);
         if ($request->has('search_key') && !empty($request->search_key)) {
             $query->where(function ($subQuery) use ($request) {
                 $subQuery->where('users.name', 'like', '%' . $request->search_key . '%');

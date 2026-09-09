@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\AdminKecamatanController;
 use App\Http\Controllers\Admin\AdminSekolahController;
+use App\Http\Controllers\Admin\DataRekapController;
 use App\Http\Controllers\Admin\AlokasiPPL;
 use App\Http\Controllers\Admin\CamatKeuchikController;
 use App\Http\Controllers\Admin\ClassroomController as AdminClassroomController;
@@ -230,6 +231,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
     Route::get('/admin/certificate/nilai-ppkpm', [CertificateController::class, 'nilaiPPKPM']);
     Route::get('/admin/certificate/settings', [CertificateController::class, 'settings']);
+
+    // Data Rekap
+    Route::get('/admin/data-rekap', [DataRekapController::class, 'index'])->name('admin.data_rekap');
 });
 
 

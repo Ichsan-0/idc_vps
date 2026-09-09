@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminKecamatanController;
+use App\Http\Controllers\Admin\DataRekapController;
 use App\Http\Controllers\Admin\AdminSekolahController;
 use App\Http\Controllers\Admin\CamatKeuchikController;
 use App\Http\Controllers\Admin\ClassroomController as AdminClassroomController;
@@ -305,4 +306,5 @@ Route::post('/admin/data/kepsek-pamong/edit', [KepsekkPamongController::class, '
 Route::middleware(['auth:sanctum', 'admin_api'])->group(function() {
     Route::get('/admin/users/student/list', [MahsiswaController::class, 'listMahasiswa']);
     Route::post('/admin/users/student/export', [MahsiswaController::class, 'exportData']);
+    Route::get('/admin/data-rekap', [DataRekapController::class, 'getData']);
 });

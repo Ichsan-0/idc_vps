@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminKecamatanController;
-use App\Http\Controllers\Admin\DataRekapController;
+use App\Http\Controllers\DataRekapController;
 use App\Http\Controllers\Admin\AdminSekolahController;
 use App\Http\Controllers\Admin\CamatKeuchikController;
 use App\Http\Controllers\Admin\ClassroomController as AdminClassroomController;
@@ -306,5 +306,10 @@ Route::post('/admin/data/kepsek-pamong/edit', [KepsekkPamongController::class, '
 Route::middleware(['auth:sanctum', 'admin_api'])->group(function() {
     Route::get('/admin/users/student/list', [MahsiswaController::class, 'listMahasiswa']);
     Route::post('/admin/users/student/export', [MahsiswaController::class, 'exportData']);
-    Route::get('/admin/data-rekap', [DataRekapController::class, 'getData']);
+});
+
+// Public API route — tanpa login, dengan Rate Limiting untuk keamanan
+Route::middleware(['throttle:30,1'])->group(function () {
+    Route::get('/data-rekap', [DataRekapController::class, 'getData']);
+    Route::get('/data_rekap', [DataRekapController::class, 'getData']);
 });

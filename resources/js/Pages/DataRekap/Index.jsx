@@ -52,8 +52,8 @@ export default function Index({ auth }) {
             setLoading(true);
             setError(null);
             const url = forceRefresh
-                ? `${config.base_url}/api/data-rekap?refresh=1`
-                : `${config.base_url}/api/data-rekap`;
+                ? `/api/data-rekap?refresh=1`
+                : `/api/data-rekap`;
 
             const res = await axios.get(url, { timeout: 120000 });
             if (res.data.status) {

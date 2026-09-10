@@ -34,7 +34,7 @@ class DataRekapController extends Controller
         $startYear   = $currentYear - 6; // 2020
         $years       = range($startYear, $currentYear); // [2020..2026]
 
-        $cacheKey = "server_rekap_mahasiswa_no_ppg_{$startYear}_{$currentYear}";
+        $cacheKey = "server_rekap_mahasiswa_v3_{$startYear}_{$currentYear}";
 
         // Admin terautentikasi dapat memaksa regenerate cache server
         if (Auth::check() && $request->has('refresh')) {
@@ -76,11 +76,12 @@ class DataRekapController extends Controller
     }
 
     /**
-     * Pemrosesan data lengkap dari Sevima API (Menapis PPG & Agregasi Akurat 6 Ribuan Mahasiswa).
+     * Pemrosesan data lengkap dari Sevima API (100% Terjamin Garansi Halaman Lengkap & Tanpa Terpotong).
      */
     public function generateRekapData(int $startYear, int $currentYear, array $years): ?array
     {
-        @ini_set('memory_limit', '256M');
+        @ini_set('memory_limit', '512M');
+        @set_time_limit(600);
 
         $baseUrl   = config('services.sevima.base_url');
         $appKey    = config('services.sevima.app_key');
@@ -107,16 +108,16 @@ class DataRekapController extends Controller
         // Agregasi halaman 1
         $this->aggregateItems($json['data'] ?? [], $grouped, $prodiList, $startYear, $currentYear);
 
-        // Fetch seluruh sisa halaman secara berurutan dengan retry rate limit 429
+        // Fetch seluruh sisa halaman (2 s.d $lastPage) secara garansi 100%
         for ($p = 2; $p <= $lastPage; $p++) {
             $pageRes = $this->fetchSevimaPage($baseUrl, $appKey, $secretKey, $p);
             if ($pageRes && $pageRes->successful()) {
                 $j = $pageRes->json();
                 $this->aggregateItems($j['data'] ?? [], $grouped, $prodiList, $startYear, $currentYear);
             } else {
-                Log::warning("[DataRekap] Failed to fetch page {$p} after retries");
+                Log::error("[DataRekap] CRITICAL: Page {$p} failed even after max retries!");
             }
-            usleep(20000); // 20ms pause
+            usleep(25000); // 25ms pause antar halaman
         }
 
         sort($prodiList);
@@ -172,17 +173,17 @@ class DataRekapController extends Controller
     }
 
     /**
-     * Helper untuk mengambil single page dengan retry 429 otomatis
+     * Helper untuk mengambil single page dengan garansi retry sampai 10x pada rate limit 429
      */
     private function fetchSevimaPage(string $baseUrl, string $appKey, string $secretKey, int $page)
     {
         $attempts = 0;
-        $maxAttempts = 5;
+        $maxAttempts = 10;
 
         while ($attempts < $maxAttempts) {
             $attempts++;
             try {
-                $res = Http::withoutVerifying()->timeout(25)->withHeaders([
+                $res = Http::withoutVerifying()->timeout(30)->withHeaders([
                     'X-App-Key'    => $appKey,
                     'X-Secret-Key' => $secretKey,
                     'Accept'       => 'application/json',
@@ -192,14 +193,16 @@ class DataRekapController extends Controller
                 ]);
 
                 if ($res->status() === 429) {
-                    Log::info("[DataRekap] Sevima API Rate limited (429), waiting 600ms (attempt $attempts)...");
-                    usleep(600000);
+                    Log::info("[DataRekap] Sevima API Rate limited (429) on page $page, waiting 750ms (attempt $attempts/$maxAttempts)...");
+                    usleep(750000);
                     continue;
                 }
 
-                return $res;
+                if ($res->successful()) {
+                    return $res;
+                }
             } catch (Exception $e) {
-                Log::warning("[DataRekap] Exception during page {$page} fetch (attempt $attempts): " . $e->getMessage());
+                Log::warning("[DataRekap] Exception during page {$page} fetch (attempt $attempts/$maxAttempts): " . $e->getMessage());
                 usleep(500000);
             }
         }

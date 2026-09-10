@@ -13,6 +13,9 @@ use Inertia\Inertia;
 
 class DataRekapController extends Controller
 {
+    // Durasi cache server: 6 bulan (180 hari)
+    const CACHE_TTL_6_MONTHS = 15552000; // 6 * 30 * 86400 detik
+
     /**
      * Halaman Utama Rekapitulasi Data (Public - tanpa login).
      */
@@ -27,7 +30,8 @@ class DataRekapController extends Controller
 
     /**
      * Endpoint API Public Rekapitulasi Mahasiswa.
-     * Mengambil data per-periode (20201-20262) dengan memori yang ter-optimasi & penanganan Rate Limit (HTTP 429).
+     * Data disimpan MURNI di Server Cache selama 6 Bulan.
+     * Client (Browser) hanya menerima respon JSON statis hasil agregasi dari cache server.
      */
     public function getData(Request $request)
     {
@@ -35,84 +39,17 @@ class DataRekapController extends Controller
         $startYear   = $currentYear - 6; // 2020
         $years       = range($startYear, $currentYear); // [2020..2026]
 
-        $cacheKey = "public_rekap_mahasiswa_v6_{$startYear}_{$currentYear}";
+        $cacheKey = "server_rekap_mahasiswa_6bulan_{$startYear}_{$currentYear}";
 
-        // Admin dapat memaksa refresh cache
+        // Admin terautentikasi dapat memaksa regenerate cache server
         if (Auth::check() && $request->has('refresh')) {
             Cache::forget($cacheKey);
         }
 
         try {
-            $result = Cache::remember($cacheKey, 7200, function () use ($years, $startYear, $currentYear) {
-                // Tingkatkan limit memori lokal jika diperlukan untuk proses agregasi
-                @ini_set('memory_limit', '256M');
-
-                $baseUrl   = config('services.sevima.base_url');
-                $appKey    = config('services.sevima.app_key');
-                $secretKey = config('services.sevima.app_secret');
-
-                if (empty($appKey) || empty($secretKey)) {
-                    Log::error('[DataRekap] Sevima credentials missing');
-                    return null;
-                }
-
-                $periods = [];
-                foreach ($years as $y) {
-                    $periods[] = $y . '1';
-                    $periods[] = $y . '2';
-                }
-
-                $grouped   = [];
-                $prodiList = [];
-
-                foreach ($periods as $period) {
-                    $firstRes = $this->fetchSevimaPage($baseUrl, $appKey, $secretKey, $period, 1);
-
-                    if (!$firstRes || !$firstRes->successful()) {
-                        Log::warning("[DataRekap] Failed to fetch period {$period} page 1");
-                        continue;
-                    }
-
-                    $json     = $firstRes->json();
-                    $lastPage = (int) ($json['meta']['last_page'] ?? 1);
-
-                    // Agregasi langsung dari halaman 1 (Hanya simpan prodi & periode, hemat memori <2MB)
-                    $this->aggregateItems($json['data'] ?? [], $grouped, $prodiList, $startYear, $currentYear);
-
-                    // Iterasi sisa halaman
-                    for ($p = 2; $p <= $lastPage; $p++) {
-                        $pageRes = $this->fetchSevimaPage($baseUrl, $appKey, $secretKey, $period, $p);
-                        if ($pageRes && $pageRes->successful()) {
-                            $j = $pageRes->json();
-                            $this->aggregateItems($j['data'] ?? [], $grouped, $prodiList, $startYear, $currentYear);
-                        } else {
-                            Log::warning("[DataRekap] Failed period {$period} page {$p}");
-                        }
-                        usleep(25000); // 25ms pause antar request
-                    }
-                }
-
-                sort($prodiList);
-
-                $rows = [];
-                foreach ($prodiList as $prodi) {
-                    $row = ['prodi' => $prodi, 'total' => 0];
-                    foreach ($years as $year) {
-                        $count      = $grouped[$prodi][$year] ?? 0;
-                        $row[$year] = $count;
-                        $row['total'] += $count;
-                    }
-                    $rows[] = $row;
-                }
-
-                // Urutkan berdasarkan total terbanyak
-                usort($rows, fn($a, $b) => $b['total'] - $a['total']);
-
-                return [
-                    'rows'       => $rows,
-                    'years'      => $years,
-                    'prodi_list' => $prodiList,
-                ];
+            // Disimpan di Server Cache selama 6 Bulan (now()->addMonths(6))
+            $result = Cache::remember($cacheKey, now()->addMonths(6), function () use ($years, $startYear, $currentYear) {
+                return $this->generateRekapData($startYear, $currentYear, $years);
             });
 
             if ($result === null) {
@@ -133,6 +70,7 @@ class DataRekapController extends Controller
                 'years'          => $result['years'],
                 'prodi_list'     => $result['prodi_list'],
                 'total_per_year' => $totalPerYear,
+                'cached_at'      => $result['generated_at'] ?? null,
             ]);
         } catch (Exception $e) {
             Log::error('[DataRekap] Exception: ' . $e->getMessage());
@@ -141,6 +79,79 @@ class DataRekapController extends Controller
                 'message' => 'Terjadi kesalahan sistem.',
             ], 500);
         }
+    }
+
+    /**
+     * Method inti untuk melakukan pemrosesan data langsung dari Sevima API dan menyimpannya di Server Cache.
+     */
+    public function generateRekapData(int $startYear, int $currentYear, array $years): ?array
+    {
+        @ini_set('memory_limit', '256M');
+
+        $baseUrl   = config('services.sevima.base_url');
+        $appKey    = config('services.sevima.app_key');
+        $secretKey = config('services.sevima.app_secret');
+
+        if (empty($appKey) || empty($secretKey)) {
+            Log::error('[DataRekap] Sevima credentials missing');
+            return null;
+        }
+
+        $periods = [];
+        foreach ($years as $y) {
+            $periods[] = $y . '1';
+            $periods[] = $y . '2';
+        }
+
+        $grouped   = [];
+        $prodiList = [];
+
+        foreach ($periods as $period) {
+            $firstRes = $this->fetchSevimaPage($baseUrl, $appKey, $secretKey, $period, 1);
+
+            if (!$firstRes || !$firstRes->successful()) {
+                Log::warning("[DataRekap] Failed to fetch period {$period} page 1");
+                continue;
+            }
+
+            $json     = $firstRes->json();
+            $lastPage = (int) ($json['meta']['last_page'] ?? 1);
+
+            $this->aggregateItems($json['data'] ?? [], $grouped, $prodiList, $startYear, $currentYear);
+
+            for ($p = 2; $p <= $lastPage; $p++) {
+                $pageRes = $this->fetchSevimaPage($baseUrl, $appKey, $secretKey, $period, $p);
+                if ($pageRes && $pageRes->successful()) {
+                    $j = $pageRes->json();
+                    $this->aggregateItems($j['data'] ?? [], $grouped, $prodiList, $startYear, $currentYear);
+                } else {
+                    Log::warning("[DataRekap] Failed period {$period} page {$p}");
+                }
+                usleep(25000); // 25ms pause
+            }
+        }
+
+        sort($prodiList);
+
+        $rows = [];
+        foreach ($prodiList as $prodi) {
+            $row = ['prodi' => $prodi, 'total' => 0];
+            foreach ($years as $year) {
+                $count      = $grouped[$prodi][$year] ?? 0;
+                $row[$year] = $count;
+                $row['total'] += $count;
+            }
+            $rows[] = $row;
+        }
+
+        usort($rows, fn($a, $b) => $b['total'] - $a['total']);
+
+        return [
+            'rows'         => $rows,
+            'years'        => $years,
+            'prodi_list'   => $prodiList,
+            'generated_at' => now()->toIso8601String(),
+        ];
     }
 
     /**

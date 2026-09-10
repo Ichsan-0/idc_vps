@@ -189,8 +189,8 @@ export default function DataRekap({ auth }) {
                 {/* Page Title Header */}
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
                     <div>
-                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 rounded-full text-xs font-semibold mb-2">
-                            <span>📡 Realtime Sync via Sevima API</span>
+                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 rounded-full text-xs font-semibold mb-2">
+                            <span>⚡ Server Cache (Diperbarui per 6 Bulan)</span>
                         </div>
                         <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
                             Rekapitulasi Jumlah Mahasiswa Aktif

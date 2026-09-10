@@ -13,9 +13,6 @@ use Inertia\Inertia;
 
 class DataRekapController extends Controller
 {
-    // Durasi cache server: 6 bulan (180 hari)
-    const CACHE_TTL_6_MONTHS = 15552000; // 6 * 30 * 86400 detik
-
     /**
      * Halaman Utama Rekapitulasi Data (Public - tanpa login).
      */
@@ -29,9 +26,7 @@ class DataRekapController extends Controller
     }
 
     /**
-     * Endpoint API Public Rekapitulasi Mahasiswa.
-     * Data disimpan MURNI di Server Cache selama 6 Bulan.
-     * Client (Browser) hanya menerima respon JSON statis hasil agregasi dari cache server.
+     * Endpoint API Public Rekapitulasi Mahasiswa (Tanpa PPG, Disimpan 6 Bulan di Server Cache).
      */
     public function getData(Request $request)
     {
@@ -39,7 +34,7 @@ class DataRekapController extends Controller
         $startYear   = $currentYear - 6; // 2020
         $years       = range($startYear, $currentYear); // [2020..2026]
 
-        $cacheKey = "server_rekap_mahasiswa_6bulan_{$startYear}_{$currentYear}";
+        $cacheKey = "server_rekap_mahasiswa_no_ppg_{$startYear}_{$currentYear}";
 
         // Admin terautentikasi dapat memaksa regenerate cache server
         if (Auth::check() && $request->has('refresh')) {
@@ -47,7 +42,6 @@ class DataRekapController extends Controller
         }
 
         try {
-            // Disimpan di Server Cache selama 6 Bulan (now()->addMonths(6))
             $result = Cache::remember($cacheKey, now()->addMonths(6), function () use ($years, $startYear, $currentYear) {
                 return $this->generateRekapData($startYear, $currentYear, $years);
             });
@@ -82,7 +76,7 @@ class DataRekapController extends Controller
     }
 
     /**
-     * Method inti untuk melakukan pemrosesan data langsung dari Sevima API dan menyimpannya di Server Cache.
+     * Pemrosesan data lengkap dari Sevima API (Menapis PPG & Agregasi Akurat 6 Ribuan Mahasiswa).
      */
     public function generateRekapData(int $startYear, int $currentYear, array $years): ?array
     {
@@ -97,38 +91,32 @@ class DataRekapController extends Controller
             return null;
         }
 
-        $periods = [];
-        foreach ($years as $y) {
-            $periods[] = $y . '1';
-            $periods[] = $y . '2';
+        // Ambil halaman 1 untuk mendapatkan info total halaman
+        $firstRes = $this->fetchSevimaPage($baseUrl, $appKey, $secretKey, 1);
+        if (!$firstRes || !$firstRes->successful()) {
+            Log::error("[DataRekap] Failed to fetch page 1 from Sevima API");
+            return null;
         }
+
+        $json     = $firstRes->json();
+        $lastPage = (int) ($json['meta']['last_page'] ?? 1);
 
         $grouped   = [];
         $prodiList = [];
 
-        foreach ($periods as $period) {
-            $firstRes = $this->fetchSevimaPage($baseUrl, $appKey, $secretKey, $period, 1);
+        // Agregasi halaman 1
+        $this->aggregateItems($json['data'] ?? [], $grouped, $prodiList, $startYear, $currentYear);
 
-            if (!$firstRes || !$firstRes->successful()) {
-                Log::warning("[DataRekap] Failed to fetch period {$period} page 1");
-                continue;
+        // Fetch seluruh sisa halaman secara berurutan dengan retry rate limit 429
+        for ($p = 2; $p <= $lastPage; $p++) {
+            $pageRes = $this->fetchSevimaPage($baseUrl, $appKey, $secretKey, $p);
+            if ($pageRes && $pageRes->successful()) {
+                $j = $pageRes->json();
+                $this->aggregateItems($j['data'] ?? [], $grouped, $prodiList, $startYear, $currentYear);
+            } else {
+                Log::warning("[DataRekap] Failed to fetch page {$p} after retries");
             }
-
-            $json     = $firstRes->json();
-            $lastPage = (int) ($json['meta']['last_page'] ?? 1);
-
-            $this->aggregateItems($json['data'] ?? [], $grouped, $prodiList, $startYear, $currentYear);
-
-            for ($p = 2; $p <= $lastPage; $p++) {
-                $pageRes = $this->fetchSevimaPage($baseUrl, $appKey, $secretKey, $period, $p);
-                if ($pageRes && $pageRes->successful()) {
-                    $j = $pageRes->json();
-                    $this->aggregateItems($j['data'] ?? [], $grouped, $prodiList, $startYear, $currentYear);
-                } else {
-                    Log::warning("[DataRekap] Failed period {$period} page {$p}");
-                }
-                usleep(25000); // 25ms pause
-            }
+            usleep(20000); // 20ms pause
         }
 
         sort($prodiList);
@@ -144,6 +132,7 @@ class DataRekapController extends Controller
             $rows[] = $row;
         }
 
+        // Urutkan berdasarkan total mahasiswa terbanyak
         usort($rows, fn($a, $b) => $b['total'] - $a['total']);
 
         return [
@@ -155,13 +144,19 @@ class DataRekapController extends Controller
     }
 
     /**
-     * Helper untuk agregasi langsung tanpa menyimpan raw array di memori
+     * Agregasi item data & menapis (exclude) PPG (Pendidikan Profesi Guru)
      */
     private function aggregateItems(array $items, array &$grouped, array &$prodiList, int $startYear, int $currentYear)
     {
         foreach ($items as $item) {
-            $attrs    = $item['attributes'] ?? [];
-            $prodi    = trim($attrs['program_studi'] ?? 'Tidak Diketahui');
+            $attrs = $item['attributes'] ?? [];
+            $prodi = trim($attrs['program_studi'] ?? 'Tidak Diketahui');
+
+            // HILANGKAN DATA PPG (Pendidikan Profesi Guru)
+            if (stripos($prodi, 'Pendidikan Profesi Guru') !== false || stripos($prodi, 'PPG') !== false) {
+                continue;
+            }
+
             $periode  = (string) ($attrs['id_periode'] ?? '');
             $angkatan = (int) substr($periode, 0, 4);
 
@@ -179,7 +174,7 @@ class DataRekapController extends Controller
     /**
      * Helper untuk mengambil single page dengan retry 429 otomatis
      */
-    private function fetchSevimaPage(string $baseUrl, string $appKey, string $secretKey, string $period, int $page)
+    private function fetchSevimaPage(string $baseUrl, string $appKey, string $secretKey, int $page)
     {
         $attempts = 0;
         $maxAttempts = 5;
@@ -193,7 +188,6 @@ class DataRekapController extends Controller
                     'Accept'       => 'application/json',
                 ])->get($baseUrl . '/mahasiswa', [
                     'f-status_mahasiswa' => 'Aktif',
-                    'f-id_periode'        => $period,
                     'page'               => $page,
                 ]);
 
@@ -205,7 +199,7 @@ class DataRekapController extends Controller
 
                 return $res;
             } catch (Exception $e) {
-                Log::warning("[DataRekap] Exception during page fetch (attempt $attempts): " . $e->getMessage());
+                Log::warning("[DataRekap] Exception during page {$page} fetch (attempt $attempts): " . $e->getMessage());
                 usleep(500000);
             }
         }

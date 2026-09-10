@@ -33,7 +33,7 @@ class GenerateDataRekapCommand extends Command
         $startYear   = $currentYear - 6;
         $years       = range($startYear, $currentYear);
 
-        $cacheKey = "server_rekap_mahasiswa_6bulan_{$startYear}_{$currentYear}";
+        $cacheKey = "server_rekap_mahasiswa_no_ppg_{$startYear}_{$currentYear}";
 
         // Hapus cache lama jika ada
         Cache::forget($cacheKey);

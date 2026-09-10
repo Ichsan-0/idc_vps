@@ -188,12 +188,6 @@ export default function Index({ auth }) {
                             >
                                 Beranda
                             </a>
-                            <a
-                                href="/login"
-                                className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-sm"
-                            >
-                                Login System
-                            </a>
                         </div>
                     </header>
                 )}

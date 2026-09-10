@@ -34,6 +34,7 @@ const COLORS = [
 
 export default function Index({ auth }) {
     const [loading, setLoading] = useState(true);
+    const [isRefreshing, setIsRefreshing] = useState(false);
     const [error, setError] = useState(null);
     const [data, setData] = useState([]);
     const [years, setYears] = useState([]);
@@ -47,15 +48,25 @@ export default function Index({ auth }) {
         fetchData();
     }, []);
 
+    const handleSyncSevima = () => {
+        const confirmed = window.confirm(
+            "Proses pembaruan data dari API Sevima akan membutuhkan waktu beberapa menit. Apakah Anda yakin ingin melanjutkan?"
+        );
+        if (confirmed) {
+            fetchData(true);
+        }
+    };
+
     const fetchData = async (forceRefresh = false) => {
         try {
             setLoading(true);
+            setIsRefreshing(forceRefresh);
             setError(null);
             const url = forceRefresh
                 ? `/api/data-rekap?refresh=1`
                 : `/api/data-rekap`;
 
-            const res = await axios.get(url, { timeout: 120000 });
+            const res = await axios.get(url, { timeout: 300000 });
             if (res.data.status) {
                 setData(res.data.data);
                 setYears(res.data.years);
@@ -72,6 +83,7 @@ export default function Index({ auth }) {
             );
         } finally {
             setLoading(false);
+            setIsRefreshing(false);
         }
     };
 
@@ -211,31 +223,46 @@ export default function Index({ auth }) {
                         </p>
                     </div>
 
-                    {auth?.user && (
-                        <button
-                            onClick={() => fetchData(true)}
-                            disabled={loading}
-                            className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-60 shadow-sm"
-                        >
-                            {loading ? (
-                                <>
-                                    <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
-                                        <path fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" className="opacity-75" />
-                                    </svg>
-                                    Memperbarui...
-                                </>
-                            ) : (
-                                <>
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                    </svg>
-                                    Refresh Cache Sevima
-                                </>
-                            )}
-                        </button>
-                    )}
+                    <button
+                        onClick={handleSyncSevima}
+                        disabled={loading}
+                        className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all disabled:opacity-60 shadow-sm"
+                        title="Sinkronkan ulang data langsung dari Sevima API"
+                    >
+                        {loading && isRefreshing ? (
+                            <>
+                                <svg className="animate-spin w-4 h-4 text-white" viewBox="0 0 24 24" fill="none">
+                                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
+                                    <path fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" className="opacity-75" />
+                                </svg>
+                                <span>Menyinkronkan API...</span>
+                            </>
+                        ) : (
+                            <>
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                <span>Reload Data Sevima</span>
+                            </>
+                        )}
+                    </button>
                 </div>
+
+                {/* Progress Banner during Sevima Reload */}
+                {isRefreshing && (
+                    <div className="bg-amber-50 dark:bg-amber-950/60 border-l-4 border-amber-500 p-4 rounded-2xl shadow-sm flex items-center gap-3 text-amber-800 dark:text-amber-200">
+                        <svg className="animate-spin w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
+                            <path fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" className="opacity-75" />
+                        </svg>
+                        <div>
+                            <p className="font-bold text-sm">Sedang melakukan sinkronisasi data dari Sevima API...</p>
+                            <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
+                                Proses ini membutuhkan waktu beberapa menit untuk melakukan scanning 82+ halaman Sevima API. Mohon jangan menutup halaman ini.
+                            </p>
+                        </div>
+                    </div>
+                )}
 
                 {/* Error Banner */}
                 {error && (

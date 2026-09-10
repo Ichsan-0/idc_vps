@@ -30,14 +30,17 @@ class DataRekapController extends Controller
      */
     public function getData(Request $request)
     {
+        @ini_set('memory_limit', '512M');
+        @set_time_limit(300);
+
         $currentYear = (int) date('Y');
         $startYear   = $currentYear - 6; // 2020
         $years       = range($startYear, $currentYear); // [2020..2026]
 
         $cacheKey = "server_rekap_mahasiswa_v3_{$startYear}_{$currentYear}";
 
-        // Admin terautentikasi dapat memaksa regenerate cache server
-        if (Auth::check() && $request->has('refresh')) {
+        // Pemaksaan regenerate cache server saat tombol refresh diklik
+        if ($request->has('refresh') || $request->boolean('refresh')) {
             Cache::forget($cacheKey);
         }
 

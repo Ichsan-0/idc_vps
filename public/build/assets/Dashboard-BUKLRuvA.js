@@ -1,0 +1,1 @@
+import{j as r}from"./app-BQCI9jf9.js";import{O as a}from"./OperatorKecamatanLayout-CxnrNLgp.js";import"./Lambang_UIN_Ar-Raniry-BzFKTjai.js";import"./NavLink-mW7KgVtz.js";function e(){return r.jsx(a,{children:"Dashboard"})}export{e as default};

@@ -1,0 +1,1 @@
+import{r}from"./createSvgIcon-CfxY7SB0.js";import{r as t}from"./createSvgIcon-BZnhQ7cq.js";import{j as a}from"./app-BQCI9jf9.js";var e={},o=r;Object.defineProperty(e,"__esModule",{value:!0});var i=e.default=void 0,u=o(t()),p=a;i=e.default=(0,u.default)((0,p.jsx)("path",{d:"m16 6 2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"}),"TrendingUp");export{i as d};

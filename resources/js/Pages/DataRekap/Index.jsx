@@ -1,15 +1,14 @@
-import AdminLayout from "@/Layouts/Admin/AdminLayout";
-import { Head, Link } from "@inertiajs/react";
-import { useEffect, useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { Head } from "@inertiajs/react";
 import axios from "axios";
-import { config } from "@/config/config";
+import AdminLayout from "@/Layouts/Admin/AdminLayout";
 import {
     Chart as ChartJS,
     CategoryScale,
     LinearScale,
     BarElement,
-    LineElement,
     PointElement,
+    LineElement,
     Title,
     Tooltip,
     Legend,
@@ -20,30 +19,29 @@ ChartJS.register(
     CategoryScale,
     LinearScale,
     BarElement,
-    LineElement,
     PointElement,
+    LineElement,
     Title,
     Tooltip,
     Legend
 );
 
 const COLORS = [
-    "#6366f1", "#f59e0b", "#10b981", "#ef4444", "#3b82f6",
-    "#8b5cf6", "#ec4899", "#14b8a6", "#f97316", "#84cc16",
-    "#06b6d4", "#a855f7", "#e11d48", "#0ea5e9", "#22d3ee",
-    "#d946ef", "#fb923c", "#4ade80", "#facc15", "#60a5fa",
+    "#4f46e5", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6",
+    "#ec4899", "#06b6d4", "#84cc16", "#f97316", "#6366f1",
+    "#14b8a6", "#d97706", "#dc2626", "#7c3aed", "#db2777",
 ];
 
-export default function DataRekap({ auth }) {
+export default function Index({ auth }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [data, setData] = useState([]);
     const [years, setYears] = useState([]);
     const [prodiList, setProdiList] = useState([]);
     const [totalPerYear, setTotalPerYear] = useState({});
+    const [selectedProdi, setSelectedProdi] = useState([]);
     const [chartType, setChartType] = useState("bar");
     const [searchProdi, setSearchProdi] = useState("");
-    const [selectedProdi, setSelectedProdi] = useState([]);
 
     useEffect(() => {
         fetchData();
@@ -77,25 +75,55 @@ export default function DataRekap({ auth }) {
         }
     };
 
-    const filteredData = data.filter((row) =>
-        row.prodi.toLowerCase().includes(searchProdi.toLowerCase())
-    );
-
-    const chartData = {
-        labels: years.map(String),
-        datasets: selectedProdi.map((prodi, i) => {
-            const row = data.find((r) => r.prodi === prodi);
-            return {
-                label: prodi,
-                data: years.map((y) => row?.[y] ?? 0),
-                backgroundColor: COLORS[i % COLORS.length] + "cc",
-                borderColor: COLORS[i % COLORS.length],
-                borderWidth: 2,
-                tension: 0.3,
-                fill: false,
-            };
-        }),
+    const toggleProdi = (prodiName) => {
+        if (selectedProdi.includes(prodiName)) {
+            setSelectedProdi(selectedProdi.filter((p) => p !== prodiName));
+        } else {
+            setSelectedProdi([...selectedProdi, prodiName]);
+        }
     };
+
+    const selectAll = () => setSelectedProdi([...prodiList]);
+    const clearAll = () => setSelectedProdi([]);
+
+    const filteredData = useMemo(() => {
+        if (!searchProdi) return data;
+        return data.filter((item) =>
+            item.prodi.toLowerCase().includes(searchProdi.toLowerCase())
+        );
+    }, [data, searchProdi]);
+
+    const grandTotalPerYear = useMemo(() => {
+        const result = {};
+        years.forEach((y) => {
+            result[y] = filteredData.reduce((acc, row) => acc + (row[y] || 0), 0);
+        });
+        return result;
+    }, [filteredData, years]);
+
+    const grandTotal = useMemo(() => {
+        return Object.values(grandTotalPerYear).reduce((a, b) => a + b, 0);
+    }, [grandTotalPerYear]);
+
+    const chartData = useMemo(() => {
+        const activeProdis = data.filter((d) => selectedProdi.includes(d.prodi));
+
+        return {
+            labels: years.map((y) => `Angkatan ${y}`),
+            datasets: activeProdis.map((item, idx) => {
+                const color = COLORS[idx % COLORS.length];
+                return {
+                    label: item.prodi,
+                    data: years.map((y) => item[y] || 0),
+                    backgroundColor: color + "B3",
+                    borderColor: color,
+                    borderWidth: 2,
+                    borderRadius: 6,
+                    tension: 0.3,
+                };
+            }),
+        };
+    }, [data, selectedProdi, years]);
 
     const chartOptions = {
         responsive: true,
@@ -103,62 +131,50 @@ export default function DataRekap({ auth }) {
         plugins: {
             legend: {
                 position: "bottom",
-                labels: { boxWidth: 12, padding: 10, font: { size: 11 } },
-            },
-            title: {
-                display: true,
-                text: "Grafik Rekapitulasi Mahasiswa Aktif per Program Studi",
-                font: { size: 15, weight: "bold" },
+                labels: {
+                    boxWidth: 12,
+                    font: { size: 11, weight: "600" },
+                    padding: 16,
+                },
             },
             tooltip: {
-                callbacks: {
-                    label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y} mahasiswa`,
-                },
+                backgroundColor: "rgba(17, 24, 39, 0.9)",
+                padding: 12,
+                cornerRadius: 8,
+                titleFont: { size: 13, weight: "bold" },
+                bodyFont: { size: 12 },
             },
         },
         scales: {
+            x: {
+                grid: { display: false },
+                ticks: { font: { size: 12, weight: "600" } },
+            },
             y: {
                 beginAtZero: true,
-                ticks: { stepSize: 10 },
-                title: { display: true, text: "Jumlah Mahasiswa Aktif" },
-            },
-            x: {
-                title: { display: true, text: "Tahun Angkatan" },
+                grid: { color: "rgba(156, 163, 175, 0.15)" },
+                ticks: { font: { size: 11 } },
             },
         },
     };
 
-    const toggleProdi = (prodi) => {
-        setSelectedProdi((prev) =>
-            prev.includes(prodi) ? prev.filter((p) => p !== prodi) : [...prev, prodi]
-        );
-    };
-
-    const selectAll = () => setSelectedProdi([...prodiList]);
-    const clearAll = () => setSelectedProdi([]);
-
-    const grandTotalPerYear = {};
-    years.forEach((y) => {
-        grandTotalPerYear[y] = data.reduce((sum, row) => sum + (row[y] ?? 0), 0);
-    });
-    const grandTotal = data.reduce((sum, row) => sum + (row.total ?? 0), 0);
-
     const content = (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-800 dark:text-gray-100">
-            {/* Top Navigation Header (For Guest / Public view) */}
-            {!auth?.user && (
-                <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50 shadow-sm">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div className="min-h-screen bg-gray-50/50 dark:bg-gray-950 text-gray-800 dark:text-gray-100 py-8 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto space-y-8">
+                {/* Guest Navigation Bar */}
+                {!auth?.user && (
+                    <header className="flex items-center justify-between bg-white dark:bg-gray-900 px-6 py-4 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
                         <div className="flex items-center gap-3">
                             <img
-                                src="https://upload.wikimedia.org/wikipedia/commons/a/af/Lambang_UIN_Ar-Raniry.png"
+                                src="/assets/images/Lambang_UIN_Ar-Raniry.png"
                                 alt="UIN Ar-Raniry Logo"
                                 className="w-10 h-10 object-contain"
+                                onError={(e) => { e.target.style.display = "none"; }}
                             />
                             <div>
-                                <h1 className="text-base font-bold text-gray-900 dark:text-white leading-tight">
+                                <h2 className="font-extrabold text-base text-gray-900 dark:text-white leading-tight">
                                     FTK UIN Ar-Raniry Banda Aceh
-                                </h1>
+                                </h2>
                                 <p className="text-xs text-gray-500 dark:text-gray-400">
                                     Sistem Informasi Rekapitulasi Data Mahasiswa
                                 </p>
@@ -166,24 +182,22 @@ export default function DataRekap({ auth }) {
                         </div>
 
                         <div className="flex items-center gap-3">
-                            <Link
+                            <a
                                 href="/"
-                                className="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 px-3 py-2 transition-colors"
+                                className="text-xs font-semibold text-gray-600 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-white transition-colors"
                             >
                                 Beranda
-                            </Link>
-                            <Link
+                            </a>
+                            <a
                                 href="/login"
-                                className="text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg shadow-sm transition-all"
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-sm"
                             >
                                 Login System
-                            </Link>
+                            </a>
                         </div>
-                    </div>
-                </header>
-            )}
+                    </header>
+                )}
 
-            <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
                 <Head title="Rekapitulasi Mahasiswa Aktif" />
 
                 {/* Page Title Header */}
@@ -215,7 +229,7 @@ export default function DataRekap({ auth }) {
                                         <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
                                         <path fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" className="opacity-75" />
                                     </svg>
-                                    Memuat Sevima API...
+                                    Memperbarui...
                                 </>
                             ) : (
                                 <>
@@ -290,92 +304,7 @@ export default function DataRekap({ auth }) {
                             </div>
                         </div>
 
-                        {/* Chart Component */}
-                        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
-                            <div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-4 border-b border-gray-100 dark:border-gray-800">
-                                <div>
-                                    <h2 className="text-base font-bold text-gray-900 dark:text-white">
-                                        📈 Grafik Distribusi Mahasiswa
-                                    </h2>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                                        Klik nama prodi di bawah untuk memfilter grafik
-                                    </p>
-                                </div>
-                                <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
-                                    <button
-                                        onClick={() => setChartType("bar")}
-                                        className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-all ${
-                                            chartType === "bar"
-                                                ? "bg-indigo-600 text-white shadow-sm"
-                                                : "text-gray-600 dark:text-gray-400 hover:text-gray-900"
-                                        }`}
-                                    >
-                                        Bar Chart
-                                    </button>
-                                    <button
-                                        onClick={() => setChartType("line")}
-                                        className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-all ${
-                                            chartType === "line"
-                                                ? "bg-indigo-600 text-white shadow-sm"
-                                                : "text-gray-600 dark:text-gray-400 hover:text-gray-900"
-                                        }`}
-                                    >
-                                        Line Chart
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Filter Chips */}
-                            <div className="flex flex-wrap items-center gap-2 mb-4">
-                                <button
-                                    onClick={selectAll}
-                                    className="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 px-2.5 py-1 rounded-lg font-medium transition-colors"
-                                >
-                                    Pilih Semua
-                                </button>
-                                <button
-                                    onClick={clearAll}
-                                    className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 dark:bg-gray-800 dark:text-gray-400 px-2.5 py-1 rounded-lg font-medium transition-colors"
-                                >
-                                    Hapus Semua
-                                </button>
-                            </div>
-
-                            <div className="flex flex-wrap gap-1.5 mb-6 max-h-36 overflow-y-auto pr-1">
-                                {prodiList.map((prodi, i) => {
-                                    const isSelected = selectedProdi.includes(prodi);
-                                    return (
-                                        <button
-                                            key={prodi}
-                                            onClick={() => toggleProdi(prodi)}
-                                            className="text-xs px-2.5 py-1 rounded-full border transition-all"
-                                            style={{
-                                                backgroundColor: isSelected
-                                                    ? COLORS[i % COLORS.length] + "20"
-                                                    : "transparent",
-                                                borderColor: COLORS[i % COLORS.length],
-                                                color: isSelected
-                                                    ? COLORS[i % COLORS.length]
-                                                    : "#9ca3af",
-                                                fontWeight: isSelected ? "600" : "400",
-                                            }}
-                                        >
-                                            {prodi}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-
-                            <div className="h-80 sm:h-96">
-                                {chartType === "bar" ? (
-                                    <Bar data={chartData} options={chartOptions} />
-                                ) : (
-                                    <Line data={chartData} options={chartOptions} />
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Data Table */}
+                        {/* Data Table (DILETAKKAN DI ATAS GRAFIK) */}
                         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden">
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-5 border-b border-gray-100 dark:border-gray-800">
                                 <div>
@@ -383,7 +312,7 @@ export default function DataRekap({ auth }) {
                                         📋 Tabel Rekapitulasi per Program Studi
                                     </h2>
                                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                                        Data jumlah mahasiswa aktif berdasarkan angkatan 2020 s.d. 2026
+                                        Data jumlah mahasiswa aktif berdasarkan angkatan {years[0]} s.d. {years[years.length - 1]}
                                     </p>
                                 </div>
                                 <input
@@ -473,13 +402,97 @@ export default function DataRekap({ auth }) {
                                 )}
                             </div>
                         </div>
+
+                        {/* Chart Component (DILETAKKAN DI BAWAH TABEL) */}
+                        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
+                            <div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-4 border-b border-gray-100 dark:border-gray-800">
+                                <div>
+                                    <h2 className="text-base font-bold text-gray-900 dark:text-white">
+                                        📈 Grafik Distribusi Mahasiswa
+                                    </h2>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                                        Klik nama prodi di bawah untuk memfilter grafik
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
+                                    <button
+                                        onClick={() => setChartType("bar")}
+                                        className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-all ${
+                                            chartType === "bar"
+                                                ? "bg-indigo-600 text-white shadow-sm"
+                                                : "text-gray-600 dark:text-gray-400 hover:text-gray-900"
+                                        }`}
+                                    >
+                                        Bar Chart
+                                    </button>
+                                    <button
+                                        onClick={() => setChartType("line")}
+                                        className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-all ${
+                                            chartType === "line"
+                                                ? "bg-indigo-600 text-white shadow-sm"
+                                                : "text-gray-600 dark:text-gray-400 hover:text-gray-900"
+                                        }`}
+                                    >
+                                        Line Chart
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Filter Chips */}
+                            <div className="flex flex-wrap items-center gap-2 mb-4">
+                                <button
+                                    onClick={selectAll}
+                                    className="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 px-2.5 py-1 rounded-lg font-medium transition-colors"
+                                >
+                                    Pilih Semua
+                                </button>
+                                <button
+                                    onClick={clearAll}
+                                    className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 dark:bg-gray-800 dark:text-gray-400 px-2.5 py-1 rounded-lg font-medium transition-colors"
+                                >
+                                    Hapus Semua
+                                </button>
+                            </div>
+
+                            <div className="flex flex-wrap gap-1.5 mb-6 max-h-36 overflow-y-auto pr-1">
+                                {prodiList.map((prodi, i) => {
+                                    const isSelected = selectedProdi.includes(prodi);
+                                    return (
+                                        <button
+                                            key={prodi}
+                                            onClick={() => toggleProdi(prodi)}
+                                            className="text-xs px-2.5 py-1 rounded-full border transition-all"
+                                            style={{
+                                                backgroundColor: isSelected
+                                                    ? COLORS[i % COLORS.length] + "20"
+                                                    : "transparent",
+                                                borderColor: COLORS[i % COLORS.length],
+                                                color: isSelected
+                                                    ? COLORS[i % COLORS.length]
+                                                    : "#9ca3af",
+                                                fontWeight: isSelected ? "600" : "400",
+                                            }}
+                                        >
+                                            {prodi}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            <div className="h-80 sm:h-96">
+                                {chartType === "bar" ? (
+                                    <Bar data={chartData} options={chartOptions} />
+                                ) : (
+                                    <Line data={chartData} options={chartOptions} />
+                                )}
+                            </div>
+                        </div>
                     </>
                 )}
             </div>
         </div>
     );
 
-    // Render inside AdminLayout if user is logged in as admin, otherwise render directly
     if (auth?.user) {
         return <AdminLayout>{content}</AdminLayout>;
     }

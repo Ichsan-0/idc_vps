@@ -65,7 +65,7 @@ class DataRekapController extends Controller
     }
 
     /**
-     * Endpoint API Public Rekapitulasi Mahasiswa (Tanpa PPG, Disimpan 6 Bulan di Server Cache).
+     * Endpoint API Public Rekapitulasi Mahasiswa (Tanpa PPG, Disimpan Persistent & Server Cache).
      */
     public function getData(Request $request)
     {
@@ -76,7 +76,8 @@ class DataRekapController extends Controller
         $startYear   = $currentYear - 6; // 2020
         $years       = range($startYear, $currentYear); // [2020..2026]
 
-        $cacheKey = "server_rekap_mahasiswa_v3_{$startYear}_{$currentYear}";
+        $cacheKey       = "server_rekap_mahasiswa_v3_{$startYear}_{$currentYear}";
+        $persistentFile = storage_path('app/rekap_mahasiswa_persistent.json');
 
         // Jika tombol reload diklik, panggil background sync agar browser TIDAK 504 Timeout
         if ($request->has('refresh') || $request->boolean('refresh')) {
@@ -86,13 +87,23 @@ class DataRekapController extends Controller
         try {
             $result = Cache::get($cacheKey);
 
-            // Jika cache belum ada sama sekali dan tidak sedang syncing, jalankan generate
-            if (!$result) {
-                if (!Cache::has('rekap_sync_running')) {
-                    $result = $this->generateRekapData($startYear, $currentYear, $years);
-                    if ($result !== null) {
+            // Fallback 1: Jika cache terhapus (e.g. php artisan optimize:clear), baca dari file persistent
+            if (!$result && file_exists($persistentFile)) {
+                $fileContent = @file_get_contents($persistentFile);
+                if ($fileContent) {
+                    $decoded = json_decode($fileContent, true);
+                    if ($decoded && !empty($decoded['rows'])) {
+                        $result = $decoded;
+                        // Restore kembali ke Laravel Cache
                         Cache::put($cacheKey, $result, now()->addMonths(6));
                     }
+                }
+            }
+
+            // Fallback 2: Jika baik cache maupun file persistent belum ada, trigger background sync
+            if (!$result) {
+                if (!Cache::has('rekap_sync_running')) {
+                    $this->triggerBackgroundSync();
                 }
             }
 
@@ -101,7 +112,7 @@ class DataRekapController extends Controller
                     'status'  => false,
                     'syncing' => Cache::has('rekap_sync_running'),
                     'message' => Cache::has('rekap_sync_running')
-                        ? 'Proses sinkronisasi data Sevima API sedang berlangsung di background server...'
+                        ? 'Proses sinkronisasi data Sevima API sedang berlangsung di background server... Data akan muncul otomatis setelah selesai.'
                         : 'Gagal mengambil data dari Sevima API.',
                 ], Cache::has('rekap_sync_running') ? 200 : 500);
             }
@@ -166,7 +177,15 @@ class DataRekapController extends Controller
             return null;
         }
 
-        return $this->aggregateItems($allMahasiswa, $years, $startYear, $currentYear);
+        $aggregated = $this->aggregateItems($allMahasiswa, $years, $startYear, $currentYear);
+
+        // Simpan juga secara persistent ke file JSON
+        if ($aggregated) {
+            $persistentFile = storage_path('app/rekap_mahasiswa_persistent.json');
+            @file_put_contents($persistentFile, json_encode($aggregated, JSON_PRETTY_PRINT));
+        }
+
+        return $aggregated;
     }
 
     /**

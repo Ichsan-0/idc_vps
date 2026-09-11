@@ -21,7 +21,7 @@ class GenerateDataRekapCommand extends Command
      *
      * @var string
      */
-    protected $description = 'Generate dan simpan data rekapitulasi mahasiswa dari Sevima API ke Server Cache (berlaku 6 Bulan)';
+    protected $description = 'Generate dan simpan data rekapitulasi mahasiswa dari Sevima API ke Server Cache & Persistent File';
 
     /**
      * Jalankan perintah console.
@@ -39,7 +39,8 @@ class GenerateDataRekapCommand extends Command
             $startYear   = $currentYear - 6;
             $years       = range($startYear, $currentYear);
 
-            $cacheKey = "server_rekap_mahasiswa_v3_{$startYear}_{$currentYear}";
+            $cacheKey       = "server_rekap_mahasiswa_v3_{$startYear}_{$currentYear}";
+            $persistentFile = storage_path('app/rekap_mahasiswa_persistent.json');
 
             // Hapus cache lama jika ada
             Cache::forget($cacheKey);
@@ -47,15 +48,17 @@ class GenerateDataRekapCommand extends Command
             $controller = new DataRekapController();
             $startTime  = microtime(true);
 
-            $result = Cache::remember($cacheKey, now()->addMonths(6), function () use ($controller, $startYear, $currentYear, $years) {
-                return $controller->generateRekapData($startYear, $currentYear, $years);
-            });
-
-            $elapsed = round(microtime(true) - $startTime, 2);
+            $result = $controller->generateRekapData($startYear, $currentYear, $years);
 
             if ($result && !empty($result['rows'])) {
+                Cache::put($cacheKey, $result, now()->addMonths(6));
+
+                // Simpan juga secara persistent di storage/app/rekap_mahasiswa_persistent.json
+                @file_put_contents($persistentFile, json_encode($result, JSON_PRETTY_PRINT));
+
+                $elapsed = round(microtime(true) - $startTime, 2);
                 $totalMahasiswa = array_sum(array_column($result['rows'], 'total'));
-                $this->info("✅ Sukses! Data rekapitulasi berhasil disimpan di Server Cache (Berlaku 6 Bulan).");
+                $this->info("✅ Sukses! Data rekapitulasi berhasil disimpan di Server Cache & Persistent Storage File.");
                 $this->info("   - Total Mahasiswa Aktif: " . number_format($totalMahasiswa));
                 $this->info("   - Total Program Studi  : " . count($result['prodi_list']));
                 $this->info("   - Waktu Pemrosesan     : {$elapsed} detik.");

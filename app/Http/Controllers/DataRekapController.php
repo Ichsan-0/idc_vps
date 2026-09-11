@@ -145,17 +145,34 @@ class DataRekapController extends Controller
     /**
      * Helper untuk mengambil seluruh halaman mahasiswa aktif dan mengagregasi data.
      */
-    public function generateRekapData(int $startYear, int $currentYear, array $years): ?array
+    public function generateRekapData(int $startYear, int $currentYear, array $years, ?callable $progressCallback = null): ?array
     {
         $allMahasiswa = [];
         $page = 1;
         $totalPages = 1;
+        $lastError = null;
+
+        $appKey    = config('services.sevima.app_key');
+        $secretKey = config('services.sevima.app_secret');
+
+        if (empty($appKey) || empty($secretKey)) {
+            $msg = "Kredensial SEVIMA_APP_KEY atau SEVIMA_APP_SECRET kosong di file .env server!";
+            if ($progressCallback) {
+                $progressCallback('error', $msg);
+            }
+            Log::error($msg);
+            return null;
+        }
 
         do {
-            $response = $this->fetchSevimaPage($page);
+            $response = $this->fetchSevimaPage($page, $lastError);
 
             if (!$response || !isset($response['data'])) {
-                Log::warning("Sevima API ganti status / error di halaman {$page}. Melanjutkan data yang didapat.");
+                $errorMsg = $lastError ?? "API Sevima tidak mengembalikan data di halaman {$page}.";
+                if ($progressCallback) {
+                    $progressCallback('error', $errorMsg);
+                }
+                Log::warning("Sevima API error di halaman {$page}: {$errorMsg}");
                 break;
             }
 
@@ -164,6 +181,15 @@ class DataRekapController extends Controller
 
             if (isset($response['meta']['last_page'])) {
                 $totalPages = (int) $response['meta']['last_page'];
+            }
+
+            if ($progressCallback) {
+                $progressCallback('progress', [
+                    'page'         => $page,
+                    'total_pages'  => $totalPages,
+                    'count'        => count($items),
+                    'total_so_far' => count($allMahasiswa),
+                ]);
             }
 
             $page++;
@@ -241,9 +267,9 @@ class DataRekapController extends Controller
     /**
      * Fetch single page Sevima API dengan 10x Retry Loop jika HTTP 429.
      */
-    private function fetchSevimaPage(int $page): ?array
+    private function fetchSevimaPage(int $page, ?string &$lastError = null): ?array
     {
-        $baseUrl   = config('services.sevima.base_url');
+        $baseUrl   = config('services.sevima.base_url', 'https://api.sevimaplatform.com/siakadcloud/v1');
         $appKey    = config('services.sevima.app_key');
         $secretKey = config('services.sevima.app_secret');
 
@@ -260,7 +286,7 @@ class DataRekapController extends Controller
                         'X-Secret-Key' => $secretKey,
                         'Accept'       => 'application/json',
                     ])
-                    ->get($baseUrl . '/mahasiswa', [
+                    ->get(rtrim($baseUrl, '/') . '/mahasiswa', [
                         'f-status_mahasiswa' => 'Aktif',
                         'page'               => $page,
                     ]);
@@ -269,12 +295,21 @@ class DataRekapController extends Controller
                     return $response->json();
                 }
 
-                if ($response->status() === 429) {
+                $status = $response->status();
+                $body = substr($response->body(), 0, 200);
+                $lastError = "HTTP Status {$status}: {$body}";
+
+                if ($status === 429) {
                     usleep(750000); // Tunggu 750ms saat kena rate limit
                     continue;
                 }
 
+                if ($status === 401 || $status === 403 || $status === 404) {
+                    break;
+                }
+
             } catch (Throwable $e) {
+                $lastError = "Exception: " . $e->getMessage();
                 Log::warning("Fetch Sevima page {$page} attempt {$attempt} error: " . $e->getMessage());
                 usleep(500000);
             }

@@ -48,7 +48,17 @@ class GenerateDataRekapCommand extends Command
             $controller = new DataRekapController();
             $startTime  = microtime(true);
 
-            $result = $controller->generateRekapData($startYear, $currentYear, $years);
+            $result = $controller->generateRekapData($startYear, $currentYear, $years, function ($type, $data) {
+                if ($type === 'progress') {
+                    $page      = $data['page'];
+                    $total     = $data['total_pages'];
+                    $count     = $data['count'];
+                    $soFar     = number_format($data['total_so_far']);
+                    $this->info("  📄 [Halaman {$page}/{$total}] Fetching {$count} mahasiswa (Total terkumpul: {$soFar})...");
+                } elseif ($type === 'error') {
+                    $this->error("  ⚠️ Error: {$data}");
+                }
+            });
 
             if ($result && !empty($result['rows'])) {
                 Cache::put($cacheKey, $result, now()->addMonths(6));
@@ -58,7 +68,7 @@ class GenerateDataRekapCommand extends Command
 
                 $elapsed = round(microtime(true) - $startTime, 2);
                 $totalMahasiswa = array_sum(array_column($result['rows'], 'total'));
-                $this->info("✅ Sukses! Data rekapitulasi berhasil disimpan di Server Cache & Persistent Storage File.");
+                $this->info("\n✅ Sukses! Data rekapitulasi berhasil disimpan di Server Cache & Persistent Storage File.");
                 $this->info("   - Total Mahasiswa Aktif: " . number_format($totalMahasiswa));
                 $this->info("   - Total Program Studi  : " . count($result['prodi_list']));
                 $this->info("   - Waktu Pemrosesan     : {$elapsed} detik.");
@@ -70,12 +80,13 @@ class GenerateDataRekapCommand extends Command
                 return Command::SUCCESS;
             }
 
-            $this->error('❌ Gagal menghasilkan data rekapitulasi dari Sevima API.');
+            $this->error("\n❌ Gagal menghasilkan data rekapitulasi dari Sevima API.");
             Cache::forget('rekap_sync_running');
             Cache::put('rekap_last_status', 'failed', now()->addHours(24));
             return Command::FAILURE;
+
         } catch (Throwable $e) {
-            $this->error('❌ Exception: ' . $e->getMessage());
+            $this->error("\n❌ Exception: " . $e->getMessage());
             Cache::forget('rekap_sync_running');
             Cache::put('rekap_last_status', 'error', now()->addHours(24));
             return Command::FAILURE;

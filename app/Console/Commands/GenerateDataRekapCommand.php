@@ -31,8 +31,8 @@ class GenerateDataRekapCommand extends Command
         $this->info('🚀 Memulai pemrosesan data mahasiswa aktif dari Sevima API...');
 
         // Tandai status background process sedang berjalan
-        Cache::put('rekap_sync_running', true, now()->addMinutes(10));
-        Cache::put('rekap_sync_start_time', now()->toIso8601String(), now()->addMinutes(10));
+        Cache::put('rekap_sync_running', true, now()->addMinutes(15));
+        Cache::put('rekap_sync_start_time', now()->toIso8601String(), now()->addMinutes(15));
 
         try {
             $currentYear = (int) date('Y');
@@ -55,6 +55,8 @@ class GenerateDataRekapCommand extends Command
                     $count     = $data['count'];
                     $soFar     = number_format($data['total_so_far']);
                     $this->info("  📄 [Halaman {$page}/{$total}] Fetching {$count} mahasiswa (Total terkumpul: {$soFar})...");
+                } elseif ($type === 'warning') {
+                    $this->warn("  ⏳ {$data}");
                 } elseif ($type === 'error') {
                     $this->error("  ⚠️ Error: {$data}");
                 }

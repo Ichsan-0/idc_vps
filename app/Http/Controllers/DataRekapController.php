@@ -32,8 +32,8 @@ class DataRekapController extends Controller
             ]);
         }
 
-        Cache::put('rekap_sync_running', true, now()->addMinutes(10));
-        Cache::put('rekap_sync_start_time', now()->toIso8601String(), now()->addMinutes(10));
+        Cache::put('rekap_sync_running', true, now()->addMinutes(15));
+        Cache::put('rekap_sync_start_time', now()->toIso8601String(), now()->addMinutes(15));
 
         $artisanPath = base_path('artisan');
         $phpBinary   = defined('PHP_BINARY') && PHP_BINARY ? PHP_BINARY : 'php';
@@ -165,7 +165,7 @@ class DataRekapController extends Controller
         }
 
         do {
-            $response = $this->fetchSevimaPage($page, $lastError);
+            $response = $this->fetchSevimaPage($page, $lastError, $progressCallback);
 
             if (!$response || !isset($response['data'])) {
                 $errorMsg = $lastError ?? "API Sevima tidak mengembalikan data di halaman {$page}.";
@@ -194,8 +194,8 @@ class DataRekapController extends Controller
 
             $page++;
 
-            // Delay mikro 25ms untuk menghindari HTTP 429 Too Many Requests
-            usleep(25000);
+            // Delay 150ms antar halaman untuk menjaga dari rate limit 429
+            usleep(150000);
 
         } while ($page <= $totalPages);
 
@@ -265,15 +265,15 @@ class DataRekapController extends Controller
     }
 
     /**
-     * Fetch single page Sevima API dengan 10x Retry Loop jika HTTP 429.
+     * Fetch single page Sevima API dengan Exponential Backoff jika HTTP 429.
      */
-    private function fetchSevimaPage(int $page, ?string &$lastError = null): ?array
+    private function fetchSevimaPage(int $page, ?string &$lastError = null, ?callable $progressCallback = null): ?array
     {
         $baseUrl   = config('services.sevima.base_url', 'https://api.sevimaplatform.com/siakadcloud/v1');
         $appKey    = config('services.sevima.app_key');
         $secretKey = config('services.sevima.app_secret');
 
-        $maxAttempts = 10;
+        $maxAttempts = 15;
         $attempt = 0;
 
         while ($attempt < $maxAttempts) {
@@ -300,7 +300,11 @@ class DataRekapController extends Controller
                 $lastError = "HTTP Status {$status}: {$body}";
 
                 if ($status === 429) {
-                    usleep(750000); // Tunggu 750ms saat kena rate limit
+                    $sleepSecs = min($attempt * 2, 10);
+                    if ($progressCallback) {
+                        $progressCallback('warning', "Halaman {$page} terbentur Rate-Limit (HTTP 429). Menunggu {$sleepSecs}s (Percobaan {$attempt}/{$maxAttempts})...");
+                    }
+                    sleep($sleepSecs);
                     continue;
                 }
 
@@ -311,7 +315,7 @@ class DataRekapController extends Controller
             } catch (Throwable $e) {
                 $lastError = "Exception: " . $e->getMessage();
                 Log::warning("Fetch Sevima page {$page} attempt {$attempt} error: " . $e->getMessage());
-                usleep(500000);
+                sleep(2);
             }
         }
 

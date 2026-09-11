@@ -124,7 +124,7 @@ export default function Index({ auth }) {
         } catch (err) {
             setError(
                 err?.response?.data?.message ||
-                    "Gagal menghubungi server. Coba lagi beberapa saat lagi."
+                "Gagal menghubungi server. Coba lagi beberapa saat lagi."
             );
         } finally {
             setLoading(false);
@@ -302,7 +302,7 @@ export default function Index({ auth }) {
                         <div>
                             <p className="font-bold text-sm">Sedang melakukan sinkronisasi data dari Sevima API...</p>
                             <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
-                                Proses ini membutuhkan waktu beberapa menit untuk melakukan scanning 82+ halaman Sevima API. Mohon jangan menutup halaman ini.
+                                Proses ini membutuhkan waktu beberapa menit untuk melakukan scanning +- 30.000 Mahasiswa di Sevima API. Mohon jangan menutup halaman ini.
                             </p>
                         </div>
                     </div>
@@ -482,21 +482,19 @@ export default function Index({ auth }) {
                                 <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
                                     <button
                                         onClick={() => setChartType("bar")}
-                                        className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-all ${
-                                            chartType === "bar"
-                                                ? "bg-indigo-600 text-white shadow-sm"
-                                                : "text-gray-600 dark:text-gray-400 hover:text-gray-900"
-                                        }`}
+                                        className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-all ${chartType === "bar"
+                                            ? "bg-indigo-600 text-white shadow-sm"
+                                            : "text-gray-600 dark:text-gray-400 hover:text-gray-900"
+                                            }`}
                                     >
                                         Bar Chart
                                     </button>
                                     <button
                                         onClick={() => setChartType("line")}
-                                        className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-all ${
-                                            chartType === "line"
-                                                ? "bg-indigo-600 text-white shadow-sm"
-                                                : "text-gray-600 dark:text-gray-400 hover:text-gray-900"
-                                        }`}
+                                        className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-all ${chartType === "line"
+                                            ? "bg-indigo-600 text-white shadow-sm"
+                                            : "text-gray-600 dark:text-gray-400 hover:text-gray-900"
+                                            }`}
                                     >
                                         Line Chart
                                     </button>

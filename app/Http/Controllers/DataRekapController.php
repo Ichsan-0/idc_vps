@@ -119,7 +119,7 @@ class DataRekapController extends Controller
 
             $totalPerYear = [];
             foreach ($years as $year) {
-                $totalPerYear[$year] = array_sum(array_column($result['rows'], $year));
+                $totalPerYear[$year] = array_sum(array_column($result['rows'], (string)$year));
             }
 
             return response()->json([
@@ -240,11 +240,17 @@ class DataRekapController extends Controller
         $rows = [];
         foreach ($aggregated as $prodiName => $yearCounts) {
             $rowTotal = array_sum($yearCounts);
-            $row = array_merge([
+
+            // JANGAN gunakan array_merge() di PHP karena array_merge mereset key numerik (2020..2026) menjadi 0, 1, 2...
+            $row = [
+                'prodi'         => $prodiName,
                 'program_studi' => $prodiName,
-            ], $yearCounts, [
-                'total' => $rowTotal,
-            ]);
+            ];
+            foreach ($yearCounts as $year => $count) {
+                $row[(string) $year] = $count;
+            }
+            $row['total'] = $rowTotal;
+
             $rows[] = $row;
         }
 

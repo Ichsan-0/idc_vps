@@ -312,4 +312,7 @@ Route::middleware(['auth:sanctum', 'admin_api'])->group(function() {
 Route::middleware(['throttle:30,1'])->group(function () {
     Route::get('/data-rekap', [DataRekapController::class, 'getData']);
     Route::get('/data_rekap', [DataRekapController::class, 'getData']);
+    Route::get('/data-rekap/status', [DataRekapController::class, 'getSyncStatus']);
+    Route::post('/data-rekap/refresh', [DataRekapController::class, 'triggerBackgroundSync']);
+    Route::get('/data-rekap/refresh', [DataRekapController::class, 'triggerBackgroundSync']);
 });

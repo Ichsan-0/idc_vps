@@ -2,26 +2,65 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
+use Throwable;
 
 class DataRekapController extends Controller
 {
     /**
-     * Halaman Utama Rekapitulasi Data (Public - tanpa login).
+     * Tampilkan Halaman Rekapitulasi Data Mahasiswa (Tanpa Login).
      */
     public function index()
     {
-        return Inertia::render('DataRekap/Index', [
-            'auth' => [
-                'user' => Auth::user(),
-            ],
+        return Inertia::render('DataRekap/Index');
+    }
+
+    /**
+     * Trigger regenerasi cache di background server tanpa membuat browser timeout.
+     */
+    public function triggerBackgroundSync()
+    {
+        if (Cache::has('rekap_sync_running')) {
+            return response()->json([
+                'status'  => true,
+                'syncing' => true,
+                'message' => 'Proses sinkronisasi Sevima API sedang berjalan di background server VPS.',
+            ]);
+        }
+
+        Cache::put('rekap_sync_running', true, now()->addMinutes(10));
+        Cache::put('rekap_sync_start_time', now()->toIso8601String(), now()->addMinutes(10));
+
+        $artisanPath = base_path('artisan');
+        $phpBinary   = defined('PHP_BINARY') && PHP_BINARY ? PHP_BINARY : 'php';
+
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+            pclose(popen("start /B {$phpBinary} \"{$artisanPath}\" rekap:generate > NUL 2>&1", "r"));
+        } else {
+            exec("{$phpBinary} \"{$artisanPath}\" rekap:generate > /dev/null 2>&1 &");
+        }
+
+        return response()->json([
+            'status'  => true,
+            'syncing' => true,
+            'message' => 'Proses regenerasi data dari Sevima API telah berhasil dijalankan di background server.',
+        ]);
+    }
+
+    /**
+     * Endpoint untuk mengecek status background sync.
+     */
+    public function getSyncStatus()
+    {
+        return response()->json([
+            'status'          => true,
+            'running'         => Cache::has('rekap_sync_running'),
+            'last_status'     => Cache::get('rekap_last_status', 'none'),
+            'last_updated_at' => Cache::get('rekap_last_updated_at', null),
         ]);
     }
 
@@ -39,21 +78,32 @@ class DataRekapController extends Controller
 
         $cacheKey = "server_rekap_mahasiswa_v3_{$startYear}_{$currentYear}";
 
-        // Pemaksaan regenerate cache server saat tombol refresh diklik
+        // Jika tombol reload diklik, panggil background sync agar browser TIDAK 504 Timeout
         if ($request->has('refresh') || $request->boolean('refresh')) {
-            Cache::forget($cacheKey);
+            $this->triggerBackgroundSync();
         }
 
         try {
-            $result = Cache::remember($cacheKey, now()->addMonths(6), function () use ($years, $startYear, $currentYear) {
-                return $this->generateRekapData($startYear, $currentYear, $years);
-            });
+            $result = Cache::get($cacheKey);
+
+            // Jika cache belum ada sama sekali dan tidak sedang syncing, jalankan generate
+            if (!$result) {
+                if (!Cache::has('rekap_sync_running')) {
+                    $result = $this->generateRekapData($startYear, $currentYear, $years);
+                    if ($result !== null) {
+                        Cache::put($cacheKey, $result, now()->addMonths(6));
+                    }
+                }
+            }
 
             if ($result === null) {
                 return response()->json([
                     'status'  => false,
-                    'message' => 'Gagal mengambil data dari Sevima API.',
-                ], 500);
+                    'syncing' => Cache::has('rekap_sync_running'),
+                    'message' => Cache::has('rekap_sync_running')
+                        ? 'Proses sinkronisasi data Sevima API sedang berlangsung di background server...'
+                        : 'Gagal mengambil data dari Sevima API.',
+                ], Cache::has('rekap_sync_running') ? 200 : 500);
             }
 
             $totalPerYear = [];
@@ -63,149 +113,150 @@ class DataRekapController extends Controller
 
             return response()->json([
                 'status'         => true,
+                'syncing'        => Cache::has('rekap_sync_running'),
                 'data'           => $result['rows'],
                 'years'          => $result['years'],
                 'prodi_list'     => $result['prodi_list'],
                 'total_per_year' => $totalPerYear,
                 'cached_at'      => $result['generated_at'] ?? null,
             ]);
-        } catch (Exception $e) {
-            Log::error('[DataRekap] Exception: ' . $e->getMessage());
+
+        } catch (Throwable $e) {
+            Log::error('Error DataRekapController: ' . $e->getMessage());
+
             return response()->json([
                 'status'  => false,
-                'message' => 'Terjadi kesalahan sistem.',
+                'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage(),
             ], 500);
         }
     }
 
     /**
-     * Pemrosesan data lengkap dari Sevima API (100% Terjamin Garansi Halaman Lengkap & Tanpa Terpotong).
+     * Helper untuk mengambil seluruh halaman mahasiswa aktif dan mengagregasi data.
      */
     public function generateRekapData(int $startYear, int $currentYear, array $years): ?array
     {
-        @ini_set('memory_limit', '512M');
-        @set_time_limit(600);
+        $allMahasiswa = [];
+        $page = 1;
+        $totalPages = 1;
 
-        $baseUrl   = config('services.sevima.base_url');
-        $appKey    = config('services.sevima.app_key');
-        $secretKey = config('services.sevima.app_secret');
+        do {
+            $response = $this->fetchSevimaPage($page);
 
-        if (empty($appKey) || empty($secretKey)) {
-            Log::error('[DataRekap] Sevima credentials missing');
+            if (!$response || !isset($response['data'])) {
+                Log::warning("Sevima API ganti status / error di halaman {$page}. Melanjutkan data yang didapat.");
+                break;
+            }
+
+            $items = $response['data'];
+            $allMahasiswa = array_merge($allMahasiswa, $items);
+
+            if (isset($response['meta']['last_page'])) {
+                $totalPages = (int) $response['meta']['last_page'];
+            }
+
+            $page++;
+
+            // Delay mikro 25ms untuk menghindari HTTP 429 Too Many Requests
+            usleep(25000);
+
+        } while ($page <= $totalPages);
+
+        if (empty($allMahasiswa)) {
             return null;
         }
 
-        // Ambil halaman 1 untuk mendapatkan info total halaman
-        $firstRes = $this->fetchSevimaPage($baseUrl, $appKey, $secretKey, 1);
-        if (!$firstRes || !$firstRes->successful()) {
-            Log::error("[DataRekap] Failed to fetch page 1 from Sevima API");
-            return null;
-        }
-
-        $json     = $firstRes->json();
-        $lastPage = (int) ($json['meta']['last_page'] ?? 1);
-
-        $grouped   = [];
-        $prodiList = [];
-
-        // Agregasi halaman 1
-        $this->aggregateItems($json['data'] ?? [], $grouped, $prodiList, $startYear, $currentYear);
-
-        // Fetch seluruh sisa halaman (2 s.d $lastPage) secara garansi 100%
-        for ($p = 2; $p <= $lastPage; $p++) {
-            $pageRes = $this->fetchSevimaPage($baseUrl, $appKey, $secretKey, $p);
-            if ($pageRes && $pageRes->successful()) {
-                $j = $pageRes->json();
-                $this->aggregateItems($j['data'] ?? [], $grouped, $prodiList, $startYear, $currentYear);
-            } else {
-                Log::error("[DataRekap] CRITICAL: Page {$p} failed even after max retries!");
-            }
-            usleep(25000); // 25ms pause antar halaman
-        }
-
-        sort($prodiList);
-
-        $rows = [];
-        foreach ($prodiList as $prodi) {
-            $row = ['prodi' => $prodi, 'total' => 0];
-            foreach ($years as $year) {
-                $count      = $grouped[$prodi][$year] ?? 0;
-                $row[$year] = $count;
-                $row['total'] += $count;
-            }
-            $rows[] = $row;
-        }
-
-        // Urutkan berdasarkan total mahasiswa terbanyak
-        usort($rows, fn($a, $b) => $b['total'] - $a['total']);
-
-        return [
-            'rows'         => $rows,
-            'years'        => $years,
-            'prodi_list'   => $prodiList,
-            'generated_at' => now()->toIso8601String(),
-        ];
+        return $this->aggregateItems($allMahasiswa, $years, $startYear, $currentYear);
     }
 
     /**
-     * Agregasi item data & menapis (exclude) PPG (Pendidikan Profesi Guru)
+     * Logika Agregasi Mahasiswa per Prodi & per Tahun Angkatan (Exclude PPG).
      */
-    private function aggregateItems(array $items, array &$grouped, array &$prodiList, int $startYear, int $currentYear)
+    private function aggregateItems(array $allMahasiswa, array $years, int $startYear, int $currentYear): array
     {
-        foreach ($items as $item) {
-            $attrs = $item['attributes'] ?? [];
-            $prodi = trim($attrs['program_studi'] ?? 'Tidak Diketahui');
+        $aggregated = [];
 
-            // HILANGKAN DATA PPG (Pendidikan Profesi Guru)
-            if (stripos($prodi, 'Pendidikan Profesi Guru') !== false || stripos($prodi, 'PPG') !== false) {
+        foreach ($allMahasiswa as $item) {
+            $namaProdi = trim($item['nama_program_studi'] ?? 'Lainnya');
+
+            // Exclude Program Studi PPG (Pendidikan Profesi Guru)
+            if (stripos($namaProdi, 'PPG') !== false || stripos($namaProdi, 'Pendidikan Profesi Guru') !== false) {
                 continue;
             }
 
-            $periode  = (string) ($attrs['id_periode'] ?? '');
-            $angkatan = (int) substr($periode, 0, 4);
+            $idPeriode = (string) ($item['id_periode'] ?? '');
+            $angkatan  = (int) substr($idPeriode, 0, 4);
 
             if ($angkatan < $startYear || $angkatan > $currentYear) {
                 continue;
             }
 
-            $grouped[$prodi][$angkatan] = ($grouped[$prodi][$angkatan] ?? 0) + 1;
-            if (!in_array($prodi, $prodiList)) {
-                $prodiList[] = $prodi;
+            if (!isset($aggregated[$namaProdi])) {
+                $aggregated[$namaProdi] = array_fill_keys($years, 0);
             }
+
+            $aggregated[$namaProdi][$angkatan]++;
         }
+
+        ksort($aggregated);
+
+        $rows = [];
+        foreach ($aggregated as $prodiName => $yearCounts) {
+            $rowTotal = array_sum($yearCounts);
+            $row = array_merge([
+                'program_studi' => $prodiName,
+            ], $yearCounts, [
+                'total' => $rowTotal,
+            ]);
+            $rows[] = $row;
+        }
+
+        return [
+            'rows'         => $rows,
+            'years'        => $years,
+            'prodi_list'   => array_keys($aggregated),
+            'generated_at' => now()->toIso8601String(),
+        ];
     }
 
     /**
-     * Helper untuk mengambil single page dengan garansi retry sampai 10x pada rate limit 429
+     * Fetch single page Sevima API dengan 10x Retry Loop jika HTTP 429.
      */
-    private function fetchSevimaPage(string $baseUrl, string $appKey, string $secretKey, int $page)
+    private function fetchSevimaPage(int $page): ?array
     {
-        $attempts = 0;
+        $baseUrl   = config('services.sevima.base_url');
+        $appKey    = config('services.sevima.app_key');
+        $secretKey = config('services.sevima.app_secret');
+
         $maxAttempts = 10;
+        $attempt = 0;
 
-        while ($attempts < $maxAttempts) {
-            $attempts++;
+        while ($attempt < $maxAttempts) {
+            $attempt++;
             try {
-                $res = Http::withoutVerifying()->timeout(30)->withHeaders([
-                    'X-App-Key'    => $appKey,
-                    'X-Secret-Key' => $secretKey,
-                    'Accept'       => 'application/json',
-                ])->get($baseUrl . '/mahasiswa', [
-                    'f-status_mahasiswa' => 'Aktif',
-                    'page'               => $page,
-                ]);
+                $response = Http::withoutVerifying()
+                    ->timeout(30)
+                    ->withHeaders([
+                        'X-App-Key'    => $appKey,
+                        'X-Secret-Key' => $secretKey,
+                        'Accept'       => 'application/json',
+                    ])
+                    ->get($baseUrl . '/mahasiswa', [
+                        'f-status_mahasiswa' => 'Aktif',
+                        'page'               => $page,
+                    ]);
 
-                if ($res->status() === 429) {
-                    Log::info("[DataRekap] Sevima API Rate limited (429) on page $page, waiting 750ms (attempt $attempts/$maxAttempts)...");
-                    usleep(750000);
+                if ($response->successful()) {
+                    return $response->json();
+                }
+
+                if ($response->status() === 429) {
+                    usleep(750000); // Tunggu 750ms saat kena rate limit
                     continue;
                 }
 
-                if ($res->successful()) {
-                    return $res;
-                }
-            } catch (Exception $e) {
-                Log::warning("[DataRekap] Exception during page {$page} fetch (attempt $attempts/$maxAttempts): " . $e->getMessage());
+            } catch (Throwable $e) {
+                Log::warning("Fetch Sevima page {$page} attempt {$attempt} error: " . $e->getMessage());
                 usleep(500000);
             }
         }

@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Http\Controllers\DataRekapController;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
+use Throwable;
 
 class GenerateDataRekapCommand extends Command
 {
@@ -29,34 +30,52 @@ class GenerateDataRekapCommand extends Command
     {
         $this->info('🚀 Memulai pemrosesan data mahasiswa aktif dari Sevima API...');
 
-        $currentYear = (int) date('Y');
-        $startYear   = $currentYear - 6;
-        $years       = range($startYear, $currentYear);
+        // Tandai status background process sedang berjalan
+        Cache::put('rekap_sync_running', true, now()->addMinutes(10));
+        Cache::put('rekap_sync_start_time', now()->toIso8601String(), now()->addMinutes(10));
 
-        $cacheKey = "server_rekap_mahasiswa_v3_{$startYear}_{$currentYear}";
+        try {
+            $currentYear = (int) date('Y');
+            $startYear   = $currentYear - 6;
+            $years       = range($startYear, $currentYear);
 
-        // Hapus cache lama jika ada
-        Cache::forget($cacheKey);
+            $cacheKey = "server_rekap_mahasiswa_v3_{$startYear}_{$currentYear}";
 
-        $controller = new DataRekapController();
-        $startTime  = microtime(true);
+            // Hapus cache lama jika ada
+            Cache::forget($cacheKey);
 
-        $result = Cache::remember($cacheKey, now()->addMonths(6), function () use ($controller, $startYear, $currentYear, $years) {
-            return $controller->generateRekapData($startYear, $currentYear, $years);
-        });
+            $controller = new DataRekapController();
+            $startTime  = microtime(true);
 
-        $elapsed = round(microtime(true) - $startTime, 2);
+            $result = Cache::remember($cacheKey, now()->addMonths(6), function () use ($controller, $startYear, $currentYear, $years) {
+                return $controller->generateRekapData($startYear, $currentYear, $years);
+            });
 
-        if ($result && !empty($result['rows'])) {
-            $totalMahasiswa = array_sum(array_column($result['rows'], 'total'));
-            $this->info("✅ Sukses! Data rekapitulasi berhasil disimpan di Server Cache (Berlaku 6 Bulan).");
-            $this->info("   - Total Mahasiswa Aktif: " . number_format($totalMahasiswa));
-            $this->info("   - Total Program Studi  : " . count($result['prodi_list']));
-            $this->info("   - Waktu Pemrosesan     : {$elapsed} detik.");
-            return Command::SUCCESS;
+            $elapsed = round(microtime(true) - $startTime, 2);
+
+            if ($result && !empty($result['rows'])) {
+                $totalMahasiswa = array_sum(array_column($result['rows'], 'total'));
+                $this->info("✅ Sukses! Data rekapitulasi berhasil disimpan di Server Cache (Berlaku 6 Bulan).");
+                $this->info("   - Total Mahasiswa Aktif: " . number_format($totalMahasiswa));
+                $this->info("   - Total Program Studi  : " . count($result['prodi_list']));
+                $this->info("   - Waktu Pemrosesan     : {$elapsed} detik.");
+
+                Cache::forget('rekap_sync_running');
+                Cache::put('rekap_last_status', 'success', now()->addHours(24));
+                Cache::put('rekap_last_updated_at', now()->toIso8601String(), now()->addMonths(6));
+
+                return Command::SUCCESS;
+            }
+
+            $this->error('❌ Gagal menghasilkan data rekapitulasi dari Sevima API.');
+            Cache::forget('rekap_sync_running');
+            Cache::put('rekap_last_status', 'failed', now()->addHours(24));
+            return Command::FAILURE;
+        } catch (Throwable $e) {
+            $this->error('❌ Exception: ' . $e->getMessage());
+            Cache::forget('rekap_sync_running');
+            Cache::put('rekap_last_status', 'error', now()->addHours(24));
+            return Command::FAILURE;
         }
-
-        $this->error('❌ Gagal menghasilkan data rekapitulasi dari Sevima API.');
-        return Command::FAILURE;
     }
 }

@@ -46,33 +46,78 @@ export default function Index({ auth }) {
 
     useEffect(() => {
         fetchData();
+        checkSyncStatus();
     }, []);
 
-    const handleSyncSevima = () => {
-        const confirmed = window.confirm(
-            "Proses pembaruan data dari API Sevima akan membutuhkan waktu beberapa menit. Apakah Anda yakin ingin melanjutkan?"
-        );
-        if (confirmed) {
-            fetchData(true);
+    // Polling status background sync setiap 4 detik
+    useEffect(() => {
+        let interval = null;
+        if (isRefreshing) {
+            interval = setInterval(async () => {
+                try {
+                    const statusRes = await axios.get("/api/data-rekap/status");
+                    if (statusRes.data.status) {
+                        if (!statusRes.data.running) {
+                            setIsRefreshing(false);
+                            fetchData(); // Reload data terbaru yang sudah selesai tergenerate
+                        }
+                    }
+                } catch (e) {
+                    console.error("Status check error", e);
+                }
+            }, 4000);
+        }
+        return () => {
+            if (interval) clearInterval(interval);
+        };
+    }, [isRefreshing]);
+
+    const checkSyncStatus = async () => {
+        try {
+            const res = await axios.get("/api/data-rekap/status");
+            if (res.data.status && res.data.running) {
+                setIsRefreshing(true);
+            }
+        } catch (e) {
+            console.error(e);
         }
     };
 
-    const fetchData = async (forceRefresh = false) => {
+    const handleSyncSevima = async () => {
+        const confirmed = window.confirm(
+            "Proses pembaruan data Sevima API akan berjalan di background server VPS (estimasi 1 - 2 menit). Anda tidak perlu menunggu di halaman ini dan tidak akan ada timeout. Lanjutkan?"
+        );
+        if (!confirmed) return;
+
+        try {
+            setIsRefreshing(true);
+            const res = await axios.post("/api/data-rekap/refresh");
+            if (res.data.status) {
+                console.log(res.data.message);
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const fetchData = async () => {
         try {
             setLoading(true);
-            setIsRefreshing(forceRefresh);
             setError(null);
-            const url = forceRefresh
-                ? `/api/data-rekap?refresh=1`
-                : `/api/data-rekap`;
-
-            const res = await axios.get(url, { timeout: 300000 });
+            const res = await axios.get(`/api/data-rekap`, { timeout: 30000 });
             if (res.data.status) {
-                setData(res.data.data);
-                setYears(res.data.years);
-                setProdiList(res.data.prodi_list);
-                setTotalPerYear(res.data.total_per_year);
-                setSelectedProdi(res.data.prodi_list.slice(0, 10));
+                if (res.data.data) {
+                    setData(res.data.data);
+                    setYears(res.data.years);
+                    setProdiList(res.data.prodi_list);
+                    setTotalPerYear(res.data.total_per_year);
+                    setSelectedProdi((prev) =>
+                        prev.length ? prev : res.data.prodi_list.slice(0, 10)
+                    );
+                }
+                if (res.data.syncing) {
+                    setIsRefreshing(true);
+                }
             } else {
                 setError(res.data.message || "Gagal memuat data.");
             }
@@ -83,7 +128,6 @@ export default function Index({ auth }) {
             );
         } finally {
             setLoading(false);
-            setIsRefreshing(false);
         }
     };
 

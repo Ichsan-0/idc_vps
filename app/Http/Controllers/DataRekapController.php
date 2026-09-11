@@ -189,14 +189,16 @@ class DataRekapController extends Controller
 
             // Agregasi langsung per halaman (On-The-Fly) untuk menghemat RAM
             foreach ($items as $item) {
-                $namaProdi = trim($item['nama_program_studi'] ?? 'Lainnya');
+                $attrs = $item['attributes'] ?? $item;
+
+                $namaProdi = trim($attrs['program_studi'] ?? $attrs['nama_program_studi'] ?? 'Lainnya');
 
                 // Exclude Program Studi PPG (Pendidikan Profesi Guru)
                 if (stripos($namaProdi, 'PPG') !== false || stripos($namaProdi, 'Pendidikan Profesi Guru') !== false) {
                     continue;
                 }
 
-                $idPeriode = (string) ($item['id_periode'] ?? '');
+                $idPeriode = (string) ($attrs['id_periode'] ?? '');
                 $angkatan  = (int) substr($idPeriode, 0, 4);
 
                 if ($angkatan < $startYear || $angkatan > $currentYear) {

@@ -143,11 +143,14 @@ class DataRekapController extends Controller
     }
 
     /**
-     * Helper untuk mengambil seluruh halaman mahasiswa aktif dan mengagregasi data.
+     * Helper untuk mengambil seluruh halaman mahasiswa aktif dan mengagregasi data on-the-fly (Hemat Memori <1MB).
      */
     public function generateRekapData(int $startYear, int $currentYear, array $years, ?callable $progressCallback = null): ?array
     {
-        $allMahasiswa = [];
+        @ini_set('memory_limit', '512M');
+
+        $aggregated = [];
+        $totalCollectedCount = 0;
         $page = 1;
         $totalPages = 1;
         $lastError = null;
@@ -177,20 +180,47 @@ class DataRekapController extends Controller
             }
 
             $items = $response['data'];
-            $allMahasiswa = array_merge($allMahasiswa, $items);
+            $pageCount = count($items);
+            $totalCollectedCount += $pageCount;
 
             if (isset($response['meta']['last_page'])) {
                 $totalPages = (int) $response['meta']['last_page'];
+            }
+
+            // Agregasi langsung per halaman (On-The-Fly) untuk menghemat RAM
+            foreach ($items as $item) {
+                $namaProdi = trim($item['nama_program_studi'] ?? 'Lainnya');
+
+                // Exclude Program Studi PPG (Pendidikan Profesi Guru)
+                if (stripos($namaProdi, 'PPG') !== false || stripos($namaProdi, 'Pendidikan Profesi Guru') !== false) {
+                    continue;
+                }
+
+                $idPeriode = (string) ($item['id_periode'] ?? '');
+                $angkatan  = (int) substr($idPeriode, 0, 4);
+
+                if ($angkatan < $startYear || $angkatan > $currentYear) {
+                    continue;
+                }
+
+                if (!isset($aggregated[$namaProdi])) {
+                    $aggregated[$namaProdi] = array_fill_keys($years, 0);
+                }
+
+                $aggregated[$namaProdi][$angkatan]++;
             }
 
             if ($progressCallback) {
                 $progressCallback('progress', [
                     'page'         => $page,
                     'total_pages'  => $totalPages,
-                    'count'        => count($items),
-                    'total_so_far' => count($allMahasiswa),
+                    'count'        => $pageCount,
+                    'total_so_far' => $totalCollectedCount,
                 ]);
             }
+
+            // Bebaskan memori array temporer per halaman
+            unset($items, $response);
 
             $page++;
 
@@ -199,48 +229,8 @@ class DataRekapController extends Controller
 
         } while ($page <= $totalPages);
 
-        if (empty($allMahasiswa)) {
+        if (empty($aggregated)) {
             return null;
-        }
-
-        $aggregated = $this->aggregateItems($allMahasiswa, $years, $startYear, $currentYear);
-
-        // Simpan juga secara persistent ke file JSON
-        if ($aggregated) {
-            $persistentFile = storage_path('app/rekap_mahasiswa_persistent.json');
-            @file_put_contents($persistentFile, json_encode($aggregated, JSON_PRETTY_PRINT));
-        }
-
-        return $aggregated;
-    }
-
-    /**
-     * Logika Agregasi Mahasiswa per Prodi & per Tahun Angkatan (Exclude PPG).
-     */
-    private function aggregateItems(array $allMahasiswa, array $years, int $startYear, int $currentYear): array
-    {
-        $aggregated = [];
-
-        foreach ($allMahasiswa as $item) {
-            $namaProdi = trim($item['nama_program_studi'] ?? 'Lainnya');
-
-            // Exclude Program Studi PPG (Pendidikan Profesi Guru)
-            if (stripos($namaProdi, 'PPG') !== false || stripos($namaProdi, 'Pendidikan Profesi Guru') !== false) {
-                continue;
-            }
-
-            $idPeriode = (string) ($item['id_periode'] ?? '');
-            $angkatan  = (int) substr($idPeriode, 0, 4);
-
-            if ($angkatan < $startYear || $angkatan > $currentYear) {
-                continue;
-            }
-
-            if (!isset($aggregated[$namaProdi])) {
-                $aggregated[$namaProdi] = array_fill_keys($years, 0);
-            }
-
-            $aggregated[$namaProdi][$angkatan]++;
         }
 
         ksort($aggregated);
@@ -256,12 +246,18 @@ class DataRekapController extends Controller
             $rows[] = $row;
         }
 
-        return [
+        $finalResult = [
             'rows'         => $rows,
             'years'        => $years,
             'prodi_list'   => array_keys($aggregated),
             'generated_at' => now()->toIso8601String(),
         ];
+
+        // Simpan juga secara persistent ke file JSON
+        $persistentFile = storage_path('app/rekap_mahasiswa_persistent.json');
+        @file_put_contents($persistentFile, json_encode($finalResult, JSON_PRETTY_PRINT));
+
+        return $finalResult;
     }
 
     /**

@@ -28,6 +28,9 @@ class GenerateDataRekapCommand extends Command
      */
     public function handle()
     {
+        @ini_set('memory_limit', '512M');
+        @set_time_limit(600);
+
         $this->info('🚀 Memulai pemrosesan data mahasiswa aktif dari Sevima API...');
 
         // Tandai status background process sedang berjalan

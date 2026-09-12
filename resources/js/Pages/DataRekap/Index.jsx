@@ -242,7 +242,9 @@ export default function Index({ auth }) {
 
                         <div className="flex items-center gap-3">
                             <a
-                                href="/"
+                                href="https://ftk.ar-raniry.ac.id"
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 className="text-xs font-semibold text-gray-600 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-white transition-colors"
                             >
                                 Beranda

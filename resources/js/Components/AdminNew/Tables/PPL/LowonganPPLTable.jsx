@@ -410,7 +410,13 @@ const LowonganPPLTable = () => {
                             />
                         </div>
 
-                        <Button onClick={openModal}>Tambah</Button>
+                        <Button
+                            size="sm"
+                            onClick={openModal}
+                            className="!px-3 !py-2 text-xs md:text-sm font-medium"
+                        >
+                            Tambah
+                        </Button>
                     </div>
                 </div>
                 <div className="w-full max-h-[500px] overflow-auto">

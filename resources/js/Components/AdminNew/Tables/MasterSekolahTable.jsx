@@ -258,51 +258,79 @@ const MasterSekolahTable = () => {
     };
 
     const kabupatenMap = useMemo(() => {
-        const map = {};
-        data?.data?.forEach((row) => {
-            if (!map["11"]) {
-                map["11"] = {};
-                kabupaten("11").forEach((d) => {
-                    map["11"][d.kode] = d.nama;
+        const map = { "11": {} };
+        try {
+            const list = kabupaten("11");
+            if (Array.isArray(list)) {
+                list.forEach((d) => {
+                    if (d && d.kode) {
+                        map["11"][d.kode] = d.nama;
+                    }
                 });
             }
-        });
+        } catch (e) {
+            console.error("Error loading kabupaten:", e);
+        }
         return map;
-    }, [data]);
+    }, []);
 
     const desaMap = useMemo(() => {
         const map = {};
-        data?.data?.forEach((row) => {
-            if (!map[row.sub_district]) {
-                map[row.sub_district] = {};
-                desa(row.sub_district).forEach((d) => {
-                    map[row.sub_district][d.kode] = d.nama;
-                });
-            }
-        });
+        if (data?.data && Array.isArray(data.data)) {
+            data.data.forEach((row) => {
+                const sub = row?.sub_district;
+                if (sub && !map[sub]) {
+                    map[sub] = {};
+                    try {
+                        const list = desa(sub);
+                        if (Array.isArray(list)) {
+                            list.forEach((d) => {
+                                if (d && d.kode) {
+                                    map[sub][d.kode] = d.nama;
+                                }
+                            });
+                        }
+                    } catch (e) {
+                        console.error("Error loading desa for sub_district:", sub, e);
+                    }
+                }
+            });
+        }
         return map;
     }, [data]);
 
     const kecamatanMap = useMemo(() => {
         const map = {};
-        data?.data?.forEach((row) => {
-            if (!map[row.regency]) {
-                map[row.regency] = {};
-                kecamatan(row.regency).forEach((kec) => {
-                    map[row.regency][kec.kode] = kec.nama;
-                });
-            }
-        });
+        if (data?.data && Array.isArray(data.data)) {
+            data.data.forEach((row) => {
+                const reg = row?.regency;
+                if (reg && !map[reg]) {
+                    map[reg] = {};
+                    try {
+                        const list = kecamatan(reg);
+                        if (Array.isArray(list)) {
+                            list.forEach((kec) => {
+                                if (kec && kec.kode) {
+                                    map[reg][kec.kode] = kec.nama;
+                                }
+                            });
+                        }
+                    } catch (e) {
+                        console.error("Error loading kecamatan for regency:", reg, e);
+                    }
+                }
+            });
+        }
         return map;
     }, [data]);
 
     const getKecamatan = (row) =>
-        (row && kecamatanMap?.[row.regency]?.[row.sub_district]) || "-";
+        (row && row.regency && kecamatanMap?.[row.regency]?.[row.sub_district]) || row?.sub_district || "-";
 
     const getDesa = (row) =>
-        (row && desaMap?.[row.sub_district]?.[row.village]) || "-";
+        (row && row.sub_district && desaMap?.[row.sub_district]?.[row.village]) || row?.village || "-";
     const getKabupaten = (row) =>
-        (row && kabupatenMap?.["11"]?.[row.regency]) || "-";
+        (row && row.regency && kabupatenMap?.["11"]?.[row.regency]) || row?.regency || "-";
 
     const renderSkeletonRows = () => {
         const skeletonRows = Array.from(

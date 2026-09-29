@@ -9,7 +9,7 @@ class SekolahMaster extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'province', 'regency', 'sub_district', 'village'];
+    protected $fillable = ['name', 'province', 'regency', 'sub_district', 'village', 'username_supervisor'];
 
     protected $table = 'sekolah_master';
 

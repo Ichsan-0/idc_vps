@@ -143,6 +143,10 @@ Route::middleware(['auth:sanctum', 'role:admin'])
             Route::get('/master-sekolah', [SekolahController::class, 'getAllDataWithoutPagination']);
             Route::prefix('ppl')->group(function () {
                 Route::post('/sekolah', [PPLTempatPPLController::class, 'addTempatPPL']);
+                Route::post('/sekolah/import', [PPLTempatPPLController::class, 'importTempatPPL']);
+                Route::get('/sekolah/template-import', [PPLTempatPPLController::class, 'downloadTemplate']);
+                Route::post('/sekolah/peserta/import', [PPLTempatPPLController::class, 'importPesertaPPL']);
+                Route::get('/sekolah/peserta/template-import', [PPLTempatPPLController::class, 'downloadPesertaTemplate']);
                 Route::get('/sekolah/detail', [PPLTempatPPLController::class, 'getDataTempatPPLByID']);
                 Route::patch('/sekolah/{id}', [PPLTempatPPLController::class, 'updateDataTempatPPLByID']);
                 Route::delete('/sekolah/delete/{id}', [PPLTempatPPLController::class, 'deleteTempatPPLById']);
@@ -158,6 +162,8 @@ Route::middleware(['auth:sanctum', 'role:admin'])
                     Route::prefix('mahasiswa')->group(function () {
                         Route::get('/list', [PelamarPPLController::class, 'listWithPaginate']);
                         Route::post('/add', [PelamarPPLController::class, 'addPelamar']);
+                        Route::post('/import', [PelamarPPLController::class, 'importMahasiswa']);
+                        Route::get('/template-import', [PelamarPPLController::class, 'downloadTemplate']);
                         Route::patch('/update/{id}', [PelamarPPLController::class, 'updatePelamarById']);
                         Route::delete('/delete/{id}', [PelamarPPLController::class, 'deletePelamarById']);
                         Route::get('/detail', [PelamarPPLController::class, 'getPelamarPPLById']);

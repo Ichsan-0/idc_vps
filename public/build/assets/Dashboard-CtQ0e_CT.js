@@ -1,0 +1,1 @@
+import{j as r}from"./app-BEVI_9MP.js";import{O as a}from"./OperatorKecamatanLayout-i-zTT1Yx.js";import"./Lambang_UIN_Ar-Raniry-CVEuQ2sX.js";import"./NavLink-BkEvl3rw.js";function e(){return r.jsx(a,{children:"Dashboard"})}export{e as default};

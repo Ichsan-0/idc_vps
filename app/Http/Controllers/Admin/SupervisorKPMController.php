@@ -21,24 +21,17 @@ class SupervisorKPMController extends Controller
 
     public function add(Request $request)
     {
-        return Inertia::render('Admin/pages/Pengguna/SupervisorKPM/Add', [
-            'base_url' => url('/')
-        ]);
+        return redirect('/admin/users/supervisor-kpm');
     }
 
     public function edit($id)
     {
-        return Inertia::render('Admin/pages/Pengguna/SupervisorKPM/Edit', [
-            'base_url' => url('/'),
-            'data' => ['id_supervisor' => $id]
-        ]);
+        return redirect('/admin/users/supervisor-kpm');
     }
 
     public function import(Request $request)
     {
-        return Inertia::render('Admin/pages/Pengguna/SupervisorKPM/Import', [
-            'base_url' => url('/')
-        ]);
+        return redirect('/admin/users/supervisor-kpm');
     }
 
     public function all()

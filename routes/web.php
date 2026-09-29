@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\MahasiswaPPKPMController;
 use App\Http\Controllers\Admin\MahasiswaPPLContoller;
 use App\Http\Controllers\Admin\MahsiswaController;
 use App\Http\Controllers\Admin\DispensasiSyaratController;
+use App\Http\Controllers\Admin\PPL\PelamarPPLController;
 use App\Http\Controllers\Admin\PPL\TempatPPLController as PPLTempatPPLController;
 use App\Http\Controllers\Admin\ProdiController;
 use App\Http\Controllers\Admin\SekolahController;
@@ -100,6 +101,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
         Route::prefix('ppl')->group(function () {
             Route::get('ppl-alocation', [AlokasiPPL::class, 'list']);
             Route::get('sekolah', [PPLTempatPPLController::class, 'index']);
+            Route::get('sekolah/template-import', [PPLTempatPPLController::class, 'downloadTemplate']);
+            Route::get('sekolah/peserta/template-import', [PPLTempatPPLController::class, 'downloadPesertaTemplate']);
+            Route::get('sekolah/detail/mahasiswa/template-import', [PelamarPPLController::class, 'downloadTemplate']);
             Route::get('sekolah/detail', [PPLTempatPPLController::class, 'view']);
         });
 

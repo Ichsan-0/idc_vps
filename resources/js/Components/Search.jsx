@@ -3,7 +3,8 @@ import { useEffect, useRef } from "react";
 export default function Search({
   onChange,
   value,
-
+  placeholder = "Search or type command...",
+  className = "",
 }) {
   const inputRef = useRef(null);
 
@@ -22,7 +23,7 @@ export default function Search({
     };
   }, []);
   return (
-    <div className="relative xl:w-[430px]">
+    <div className={`relative ${className ? className : "xl:w-[430px]"}`}>
       <span className="flex absolute -translate-y-1/2 w-full pointer-events-none left-4 top-1/2">
         <svg
           className="fill-gray-500 dark:fill-gray-400"

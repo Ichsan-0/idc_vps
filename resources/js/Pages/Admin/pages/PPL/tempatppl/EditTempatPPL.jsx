@@ -30,41 +30,55 @@ export const EditTempatPPL = ({ tempatppl, supervisordata }) => {
             : null
     );
 
-    const dataKabupaten = kabupaten("11");
-    const [subDistrictData, setSubDistrictData] = useState(
-        tempatppl.regency !== null ? kecamatan(tempatppl.regency) : []
-    );
-    const [villageData, setVillageData] = useState(
-        tempatppl.sub_district !== null ? desa(tempatppl.sub_district) : []
-    );
+    const dataKabupaten = (typeof kabupaten === "function" ? kabupaten("11") : []) || [];
+    const [subDistrictData, setSubDistrictData] = useState(() => {
+        try {
+            return (tempatppl.regency && typeof kecamatan === "function" ? kecamatan(tempatppl.regency) : []) || [];
+        } catch (e) {
+            return [];
+        }
+    });
+    const [villageData, setVillageData] = useState(() => {
+        try {
+            return (tempatppl.sub_district && typeof desa === "function" ? desa(tempatppl.sub_district) : []) || [];
+        } catch (e) {
+            return [];
+        }
+    });
 
     const [regency, setRegency] = useState(() => {
         let obj;
-        if (tempatppl.regency !== null) {
-            obj = kabupaten("11").find((itm) => itm.kode === tempatppl.regency);
-            return obj;
+        if (tempatppl.regency && Array.isArray(dataKabupaten)) {
+            obj = dataKabupaten.find((itm) => itm.kode === tempatppl.regency);
+            return obj || null;
         } else {
             return null;
         }
     });
     const [subDistrict, setSubDistrict] = useState(() => {
         let obj;
-        if (tempatppl.regency !== null && tempatppl.sub_district !== null) {
-            obj = kecamatan(tempatppl.regency).find(
-                (itm) => itm.kode === tempatppl.sub_district
-            );
-            return obj;
+        if (tempatppl.regency && tempatppl.sub_district && typeof kecamatan === "function") {
+            try {
+                const list = kecamatan(tempatppl.regency);
+                obj = Array.isArray(list) ? list.find((itm) => itm.kode === tempatppl.sub_district) : null;
+                return obj || null;
+            } catch (e) {
+                return null;
+            }
         } else {
             return null;
         }
     });
     const [village, setVillage] = useState(() => {
         let obj;
-        if (tempatppl.sub_district !== null && tempatppl.village !== null) {
-            obj = desa(tempatppl.sub_district).find(
-                (itm) => itm.kode === tempatppl.village
-            );
-            return obj;
+        if (tempatppl.sub_district && tempatppl.village && typeof desa === "function") {
+            try {
+                const list = desa(tempatppl.sub_district);
+                obj = Array.isArray(list) ? list.find((itm) => itm.kode === tempatppl.village) : null;
+                return obj || null;
+            } catch (e) {
+                return null;
+            }
         } else {
             return null;
         }

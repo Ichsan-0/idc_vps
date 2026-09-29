@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers\Admin\PPL;
 
+use App\Exports\PelamarPPLTemplateExport;
 use App\Http\Controllers\Controller;
+use App\Imports\PelamarPPLImport;
 use App\Models\LamaranPPL;
 use Exception;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Maatwebsite\Excel\Facades\Excel;
 
 class PelamarPPLController extends Controller
 {
@@ -248,5 +251,56 @@ class PelamarPPLController extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
+    }
+
+    public function importMahasiswa(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
+                'id_sekolah' => 'required|exists:sekolah_tbl,id',
+            ], [
+                'file.required' => 'File Excel wajib diunggah.',
+                'file.file' => 'Format file tidak valid.',
+                'file.mimes' => 'File harus berupa Excel (.xlsx, .xls) atau .csv.',
+                'file.max' => 'Ukuran file maksimal 10MB.',
+                'id_sekolah.required' => 'ID Sekolah / Tempat PPL wajib disertakan.',
+                'id_sekolah.exists' => 'Data Tempat PPL tidak valid.',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'message' => $validator->errors()->first(),
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
+
+            $idSekolah = $request->input('id_sekolah');
+            $defaultIdLowongan = $request->input('id_lowongan_ppl');
+
+            $import = new PelamarPPLImport($idSekolah, $defaultIdLowongan);
+            Excel::import($import, $request->file('file'));
+
+            $imported = $import->getImportedCount();
+            $skipped = $import->getSkippedCount();
+
+            return response()->json([
+                'message' => "Berhasil mengimpor {$imported} mahasiswa ke lokasi PPL" . ($skipped > 0 ? " ({$skipped} data dilewati / sudah terdaftar)" : "") . ".",
+                'data' => [
+                    'imported' => $imported,
+                    'skipped' => $skipped,
+                ],
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat mengimpor data: ' . $e->getMessage(),
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function downloadTemplate()
+    {
+        return Excel::download(new PelamarPPLTemplateExport, 'template_import_mahasiswa_ppl.xlsx');
     }
 }

@@ -166,16 +166,31 @@ export default function ViewTempatPPL({ data }) {
     }, []);
 
     const getKabupaten = (kode) => {
-        return kabupaten("11").find((item) => item.kode == kode);
+        if (!kode) return null;
+        try {
+            return (typeof kabupaten === "function" ? kabupaten("11") : [])?.find((item) => item.kode == kode);
+        } catch (e) {
+            return null;
+        }
     };
 
     const getKecamatan = (kecamatanKode, kabupatenKode) => {
-        return kecamatan(kabupatenKode).find(
-            (item) => item.kode == kecamatanKode
-        );
+        if (!kecamatanKode || !kabupatenKode) return null;
+        try {
+            return (typeof kecamatan === "function" ? kecamatan(kabupatenKode) : [])?.find(
+                (item) => item.kode == kecamatanKode
+            );
+        } catch (e) {
+            return null;
+        }
     };
     const getDesa = (desaKode, kecamatanKode) => {
-        return desa(kecamatanKode)?.find((item) => item.kode == desaKode);
+        if (!desaKode || !kecamatanKode) return null;
+        try {
+            return (typeof desa === "function" ? desa(kecamatanKode) : [])?.find((item) => item.kode == desaKode);
+        } catch (e) {
+            return null;
+        }
     };
 
     const getMasterSekolah = async () => {

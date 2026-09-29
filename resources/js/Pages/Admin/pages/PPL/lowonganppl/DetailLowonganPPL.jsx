@@ -95,22 +95,32 @@ export const DetailLowonganPPL = ({ lowngan, pelamar }) => {
         router.get(`/admin/pelamarppl/detail/${value}`);
     };
 
-    const daftarKabupaten = kabupaten("11");
+    const daftarKabupaten = (typeof kabupaten === "function" ? kabupaten("11") : []) || [];
     const [regency, setRegency] = useState(
-        daftarKabupaten.find((itm) => itm.kode === lowngan?.sekolah?.regency)
+        lowngan?.sekolah?.regency && Array.isArray(daftarKabupaten)
+            ? (daftarKabupaten.find((itm) => itm.kode === lowngan?.sekolah?.regency) || null)
+            : null
     );
 
-    const [subDistrict, setSubDistrict] = useState(
-        kecamatan(lowngan?.sekolah?.regency).find(
-            (itm) => itm.kode === lowngan?.sekolah?.sub_district
-        )
-    );
+    const [subDistrict, setSubDistrict] = useState(() => {
+        if (!lowngan?.sekolah?.regency || !lowngan?.sekolah?.sub_district || typeof kecamatan !== "function") return null;
+        try {
+            const list = kecamatan(lowngan.sekolah.regency);
+            return Array.isArray(list) ? (list.find((itm) => itm.kode === lowngan?.sekolah?.sub_district) || null) : null;
+        } catch (e) {
+            return null;
+        }
+    });
 
-    const [village, setVillage] = useState(
-        desa(lowngan?.sekolah?.sub_district).find(
-            (itm) => itm.kode === lowngan?.sekolah?.village
-        )
-    );
+    const [village, setVillage] = useState(() => {
+        if (!lowngan?.sekolah?.sub_district || !lowngan?.sekolah?.village || typeof desa !== "function") return null;
+        try {
+            const list = desa(lowngan.sekolah.sub_district);
+            return Array.isArray(list) ? (list.find((itm) => itm.kode === lowngan?.sekolah?.village) || null) : null;
+        } catch (e) {
+            return null;
+        }
+    });
 
     return (
         <section className="main flex">
@@ -169,7 +179,7 @@ export const DetailLowonganPPL = ({ lowngan, pelamar }) => {
                                             Kabupaten
                                         </td>
                                         <td className="text-gray-950 font-semibold align-top">
-                                            {regency?.nama}
+                                            {regency?.nama || lowngan?.sekolah?.regency || "-"}
                                         </td>
                                     </tr>
                                     <tr className="gap-3">
@@ -177,7 +187,7 @@ export const DetailLowonganPPL = ({ lowngan, pelamar }) => {
                                             Kecamatan
                                         </td>
                                         <td className="text-gray-950 font-semibold align-top">
-                                            {subDistrict?.nama}
+                                            {subDistrict?.nama || lowngan?.sekolah?.sub_district || "-"}
                                         </td>
                                     </tr>
                                     <tr className="gap-3">
@@ -185,7 +195,7 @@ export const DetailLowonganPPL = ({ lowngan, pelamar }) => {
                                             Desa
                                         </td>
                                         <td className="text-gray-950 font-semibold align-top">
-                                            {village?.nama}
+                                            {village?.nama || lowngan?.sekolah?.village || "-"}
                                         </td>
                                     </tr>
                                 </tbody>

@@ -154,19 +154,21 @@ export const DetailTempatPPL = ({ sekolah, pelamar, lowongan }) => {
         selectableRows: false,
     };
 
-    const daftarKabupaten = kabupaten("11");
+    const daftarKabupaten = (typeof kabupaten === "function" ? kabupaten("11") : []) || [];
     const [regency, setRegency] = useState(
-        daftarKabupaten.find((itm) => itm.kode === sekolah.regency).name
+        sekolah?.regency ? (daftarKabupaten.find((itm) => itm.kode === sekolah.regency)?.nama || sekolah.regency) : "-"
     );
 
     const [subDistrict, setSubDistrict] = useState(
-        kecamatan(sekolah?.regency).find(
-            (itm) => itm.kode === sekolah?.sub_district
-        ).name
+        sekolah?.regency && sekolah?.sub_district && typeof kecamatan === "function"
+            ? (kecamatan(sekolah.regency)?.find((itm) => itm.kode === sekolah.sub_district)?.nama || sekolah.sub_district)
+            : (sekolah?.sub_district || "-")
     );
 
     const [village, setVillage] = useState(
-        desa(sekolah?.sub_district).find((itm) => itm.kode === sekolah?.village)
+        sekolah?.sub_district && sekolah?.village && typeof desa === "function"
+            ? (desa(sekolah.sub_district)?.find((itm) => itm.kode === sekolah.village)?.nama || sekolah.village)
+            : (sekolah?.village || "-")
     );
     useEffect(() => {
         console.log(subDistrict);
@@ -218,11 +220,9 @@ export const DetailTempatPPL = ({ sekolah, pelamar, lowongan }) => {
                                         </td>
                                         <td className="text-gray-950 font-semibold align-top">
                                             {
-                                                daftarKabupaten.find(
-                                                    (item) =>
-                                                        item.kode ===
-                                                        sekolah.regency
-                                                )?.nama
+                                                (daftarKabupaten && sekolah?.regency && daftarKabupaten.find(
+                                                    (item) => item.kode === sekolah.regency
+                                                )?.nama) || sekolah?.regency || "-"
                                             }
                                         </td>
                                     </tr>
@@ -232,13 +232,11 @@ export const DetailTempatPPL = ({ sekolah, pelamar, lowongan }) => {
                                         </td>
                                         <td className="text-gray-950 font-semibold align-top">
                                             {
-                                                kecamatan(
-                                                    sekolah?.regency
-                                                ).find(
-                                                    (item) =>
-                                                        item.kode ===
-                                                        sekolah?.sub_district
-                                                )?.nama
+                                                (sekolah?.regency && typeof kecamatan === "function" && kecamatan(
+                                                    sekolah.regency
+                                                )?.find(
+                                                    (item) => item.kode === sekolah?.sub_district
+                                                )?.nama) || sekolah?.sub_district || "-"
                                             }
                                         </td>
                                     </tr>
@@ -248,13 +246,11 @@ export const DetailTempatPPL = ({ sekolah, pelamar, lowongan }) => {
                                         </td>
                                         <td className="text-gray-950 font-semibold align-top">
                                             {
-                                                desa(
-                                                    sekolah?.sub_district
-                                                ).find(
-                                                    (item) =>
-                                                        item.kode ===
-                                                        sekolah?.village
-                                                )?.nama
+                                                (sekolah?.sub_district && typeof desa === "function" && desa(
+                                                    sekolah.sub_district
+                                                )?.find(
+                                                    (item) => item.kode === sekolah?.village
+                                                )?.nama) || sekolah?.village || "-"
                                             }
                                         </td>
                                     </tr>

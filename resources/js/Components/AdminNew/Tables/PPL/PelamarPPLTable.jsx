@@ -13,6 +13,7 @@ import { useState } from "react";
 import { PiSortAscending, PiSortDescending } from "react-icons/pi";
 import { FaRegTrashCan } from "react-icons/fa6";
 import { TfiPencil } from "react-icons/tfi";
+import { RiFileExcel2Line, RiDownloadLine, RiUploadCloud2Line } from "react-icons/ri";
 import DynamicModalConf from "@/Components/DynamicModalConf";
 import {
     Autocomplete,
@@ -33,8 +34,15 @@ import InputError from "@/Components/InputError";
 const PelamarPPLTable = () => {
     const [loading, setLoading] = useState(false);
     const { openModal, closeModal, isOpen } = useModal();
+    const { openModal: openImportModal, closeModal: closeImportModal, isOpen: isOpenImport } = useModal();
     const { openModalConf, closeModalConf, isOpenConf } =
         useConfirmationModal();
+
+    const [importFile, setImportFile] = useState(null);
+    const [importLoading, setImportLoading] = useState(false);
+    const [importLowongan, setImportLowongan] = useState(null);
+    const [importError, setImportError] = useState(null);
+    const [isDragging, setIsDragging] = useState(false);
 
     const modalA = useModal();
 
@@ -360,6 +368,107 @@ const PelamarPPLTable = () => {
         }
     };
 
+    const handleDownloadTemplate = () => {
+        window.location.href = `${config.base_url}/admin/ppl/sekolah/detail/mahasiswa/template-import`;
+    };
+
+    const handleDragOver = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+    };
+
+    const handleDragEnter = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.currentTarget.contains(e.relatedTarget)) return;
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+
+        const files = e.dataTransfer?.files;
+        if (files && files.length > 0) {
+            const file = files[0];
+            const ext = "." + file.name.split(".").pop().toLowerCase();
+            if (![".xlsx", ".xls", ".csv"].includes(ext)) {
+                setImportError("Format file tidak didukung. Harap unggah file .xlsx, .xls, atau .csv.");
+                return;
+            }
+            if (file.size > 10 * 1024 * 1024) {
+                setImportError("Ukuran file melebihi batas maksimal (10MB).");
+                return;
+            }
+            setImportFile(file);
+            setImportError(null);
+        }
+    };
+
+    const handleImportSubmit = async (e) => {
+        e.preventDefault();
+        if (!importFile) {
+            setImportError("Silakan pilih file Excel terlebih dahulu.");
+            return;
+        }
+
+        try {
+            setImportLoading(true);
+            setImportError(null);
+
+            const payload = new FormData();
+            payload.append("file", importFile);
+            payload.append("id_sekolah", x);
+            if (importLowongan?.id) {
+                payload.append("id_lowongan_ppl", importLowongan.id);
+            }
+
+            const res = await axios.post(
+                `${config.base_url}/api/admin/ppl/lowongan/mahasiswa/import`,
+                payload,
+                {
+                    withCredentials: true,
+                    headers: {
+                        "Content-Type": "multipart/form-data",
+                        Accept: "application/json",
+                    },
+                }
+            );
+
+            setResponseData({
+                message: res.data?.message || "Data mahasiswa PPL berhasil diimpor.",
+                severity: "success",
+                open: true,
+            });
+
+            setImportFile(null);
+            setImportLowongan(null);
+            closeImportModal();
+            getMahasiswa();
+        } catch (err) {
+            console.error("Import error:", err);
+            const errorMsg =
+                err.response?.data?.message ||
+                err.response?.data?.error ||
+                "Terjadi kesalahan saat mengimpor data.";
+            setImportError(errorMsg);
+            setResponseData({
+                message: errorMsg,
+                severity: "error",
+                open: true,
+            });
+        } finally {
+            setImportLoading(false);
+        }
+    };
+
     const handleSearchChange = (e) => {
         setSearchInput(e.target.value);
         setTimeout(() => {
@@ -379,11 +488,10 @@ const PelamarPPLTable = () => {
                     <button
                         key={page}
                         onClick={() => setCurrentPage(page)}
-                        className={`inline-flex px-5 py-3.5 text-sm items-center justify-center gap-2 rounded-lg transition ${
-                            isCurrent
+                        className={`inline-flex px-5 py-3.5 text-sm items-center justify-center gap-2 rounded-lg transition ${isCurrent
                                 ? "bg-brand-500 text-white shadow-theme-xs hover:bg-brand-600 disabled:bg-brand-300"
                                 : "bg-white text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-400 dark:ring-gray-700 dark:hover:bg-white/[0.03] dark:hover:text-gray-300"
-                        }`}
+                            }`}
                     >
                         {page}
                     </button>
@@ -459,7 +567,23 @@ const PelamarPPLTable = () => {
                             />
                         </div>
 
-                        <Button onClick={openModal}>Tambah</Button>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={openImportModal}
+                            className="!border-blue-600 !text-blue-700 hover:!bg-blue-50 dark:!border-blue-500 dark:!text-blue-400 dark:hover:!bg-blue-950/20 !px-3 !py-2 text-xs md:text-sm font-medium"
+                            startIcon={<RiFileExcel2Line className="w-4 h-4 text-blue-600 dark:text-blue-400" />}
+                        >
+                            Import Peserta
+                        </Button>
+
+                        <Button
+                            size="sm"
+                            onClick={openModal}
+                            className="!px-3 !py-2 text-xs md:text-sm font-medium"
+                        >
+                            Tambah
+                        </Button>
                     </div>
                 </div>
                 <div className="w-full max-h-[500px] overflow-auto">
@@ -526,71 +650,70 @@ const PelamarPPLTable = () => {
                             {loading
                                 ? renderSkeletonRows()
                                 : daftarMahasiswa?.data?.map((row, idx) => (
-                                      <tr key={row.id + "-" + idx}>
-                                          <td className="px-4 py-3">
-                                              {(currentPage - 1) *
-                                                  entriesPerPage +
-                                                  idx +
-                                                  1}
-                                          </td>
-                                          <td className="px-4 py-3">
-                                              {row.name}
-                                          </td>
-                                          <td className="px-4 py-3">
-                                              {row.username_mahasiswa}
-                                          </td>
+                                    <tr key={row.id + "-" + idx}>
+                                        <td className="px-4 py-3">
+                                            {(currentPage - 1) *
+                                                entriesPerPage +
+                                                idx +
+                                                1}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            {row.name}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            {row.username_mahasiswa}
+                                        </td>
 
-                                          <td className="px-4 py-3">
-                                              {row?.nama_prodi}
-                                          </td>
-                                          <td className="px-4 py-3">
-                                              {row?.jk}
-                                          </td>
-                                          <td className="px-4 py-3">
-                                              {row?.nama_lowongan}
-                                          </td>
-                                          <td className="px-4 py-3">
-                                              {row?.status}
-                                          </td>
+                                        <td className="px-4 py-3">
+                                            {row?.nama_prodi}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            {row?.jk}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            {row?.nama_lowongan}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            {row?.status}
+                                        </td>
 
-                                          <td className="px-4 py-3">
-                                              <div className="flex gap-x-2 items-center justify-center">
-                                                  <button
-                                                      onClick={() =>
-                                                          handleDelete(row.id)
-                                                      }
-                                                      className="text-gray-500 cursor-pointer hover:text-error-500"
-                                                  >
-                                                      <FaRegTrashCan />
-                                                  </button>
-                                                  <button
-                                                      //   href={`/admin/kpm/tempatkpm/${row.id}`}
-                                                      className="text-gray-500 cursor-pointer hover:text-gray-800"
-                                                      onClick={() => {
-                                                          setSelectedPelamar(
-                                                              row?.id
-                                                          );
-                                                          modalA.openModal();
-                                                      }}
-                                                  >
-                                                      <TfiPencil />
-                                                  </button>
-                                              </div>
-                                          </td>
-                                      </tr>
-                                  ))}
+                                        <td className="px-4 py-3">
+                                            <div className="flex gap-x-2 items-center justify-center">
+                                                <button
+                                                    onClick={() =>
+                                                        handleDelete(row.id)
+                                                    }
+                                                    className="text-gray-500 cursor-pointer hover:text-error-500"
+                                                >
+                                                    <FaRegTrashCan />
+                                                </button>
+                                                <button
+                                                    //   href={`/admin/kpm/tempatkpm/${row.id}`}
+                                                    className="text-gray-500 cursor-pointer hover:text-gray-800"
+                                                    onClick={() => {
+                                                        setSelectedPelamar(
+                                                            row?.id
+                                                        );
+                                                        modalA.openModal();
+                                                    }}
+                                                >
+                                                    <TfiPencil />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
                         </tbody>
                     </table>
                 </div>
 
                 <div className="navigation-3 p-5 flex flex-col md:flex-row gap-y-3 justify-between">
                     <div className="flex items-center gap-2 text-gray-500">
-                        <span>{`Showing ${
-                            (currentPage - 1) * entriesPerPage + 1
-                        } to ${Math.min(
-                            currentPage * entriesPerPage,
-                            totalEntries
-                        )} of ${totalEntries} entries`}</span>
+                        <span>{`Showing ${(currentPage - 1) * entriesPerPage + 1
+                            } to ${Math.min(
+                                currentPage * entriesPerPage,
+                                totalEntries
+                            )} of ${totalEntries} entries`}</span>
                     </div>
                     <div className="flex gap-x-4">
                         <Button
@@ -676,17 +799,17 @@ const PelamarPPLTable = () => {
                                                     label="Student"
                                                     sx={{
                                                         "& .MuiOutlinedInput-root.Mui-focused":
-                                                            {
-                                                                outline: "none",
-                                                                boxShadow:
-                                                                    "none",
-                                                            },
+                                                        {
+                                                            outline: "none",
+                                                            boxShadow:
+                                                                "none",
+                                                        },
                                                         "& .MuiInputBase-input:focus":
-                                                            {
-                                                                outline: "none",
-                                                                boxShadow:
-                                                                    "none",
-                                                            },
+                                                        {
+                                                            outline: "none",
+                                                            boxShadow:
+                                                                "none",
+                                                        },
                                                     }}
                                                     InputProps={{
                                                         ...params.InputProps,
@@ -746,17 +869,17 @@ const PelamarPPLTable = () => {
                                                     label="Lowongan PPL"
                                                     sx={{
                                                         "& .MuiOutlinedInput-root.Mui-focused":
-                                                            {
-                                                                outline: "none",
-                                                                boxShadow:
-                                                                    "none",
-                                                            },
+                                                        {
+                                                            outline: "none",
+                                                            boxShadow:
+                                                                "none",
+                                                        },
                                                         "& .MuiInputBase-input:focus":
-                                                            {
-                                                                outline: "none",
-                                                                boxShadow:
-                                                                    "none",
-                                                            },
+                                                        {
+                                                            outline: "none",
+                                                            boxShadow:
+                                                                "none",
+                                                        },
                                                     }}
                                                 />
                                             )}
@@ -790,10 +913,10 @@ const PelamarPPLTable = () => {
                                             multiline
                                             sx={{
                                                 "& .MuiOutlinedInput-root.Mui-focused":
-                                                    {
-                                                        outline: "none",
-                                                        boxShadow: "none",
-                                                    },
+                                                {
+                                                    outline: "none",
+                                                    boxShadow: "none",
+                                                },
                                                 "& .MuiInputBase-input:focus": {
                                                     outline: "none",
                                                     boxShadow: "none",
@@ -885,6 +1008,198 @@ const PelamarPPLTable = () => {
                         console.log("success", value);
                     }}
                 />
+            </DynamicModal>
+            {/* Modal Import Excel Mahasiswa PPL */}
+            <DynamicModal
+                className="max-w-[620px] m-4"
+                isOpen={isOpenImport}
+                onClose={() => {
+                    if (!importLoading) {
+                        setImportFile(null);
+                        setImportError(null);
+                        setIsDragging(false);
+                        closeImportModal();
+                    }
+                }}
+            >
+                <div className="no-scrollbar relative w-full overflow-y-auto rounded-3xl bg-white p-5 dark:bg-gray-900 lg:p-8">
+                    {/* Header Modal */}
+                    <div className="flex items-start gap-3.5 pb-4 border-b border-gray-100 dark:border-gray-800">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400">
+                            <RiFileExcel2Line className="h-6 w-6" />
+                        </div>
+                        <div>
+                            <h4 className="text-lg font-bold text-gray-800 dark:text-white">
+                                Import Mahasiswa PPL dari Excel
+                            </h4>
+                            <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                                Tambahkan data mahasiswa pelamar/peserta PPL pada sekolah ini secara massal menggunakan file Excel (.xlsx / .xls).
+                            </p>
+                        </div>
+                    </div>
+
+                    <form onSubmit={handleImportSubmit} className="mt-5 space-y-4">
+                        {/* Target Lowongan / Prodi Default (Opsional) */}
+                        <div>
+                            <label className="mb-1 block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                                Lowongan PPL Default (Opsional)
+                            </label>
+                            <Autocomplete
+                                id="import_lowongan"
+                                name="import_lowongan"
+                                sx={{ width: "100%" }}
+                                value={importLowongan}
+                                options={lowonganPPL || []}
+                                getOptionLabel={(option) => option?.name || ""}
+                                onChange={(e, value) => setImportLowongan(value)}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        size="small"
+                                        placeholder="Pilih Lowongan Default (Opsional)"
+                                    />
+                                )}
+                            />
+                            <p className="mt-1 text-[11px] text-gray-400">
+                                Jika dipilih, baris mahasiswa dengan kolom lowongan kosong di Excel akan otomatis dimasukkan ke lowongan ini.
+                            </p>
+                        </div>
+
+                        {/* Template Download Card */}
+                        <div className="flex items-center justify-between rounded-xl border border-dashed border-gray-200 bg-gray-50/70 p-3.5 dark:border-gray-800 dark:bg-gray-800/40">
+                            <div className="flex items-center gap-2.5">
+                                <RiFileExcel2Line className="text-xl text-emerald-600 dark:text-emerald-400" />
+                                <div>
+                                    <p className="text-xs font-semibold text-gray-800 dark:text-white">
+                                        Format Excel Template
+                                    </p>
+                                    <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                                        Unduh template standar untuk pengisian data mahasiswa
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={handleDownloadTemplate}
+                                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 hover:text-emerald-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                            >
+                                <RiDownloadLine className="text-sm" />
+                                Unduh Template
+                            </button>
+                        </div>
+
+                        {/* File Upload Area */}
+                        <div>
+                            <label className="mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                                Pilih File Excel
+                            </label>
+                            <div
+                                onClick={() => document.getElementById("file-import-mahasiswa-ppl")?.click()}
+                                onDragOver={handleDragOver}
+                                onDragEnter={handleDragEnter}
+                                onDragLeave={handleDragLeave}
+                                onDrop={handleDrop}
+                                className={`relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 text-center transition-all duration-200 cursor-pointer ${isDragging
+                                        ? "border-emerald-500 bg-emerald-100/50 scale-[1.01] shadow-lg shadow-emerald-500/10 dark:border-emerald-400 dark:bg-emerald-950/30"
+                                        : importFile
+                                        ? "border-emerald-500 bg-emerald-50/20 dark:border-emerald-600 dark:bg-emerald-950/10"
+                                        : "border-gray-300 bg-gray-50 hover:bg-gray-100/70 hover:border-gray-400 dark:border-gray-700 dark:bg-gray-800/50 dark:hover:bg-gray-800"
+                                    }`}
+                            >
+                                <input
+                                    id="file-import-mahasiswa-ppl"
+                                    type="file"
+                                    className="hidden"
+                                    accept=".xlsx,.xls,.csv"
+                                    onChange={(e) => {
+                                        if (e.target.files && e.target.files[0]) {
+                                            setImportFile(e.target.files[0]);
+                                            setImportError(null);
+                                        }
+                                    }}
+                                />
+                                <RiUploadCloud2Line
+                                    className={`text-4xl mb-2 transition-transform duration-200 ${isDragging
+                                            ? "text-emerald-600 scale-125 animate-bounce"
+                                            : importFile
+                                            ? "text-emerald-600"
+                                            : "text-gray-400"
+                                        }`}
+                                />
+                                {isDragging ? (
+                                    <div>
+                                        <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                                            Lepaskan file Excel di sini...
+                                        </p>
+                                        <p className="text-xs text-emerald-500 dark:text-emerald-400 mt-0.5">
+                                            File akan otomatis dipilih
+                                        </p>
+                                    </div>
+                                ) : importFile ? (
+                                    <div>
+                                        <p className="text-sm font-semibold text-gray-800 dark:text-white">
+                                            {importFile.name}
+                                        </p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                                            {(importFile.size / 1024).toFixed(1)} KB — Klik atau seret file lain untuk mengganti
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div>
+                                        <p className="text-xs font-semibold text-gray-700 dark:text-gray-200">
+                                            Klik untuk memilih file Excel atau seret dan lepas file ke sini
+                                        </p>
+                                        <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+                                            Format didukung: .xlsx, .xls, .csv (Maks. 10MB)
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                            {importError && (
+                                <div className="mt-2">
+                                    <InputError message={importError} />
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Panduan Format Singkat */}
+                        <div className="rounded-xl bg-blue-50/60 p-3 text-[11px] text-blue-800 dark:bg-blue-950/30 dark:text-blue-300">
+                            <span className="font-bold">Ketentuan Kolom Excel:</span>
+                            <ul className="mt-1 list-disc list-inside space-y-0.5 text-blue-700 dark:text-blue-400">
+                                <li><span className="font-medium">NIM:</span> Wajib (NIM / username mahasiswa).</li>
+                                <li><span className="font-medium">Nama Mahasiswa:</span> Opsional (nama lengkap mahasiswa).</li>
+                                <li><span className="font-medium">Lowongan / Prodi:</span> Nama lowongan atau prodi sasaran pada sekolah ini.</li>
+                                <li><span className="font-medium">Status:</span> Opsional (default: <span className="font-semibold">accepted</span> / Diterima).</li>
+                                <li><span className="font-medium">Keterangan:</span> Opsional (catatan penempatan).</li>
+                            </ul>
+                        </div>
+
+                        {/* Modal Actions */}
+                        <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                    setImportFile(null);
+                                    setImportError(null);
+                                    setIsDragging(false);
+                                    closeImportModal();
+                                }}
+                            >
+                                Batal
+                            </Button>
+                            <Button
+                                disabled={importLoading || !importFile}
+                                className="relative !bg-emerald-600 hover:!bg-emerald-700"
+                                size="sm"
+                                type="submit"
+                            >
+                                {importLoading ? <LoaderOnButton /> : "Import Sekarang"}
+                            </Button>
+                        </div>
+                    </form>
+                </div>
             </DynamicModal>
             <DynamicModalConf
                 className="max-w-[400px] m-4"

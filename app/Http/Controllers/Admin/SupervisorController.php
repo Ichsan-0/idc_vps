@@ -18,18 +18,26 @@ class SupervisorController extends Controller
     {
         $query = User::whereIn('role', ['supervisor_kpm', 'supervisor', 'Supervisor_KPM']);
         if ($request->has('search_key') && !empty($request->search_key)) {
-            $query->where(function ($subQuery) use ($request) {
-                $subQuery->where('users.name', 'like', '%' . $request->search_key . '%');
+            $search = $request->search_key;
+            $query->where(function ($subQuery) use ($search) {
+                $subQuery->where('users.name', 'like', '%' . $search . '%')
+                         ->orWhere('users.username', 'like', '%' . $search . '%')
+                         ->orWhere('users.email', 'like', '%' . $search . '%');
             });
         }
-        $query->selectRaw(
-            'ROW_NUMBER() OVER (ORDER BY users.id) AS row_index,
-                users.id,
-               users.name as name,
-               users.email,
-               users.username'
-        );
-        $data = $query->paginate(10);
+
+        $sortKey = $request->input('sort_key', 'id');
+        $sortDir = $request->input('sort_dir', 'desc');
+        $allowedSorts = ['id', 'name', 'username', 'email', 'created_at'];
+        if (!in_array($sortKey, $allowedSorts)) {
+            $sortKey = 'id';
+        }
+        $sortDir = strtolower($sortDir) === 'asc' ? 'asc' : 'desc';
+
+        $perPage = (int) $request->input('entries_per_page', 10);
+        if ($perPage < 1) $perPage = 10;
+
+        $data = $query->orderBy($sortKey, $sortDir)->paginate($perPage);
 
         return new SupervisorResource(true, 'List Supervisor', $data);
     }
@@ -44,7 +52,10 @@ class SupervisorController extends Controller
             $import = Excel::import(new SupervisorImport, $request->file('daftarsupervisor'));
             return new SupervisorResource(true, 'Berhasil Import Data Supervisor', $import);
         } catch (\Exception $e) {
-            return new SupervisorResource(false, $e->getMessage(), $e->getCode());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal import supervisor: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
@@ -53,26 +64,32 @@ class SupervisorController extends Controller
         try {
             return Excel::download(new SupervisorExport, 'Kredentials_Supervisor.xlsx');
         } catch (\Exception $e) {
-            return new SupervisorResource(false, $e->getMessage(), $e->getCode());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal export supervisor: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
     public function delete($id)
     {
         try {
-            // dd($id);
             $supervisor = User::find($id);
             if ($supervisor) {
-                $result = $supervisor->delete();
-                if ($result) {
-                    // return redirect()->back()->with('message', ['success' => 'Berhasil Menghapus Supervisor']);
-                    return new SupervisorResource(true, 'Berhasil Menghapus Supervisor', null);
-                }
+                $supervisor->delete();
+                return (new SupervisorResource(true, 'Berhasil Menghapus Supervisor', null))
+                    ->response()
+                    ->setStatusCode(200);
             }
-            // return redirect()->back()->with('message', ['error' => 'Gagal Menghapus Supervisor']);
-            return new SupervisorResource(false, 'Gagal Menghapus Supervisor', null);
+            return response()->json([
+                'success' => false,
+                'message' => 'Supervisor tidak ditemukan.'
+            ], 404);
         } catch (\Exception $e) {
-            return new SupervisorResource(false, $e->getMessage(), $e->getCode());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus supervisor: ' . $e->getMessage()
+            ], 500);
         }
     }
 
@@ -80,75 +97,131 @@ class SupervisorController extends Controller
 
     public function update(Request $request, $id)
     {
+        $user = User::find($id);
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Supervisor tidak ditemukan.'
+            ], 404);
+        }
+
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'username' => 'required|string|max:100|unique:users,username,' . $id,
+            'email' => 'required|email|max:255|unique:users,email,' . $id,
+            'password' => 'nullable|string|min:6',
+        ], [
+            'name.required' => 'Nama lengkap wajib diisi.',
+            'username.required' => 'NIP / Username wajib diisi.',
+            'username.unique' => 'NIP / Username sudah digunakan pengguna lain.',
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'email.unique' => 'Email sudah digunakan pengguna lain.',
+            'password.min' => 'Password baru minimal harus 6 karakter.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first(),
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
         try {
-            // Data yang akan diupdate
             $data = [
                 'name' => $request->name,
                 'email' => $request->email,
                 'username' => $request->username,
-
             ];
 
-
-
-            // Cari user berdasarkan ID
-            $user = User::find($id);
-
-            if ($user) {
-                // Update data user
-                $user->update($data);
-
-                // Response sukses
-                return new SupervisorResource(true, 'Supervisor Berhasil diupdate', $user);
+            // Password reset jika superadmin mengisi password
+            if ($request->filled('password')) {
+                $data['password'] = \Illuminate\Support\Facades\Hash::make($request->password);
             }
 
-            // Jika user tidak ditemukan
-            return new SupervisorResource(false, 'Supervisor tidak ditemukan', null);
+            $user->update($data);
+
+            return (new SupervisorResource(true, 'Supervisor Berhasil diupdate', $user))
+                ->response()
+                ->setStatusCode(200);
         } catch (\Exception $e) {
-            return new SupervisorResource(false, $e->getMessage(), $e->getCode());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui supervisor: ' . $e->getMessage()
+            ], 500);
         }
     }
 
     public function show($id)
     {
         try {
-            //find post by ID
             $user = User::find($id);
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data supervisor tidak ditemukan.'
+                ], 404);
+            }
 
-            //return single User as a resource
             return new SupervisorResource(true, 'Detail Data User!', $user);
         } catch (\Exception $e) {
-            return new SupervisorResource(false, $e->getMessage(), $e->getCode());
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
         }
     }
 
     public function tambah(Request $request)
     {
-
-        // dd($request);
         return Inertia::render('Admin/pages/Pengguna/Supervisor/AddSupervisor');
     }
 
     public function save(Request $request)
     {
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'username' => 'required|string|max:100|unique:users,username',
+            'email' => 'required|email|max:255|unique:users,email',
+            'password' => 'required|string|min:6',
+        ], [
+            'name.required' => 'Nama lengkap wajib diisi.',
+            'username.required' => 'NIP / Username wajib diisi.',
+            'username.unique' => 'NIP / Username sudah terdaftar.',
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'email.unique' => 'Email sudah terdaftar.',
+            'password.required' => 'Password wajib diisi.',
+            'password.min' => 'Password minimal harus 6 karakter.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first(),
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
         try {
             $data = [
                 'name' => $request->name,
                 'email' => $request->email,
-                'password' => $request->password,
+                'password' => \Illuminate\Support\Facades\Hash::make($request->password),
                 'username' => $request->username,
-                'role' => $request->role,
+                'role' => $request->role ?: 'supervisor_kpm',
             ];
 
             $user = User::create($data);
-            if ($user) {
-                // return redirect('/admin/daftarsupervisor')->with('message', ['success' => 'Supervisor Berhasil ditambahkan']);
-                return new SupervisorResource(true, 'Supervisor Berhasil ditambahkan', $user);
-            }
-            // return redirect('/admin/daftarsupervisor')->with('message', ['success' => 'Supervisor Berhasil ditambahkan']);
-            return new SupervisorResource(false, 'Supervisor gagal ditambahkan', null);
+            return (new SupervisorResource(true, 'Supervisor Berhasil ditambahkan', $user))
+                ->response()
+                ->setStatusCode(200);
         } catch (\Exception $e) {
-            return new SupervisorResource(false, $e->getMessage(), $e->getCode());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menambahkan supervisor: ' . $e->getMessage()
+            ], 500);
         }
     }
 }

@@ -442,12 +442,16 @@ const TempatKPMTable = () => {
                         />
                         <span>entries</span>
                     </div>
-                    <div className="flex justify-end gap-x-2">
-                        <Search
-                            value={searchInput}
-                            onChange={handleSearchChange}
-                        />
-                        <Button onClick={openModal}>Tambah</Button>
+                    <div className="flex flex-wrap items-center gap-2 shrink-0">
+                        <div className="w-full sm:w-52 md:w-60 min-w-[160px]">
+                            <Search
+                                value={searchInput}
+                                onChange={handleSearchChange}
+                                placeholder="Cari lokasi KPM..."
+                                className="w-full"
+                            />
+                        </div>
+                        <Button onClick={openModal} className="whitespace-nowrap shadow-xs shrink-0">Tambah</Button>
                     </div>
                 </div>
                 <div className="w-full max-h-[500px] overflow-auto">

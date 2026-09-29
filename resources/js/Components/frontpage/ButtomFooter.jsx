@@ -197,6 +197,9 @@ const Footer = () => {
                         <p className="mt-1 text-xs lg:text-sm">
                             Jl. Syaikh Abdul Rauf, Kopelma Darussalam, Kec. Syiah Kuala, Kota Banda Aceh
                         </p>
+                        <p className="mt-1 text-xs text-gray-400">
+                            Developed by : <span className="font-semibold text-gray-200">Muhammad Ichsan, S.Kom</span>, FTK UIN Ar-Raniry Banda Aceh
+                        </p>
                     </div>
                     
                     <div className="flex gap-6 text-sm text-gray-400">

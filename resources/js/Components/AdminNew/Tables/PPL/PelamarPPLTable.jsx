@@ -559,11 +559,12 @@ const PelamarPPLTable = () => {
                         />
                         <span>entries</span>
                     </div>
-                    <div className="flex justify-end gap-x-2">
-                        <div>
+                    <div className="flex flex-wrap items-center gap-2 shrink-0">
+                        <div className="w-full sm:w-52 md:w-60 min-w-[160px]">
                             <Search
                                 value={searchInput}
                                 onChange={(e) => handleSearchChange(e)}
+                                className="w-full"
                             />
                         </div>
 
@@ -571,7 +572,7 @@ const PelamarPPLTable = () => {
                             size="sm"
                             variant="outline"
                             onClick={openImportModal}
-                            className="!border-blue-600 !text-blue-700 hover:!bg-blue-50 dark:!border-blue-500 dark:!text-blue-400 dark:hover:!bg-blue-950/20 !px-3 !py-2 text-xs md:text-sm font-medium"
+                            className="!border-blue-600 !text-blue-700 hover:!bg-blue-50 dark:!border-blue-500 dark:!text-blue-400 dark:hover:!bg-blue-950/20 !px-3 !py-2 text-xs md:text-sm font-medium whitespace-nowrap shadow-xs shrink-0"
                             startIcon={<RiFileExcel2Line className="w-4 h-4 text-blue-600 dark:text-blue-400" />}
                         >
                             Import Peserta
@@ -580,7 +581,7 @@ const PelamarPPLTable = () => {
                         <Button
                             size="sm"
                             onClick={openModal}
-                            className="!px-3 !py-2 text-xs md:text-sm font-medium"
+                            className="!px-3 !py-2 text-xs md:text-sm font-medium whitespace-nowrap shadow-xs shrink-0"
                         >
                             Tambah
                         </Button>

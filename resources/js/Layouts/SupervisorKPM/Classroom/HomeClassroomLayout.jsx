@@ -1,5 +1,4 @@
-import NavLink from "@/Components/Mahasiswa/Classroom/Header/NavLink";
-import Sidebar from "@/Components/Mahasiswa/Classroom/Sidebar/Sidebar";
+import AppFooter from "@/Components/Common/AppFooter";
 import Header from "@/Components/SupervisorKPM/HomeClassroom/Header/Header";
 import { usePage } from "@inertiajs/react";
 import React, { useState } from "react";
@@ -21,7 +20,7 @@ const HomeClassroomLayout = ({ children }) => {
                 {/* <!-- ===== Sidebar End ===== --> */}
 
                 {/* <!-- ===== Content Area Start ===== --> */}
-                <div className="relative flex flex-1 flex-col overflow-y-auto overflow-x-hidden">
+                <div className="relative flex flex-1 flex-col overflow-y-auto overflow-x-hidden min-w-0">
                     {/* <!-- ===== Header Start ===== --> */}
                     <Header
                         sidebarOpen={sidebarOpen}
@@ -31,13 +30,11 @@ const HomeClassroomLayout = ({ children }) => {
                     {/* <!-- ===== Header End ===== --> */}
 
                     {/* <!-- ===== Main Content Start ===== --> */}
-                    <main>
-                        <div className="mx-auto max-w-screen-lg p-4 md:p-6 2xl:p-10 justify-center flex">
+                    <main className="flex-1 flex flex-col justify-between">
+                        <div className="mx-auto max-w-screen-lg p-4 md:p-6 2xl:p-10 justify-center flex flex-1 w-full">
                             {children}
                         </div>
-                        {/* <footer className="flex bg-white p-5 justify-center items-center text-sm dark:bg-black dark:text-bodydark">
-                            Copyright © 2024 PT. EduTestMarket
-                        </footer> */}
+                        <AppFooter />
                     </main>
                     {/* <!-- ===== Main Content End ===== --> */}
                 </div>

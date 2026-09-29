@@ -767,26 +767,32 @@ const TempatPPLTable = () => {
                         ></Autocomplete>
                     </div>
                 </div>
-                <div className="navigation-2 p-5 flex flex-col md:flex-row gap-y-3  justify-between">
-                    <div className="flex items-center gap-2 text-gray-500">
-                        <span>Show</span>
-                        <Select
-                            showPlaceHolder={false}
-                            options={["5", "10", "50", "100"].map((v) => ({
-                                value: v,
-                                label: v,
-                            }))}
-                            defaultValue={entriesPerPage}
-                            onChange={handleEntriesChange}
-                            className="dark:bg-dark-900"
-                        />
-                        <span>entries</span>
+                <div className="navigation-2 p-4 sm:p-5 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3 border-b border-gray-100 dark:border-gray-800">
+                    <div className="flex flex-wrap items-center gap-3">
+                        <div className="flex items-center gap-2 text-sm text-gray-500 shrink-0">
+                            <span>Show</span>
+                            <Select
+                                showPlaceHolder={false}
+                                options={["5", "10", "50", "100"].map((v) => ({
+                                    value: v,
+                                    label: v,
+                                }))}
+                                defaultValue={entriesPerPage}
+                                onChange={handleEntriesChange}
+                                className="dark:bg-dark-900"
+                            />
+                            <span>entries</span>
+                        </div>
+                        <div className="w-full sm:w-52 md:w-60 lg:w-64 min-w-[160px]">
+                            <Search
+                                value={searchInput}
+                                onChange={handleSearchChange}
+                                placeholder="Cari lokasi PPL..."
+                                className="w-full"
+                            />
+                        </div>
                     </div>
-                    <div className="flex justify-end gap-x-2">
-                        <Search
-                            value={searchInput}
-                            onChange={handleSearchChange}
-                        />
+                    <div className="flex flex-wrap items-center gap-2 shrink-0">
                         <Button
                             size="sm"
                             variant="outline"
@@ -797,7 +803,7 @@ const TempatPPLTable = () => {
                                 setImportError(null);
                                 openImportModal();
                             }}
-                            className="!border-emerald-600 !text-emerald-700 hover:!bg-emerald-50 dark:!text-emerald-400 dark:hover:!bg-emerald-950/30 flex items-center gap-1.5 !px-3 !py-2 text-xs md:text-sm font-medium"
+                            className="!border-emerald-600 !text-emerald-700 hover:!bg-emerald-50 dark:!text-emerald-400 dark:hover:!bg-emerald-950/30 flex items-center gap-1.5 !px-3 !py-2 text-xs md:text-sm font-medium whitespace-nowrap shadow-xs shrink-0"
                         >
                             <RiFileExcel2Line className="text-base text-emerald-600" />
                             Import Lokasi
@@ -812,7 +818,7 @@ const TempatPPLTable = () => {
                                 setImportPesertaError(null);
                                 openImportPesertaModal();
                             }}
-                            className="!border-blue-600 !text-blue-700 hover:!bg-blue-50 dark:!border-blue-500 dark:!text-blue-400 dark:hover:!bg-blue-950/30 flex items-center gap-1.5 !px-3 !py-2 text-xs md:text-sm font-medium"
+                            className="!border-blue-600 !text-blue-700 hover:!bg-blue-50 dark:!border-blue-500 dark:!text-blue-400 dark:hover:!bg-blue-950/30 flex items-center gap-1.5 !px-3 !py-2 text-xs md:text-sm font-medium whitespace-nowrap shadow-xs shrink-0"
                         >
                             <RiFileExcel2Line className="text-base text-blue-600 dark:text-blue-400" />
                             Import Peserta
@@ -820,7 +826,7 @@ const TempatPPLTable = () => {
                         <Button
                             size="sm"
                             onClick={openModal}
-                            className="!px-3 !py-2 text-xs md:text-sm font-medium"
+                            className="!px-3.5 !py-2 text-xs md:text-sm font-medium whitespace-nowrap shadow-xs shrink-0"
                         >
                             Tambah
                         </Button>

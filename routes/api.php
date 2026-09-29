@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\AdminKecamatanController;
 use App\Http\Controllers\DataRekapController;
 use App\Http\Controllers\Admin\AdminSekolahController;
@@ -247,6 +248,11 @@ Route::get('/admin/users/supervisor-kpm/{id}', [SupervisorController::class, 'sh
 Route::post('/admin/users/supervisor-kpm/update/{id}', [SupervisorController::class, 'update']);
 Route::delete('/admin/users/supervisor-kpm/{id}', [SupervisorController::class, 'delete']);
 Route::post('/admin/importsupervisor', [SupervisorController::class, 'importsupervisor']);
+
+Route::get('/admin/users/admin', [AdminController::class, 'apiList']);
+Route::post('/admin/users/admin', [AdminController::class, 'apiSave']);
+Route::post('/admin/users/admin/update/{id}', [AdminController::class, 'apiUpdate']);
+Route::delete('/admin/users/admin/{id}', [AdminController::class, 'apiDelete']);
 
 
 Route::post('/student/classroom/task', [TaskController::class, 'createTasksByClass']);

@@ -1,5 +1,6 @@
 import Header from "@/Components/SupervisorKPM/SuperviosrPPL/Header/Header";
 import Sidebar from "@/Components/SupervisorKPM/SuperviosrPPL/Sidebar/Sidebar";
+import AppFooter from "@/Components/Common/AppFooter";
 import React, { useState } from "react";
 
 const SupervisorPPLLayout = ({ children }) => {
@@ -17,7 +18,7 @@ const SupervisorPPLLayout = ({ children }) => {
                 {/* <!-- ===== Sidebar End ===== --> */}
 
                 {/* <!-- ===== Content Area Start ===== --> */}
-                <div className="relative flex flex-1 flex-col overflow-y-auto overflow-x-hidden">
+                <div className="relative flex flex-1 flex-col overflow-y-auto overflow-x-hidden min-w-0">
                     {/* <!-- ===== Header Start ===== --> */}
                     <Header
                         sidebarOpen={sidebarOpen}
@@ -26,13 +27,11 @@ const SupervisorPPLLayout = ({ children }) => {
                     {/* <!-- ===== Header End ===== --> */}
 
                     {/* <!-- ===== Main Content Start ===== --> */}
-                    <main>
-                        <div className="mx-auto max-w-screen-xl p-4 md:p-6 2xl:p-10">
+                    <main className="flex-1 flex flex-col justify-between">
+                        <div className="mx-auto max-w-screen-xl p-4 md:p-6 2xl:p-10 flex-1 w-full">
                             {children}
                         </div>
-                        <footer className="flex bg-white p-5 justify-center items-center text-sm">
-                            Copyright © 2024 PT. EduTestMarket
-                        </footer>
+                        <AppFooter />
                     </main>
                     {/* <!-- ===== Main Content End ===== --> */}
                 </div>

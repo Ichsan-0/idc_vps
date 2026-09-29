@@ -524,9 +524,9 @@ const SupervisorKPMTable = ({ base_url }) => {
             />
 
             {/* Toolbar Header */}
-            <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3.5 pb-5">
+            <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3 pb-4">
                 {/* Search & Entries */}
-                <div className="flex flex-wrap sm:flex-nowrap items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                     <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 shrink-0">
                         <span>Tampilkan</span>
                         <select
@@ -542,7 +542,7 @@ const SupervisorKPMTable = ({ base_url }) => {
                         <span>data</span>
                     </div>
 
-                    <div className="w-full sm:w-64 md:w-72 lg:w-80">
+                    <div className="w-full sm:w-52 md:w-60 lg:w-64 min-w-[160px]">
                         <Search
                             value={searchInput}
                             onChange={handleSearchChange}
@@ -552,14 +552,14 @@ const SupervisorKPMTable = ({ base_url }) => {
                     </div>
                 </div>
 
-                {/* Actions: Tambah, Import, Export (Sejajar) */}
-                <div className="flex items-center gap-2 flex-nowrap overflow-x-auto pb-1 xl:pb-0 shrink-0">
+                {/* Actions: Tambah, Import, Export (Sejajar & Aman dari Offside) */}
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
                     <Button
                         size="sm"
                         variant="primary"
                         onClick={handleOpenAdd}
                         startIcon={<PlusIcon className="h-4 w-4" />}
-                        className="!bg-emerald-600 hover:!bg-emerald-700 shadow-sm !py-2 !px-3.5 text-xs sm:text-sm whitespace-nowrap"
+                        className="!bg-emerald-600 hover:!bg-emerald-700 shadow-xs !py-2 !px-3.5 text-xs sm:text-sm whitespace-nowrap shrink-0"
                     >
                         Tambah Supervisor
                     </Button>
@@ -569,7 +569,7 @@ const SupervisorKPMTable = ({ base_url }) => {
                         variant="outline"
                         onClick={openImportModal}
                         startIcon={<RiUploadCloud2Line className="text-base text-blue-600 dark:text-blue-400" />}
-                        className="hover:!border-blue-500 hover:!text-blue-600 !py-2 !px-3.5 text-xs sm:text-sm whitespace-nowrap"
+                        className="hover:!border-blue-500 hover:!text-blue-600 !py-2 !px-3.5 text-xs sm:text-sm whitespace-nowrap shadow-xs shrink-0"
                     >
                         Import Excel
                     </Button>
@@ -580,7 +580,7 @@ const SupervisorKPMTable = ({ base_url }) => {
                         onClick={handleExport}
                         disabled={exportLoading}
                         startIcon={<RiDownloadLine className="text-base text-gray-600 dark:text-gray-400" />}
-                        className="!py-2 !px-3.5 text-xs sm:text-sm whitespace-nowrap"
+                        className="!py-2 !px-3.5 text-xs sm:text-sm whitespace-nowrap shadow-xs shrink-0"
                     >
                         {exportLoading ? <LoaderOnButton /> : "Export Data"}
                     </Button>

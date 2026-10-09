@@ -222,56 +222,107 @@ class TempatPPLDataImport implements ToCollection
                 : null;
             if ($desaVal === '') $desaVal = null;
 
-            // 1. Resolve supervisor
-            $usernameSupervisor = null;
-            if (!empty($supervisorVal)) {
-                // Konversi notasi ilmiah atau float dari format angka Excel (misal 1.98709E+17)
-                if (is_numeric($supervisorVal) || stripos((string)$supervisorVal, 'e+') !== false) {
-                    $numVal = (float)$supervisorVal;
-                    if ($numVal > 0) {
-                        $supervisorVal = number_format($numVal, 0, '', '');
-                    }
-                }
-                $cleanNip = trim((string)$supervisorVal);
-
-                // Cari berdasarkan username atau nama lengkap
-                $user = User::where('username', $cleanNip)
-                    ->orWhere('name', $cleanNip)
-                    ->first();
-
-                // Jika belum ketemu, coba cari berdasarkan digit NIP bersih
-                if (!$user) {
-                    $digitsOnly = preg_replace('/\D/', '', $cleanNip);
-                    if (!empty($digitsOnly)) {
-                        $user = User::where('username', $digitsOnly)->first();
-                    }
-                }
-
-                // Jika belum ketemu dan panjang >= 4, coba LIKE query
-                if (!$user && strlen($cleanNip) >= 4) {
-                    $user = User::where('name', 'LIKE', '%' . $cleanNip . '%')
-                        ->orWhere('username', 'LIKE', '%' . $cleanNip . '%')
-                        ->first();
-                }
-
-                if ($user) {
-                    $usernameSupervisor = $user->username;
-                } else {
-                    $usernameSupervisor = preg_replace('/\s+/', '', $cleanNip);
-                }
-            }
-
-            // 2. Resolve SekolahMaster
+            // 1. Resolve SekolahMaster dan Sekolah eksisting terlebih dahulu
             $master = SekolahMaster::where(function ($q) use ($schoolName) {
                 $q->where('name', 'LIKE', $schoolName)
                   ->orWhereRaw('TRIM(name) LIKE ?', [$schoolName]);
             })->first();
 
-            // Fallback ke supervisor dari data master jika baris excel kosong
-            if (empty($usernameSupervisor) && $master && !empty($master->username_supervisor)) {
-                $usernameSupervisor = $master->username_supervisor;
+            $sekolah = Sekolah::where('id_gelombang', $this->idGelombang)
+                ->where(function ($q) use ($master, $schoolName) {
+                    if ($master) {
+                        $q->where('id_sekolah', $master->id);
+                    }
+                    $q->orWhere('name', 'LIKE', $schoolName)
+                      ->orWhereRaw('TRIM(name) LIKE ?', [$schoolName]);
+                })
+                ->first();
+
+            // Dapatkan supervisor yang sudah ada di database saat ini (jika ada)
+            $existingSchoolSpv = null;
+            if ($sekolah && !empty($sekolah->username_supervisor)) {
+                $existingSchoolSpv = $sekolah->username_supervisor;
+            } elseif ($master && !empty($master->username_supervisor)) {
+                $existingSchoolSpv = $master->username_supervisor;
             }
 
+            // 2. Resolve supervisor secara cerdas & aman dari foreign key error
+            $usernameSupervisor = null;
+            if (!empty($supervisorVal)) {
+                $rawNip = trim((string)$supervisorVal);
+                $cleanNip = preg_replace('/[^\w\.\+\-]/', '', $rawNip);
+
+                // Jika format Excel mengandung notasi eksponensial (e.g. 1.98708E+17)
+                if (stripos($cleanNip, 'e+') !== false || stripos($cleanNip, 'e-') !== false) {
+                    $numVal = (float)$cleanNip;
+                    if ($numVal > 0) {
+                        $cleanNip = number_format($numVal, 0, '', '');
+                    }
+                }
+
+                $digitsOnly = preg_replace('/\D/', '', $cleanNip);
+
+                // Cek 1: Exact match dengan username di tabel users
+                $user = User::where('username', $cleanNip)
+                    ->orWhere('name', $rawNip)
+                    ->first();
+
+                // Cek 2: Match berdasarkan digit angka
+                if (!$user && !empty($digitsOnly)) {
+                    $user = User::where('username', $digitsOnly)->first();
+                }
+
+                // Cek 3: Jika sekolah sudah memiliki supervisor di DB dan digit awalan (14 digit) cocok,
+                // maka supervisor tidak berubah (mengatasi digit terakhir yang terpotong/dibulatkan oleh float Excel)
+                if (!$user && !empty($existingSchoolSpv) && strlen($digitsOnly) >= 14) {
+                    $prefix14 = substr($digitsOnly, 0, 14);
+                    if (str_starts_with((string)$existingSchoolSpv, $prefix14)) {
+                        $user = User::where('username', $existingSchoolSpv)->first();
+                    }
+                }
+
+                // Cek 4: Cari user berdasarkan prefix 15 digit (mengatasi float rounding pada 3 digit terakhir NIP)
+                if (!$user && strlen($digitsOnly) >= 15) {
+                    $prefix15 = substr($digitsOnly, 0, 15);
+                    $user = User::where('username', 'LIKE', $prefix15 . '%')->first();
+                }
+
+                // Cek 5: Cari user berdasarkan prefix 14 digit
+                if (!$user && strlen($digitsOnly) >= 14) {
+                    $prefix14 = substr($digitsOnly, 0, 14);
+                    $user = User::where('username', 'LIKE', $prefix14 . '%')->first();
+                }
+
+                // Cek 6: Cari user berdasarkan nama lengkap
+                if (!$user && strlen($rawNip) >= 4) {
+                    $user = User::where('name', 'LIKE', '%' . $rawNip . '%')->first();
+                }
+
+                if ($user) {
+                    $usernameSupervisor = $user->username;
+                } else {
+                    // Jika tidak ditemukan di tabel users, gunakan supervisor eksisting jika valid, atau NULL
+                    // PENTING: JANGAN PERNAH gunakan NIP yang tidak terdaftar di tabel users
+                    // karena kolom username_supervisor memiliki foreign key constraint ke users.username
+                    if (!empty($existingSchoolSpv) && User::where('username', $existingSchoolSpv)->exists()) {
+                        $usernameSupervisor = $existingSchoolSpv;
+                    } else {
+                        $usernameSupervisor = null;
+                    }
+                }
+            } else {
+                // Jika kolom NIP di Excel kosong, pertahankan supervisor eksisting jika valid
+                if (!empty($existingSchoolSpv) && User::where('username', $existingSchoolSpv)->exists()) {
+                    $usernameSupervisor = $existingSchoolSpv;
+                }
+            }
+
+            // Validasi final: pastikan usernameSupervisor benar-benar ada di users jika diisi
+            if (!empty($usernameSupervisor) && !User::where('username', $usernameSupervisor)->exists()) {
+                $usernameSupervisor = null;
+            }
+
+            // 3. Simpan / perbarui SekolahMaster
             if (!$master) {
                 $master = SekolahMaster::create([
                     'name' => $schoolName,
@@ -293,17 +344,7 @@ class TempatPPLDataImport implements ToCollection
                 }
             }
 
-            // 3. Cek apakah sekolah sudah ada di sekolah_tbl untuk gelombang ini
-            $sekolah = Sekolah::where('id_gelombang', $this->idGelombang)
-                ->where(function ($q) use ($master, $schoolName) {
-                    if ($master) {
-                        $q->where('id_sekolah', $master->id);
-                    }
-                    $q->orWhere('name', 'LIKE', $schoolName)
-                      ->orWhereRaw('TRIM(name) LIKE ?', [$schoolName]);
-                })
-                ->first();
-
+            // 4. Simpan / perbarui Sekolah di sekolah_tbl untuk gelombang ini
             if ($sekolah) {
                 // Perbarui data sekolah yang sudah ada jika ada perubahan
                 $sekolahUpdates = [];
@@ -333,7 +374,7 @@ class TempatPPLDataImport implements ToCollection
                     'name' => $schoolName,
                     'id_sekolah' => $master->id,
                     'id_gelombang' => $this->idGelombang,
-                    'username_supervisor' => $usernameSupervisor ?: ($master ? $master->username_supervisor : null),
+                    'username_supervisor' => $usernameSupervisor,
                     'province' => '11',
                     'regency' => $kabupatenVal ?: $master->regency,
                     'sub_district' => $kecamatanVal ?: $master->sub_district,

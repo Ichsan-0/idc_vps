@@ -135,7 +135,7 @@ class LokasiPPLDataSheet extends DefaultValueBinder implements FromArray, WithHe
                 $rows = [];
                 foreach ($masters as $idx => $master) {
                     $nip = (string)($master->username_supervisor ?? '');
-                    if (!empty($nip) && (is_numeric($nip) || stripos((string)$nip, 'e+') !== false)) {
+                    if (!empty($nip) && (stripos((string)$nip, 'e+') !== false || stripos((string)$nip, 'e-') !== false)) {
                         $numVal = (float)$nip;
                         if ($numVal > 0) {
                             $nip = number_format($numVal, 0, '', '');
@@ -173,9 +173,10 @@ class LokasiPPLDataSheet extends DefaultValueBinder implements FromArray, WithHe
             foreach ($sekolahs as $idx => $sekolah) {
                 $schoolName = trim((string)($sekolah->master_name ?: $sekolah->name));
 
-                // Bersihkan NIP agar tampil normal tanpa notasi scientific
+                // Bersihkan NIP: Hanya lakukan konversi jika berupa notasi ilmiah (mengandung e+/e-)
+                // Jangan convert string angka murni ke (float) karena float IEEE 754 memotong presisi digit ke-16 ke atas (18-digit NIP)
                 $nip = trim((string)($sekolah->username_supervisor ?: ($sekolah->master_supervisor ?? '')));
-                if (!empty($nip) && (is_numeric($nip) || stripos((string)$nip, 'e+') !== false)) {
+                if (!empty($nip) && (stripos((string)$nip, 'e+') !== false || stripos((string)$nip, 'e-') !== false)) {
                     $numVal = (float)$nip;
                     if ($numVal > 0) {
                         $nip = number_format($numVal, 0, '', '');

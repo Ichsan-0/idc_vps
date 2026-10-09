@@ -74,13 +74,11 @@ const Sidebar = ({
     return (
         <aside
             ref={sidebar}
-            className={`fixed lg:static top-0 left-0 z-[150] flex h-screen flex-col overflow-hidden bg-[#0c1322] border-r border-slate-800/80 shadow-xl transition-all duration-300 ease-in-out ${
-                sidebarCollapsed ? "w-20" : "w-64"
-            } ${
-                sidebarOpen
+            className={`fixed lg:static top-0 left-0 z-[150] flex h-screen flex-col overflow-hidden bg-[#0c1322] border-r border-slate-800/80 shadow-xl transition-all duration-300 ease-in-out ${sidebarCollapsed ? "w-20" : "w-64"
+                } ${sidebarOpen
                     ? "translate-x-0"
                     : "-translate-x-full lg:translate-x-0"
-            }`}
+                }`}
         >
             {/* <!-- SIDEBAR HEADER --> */}
             <div className="flex h-16 shrink-0 items-center justify-between border-b border-slate-800/80 px-4">
@@ -155,15 +153,13 @@ const Sidebar = ({
                                         onClick={(e) =>
                                             handleItemClick(e, handleClick)
                                         }
-                                        className={`group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
-                                            sidebarCollapsed
-                                                ? "justify-center"
-                                                : "justify-between"
-                                        } ${
-                                            isGroupActive
+                                        className={`group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${sidebarCollapsed
+                                            ? "justify-center"
+                                            : "justify-between"
+                                            } ${isGroupActive
                                                 ? "bg-brand-500/15 text-brand-300 font-semibold border border-brand-500/30"
                                                 : "text-slate-300 hover:bg-slate-800/70 hover:text-white"
-                                        }`}
+                                            }`}
                                     >
                                         <div className="flex items-center gap-3 min-w-0">
                                             <LuLayoutDashboard className="h-5 w-5 shrink-0 text-slate-400 group-hover:text-white" />
@@ -175,9 +171,8 @@ const Sidebar = ({
                                         </div>
                                         {!sidebarCollapsed && (
                                             <LuChevronDown
-                                                className={`h-4 w-4 shrink-0 transition-transform duration-200 text-slate-400 ${
-                                                    open ? "rotate-180" : ""
-                                                }`}
+                                                className={`h-4 w-4 shrink-0 transition-transform duration-200 text-slate-400 ${open ? "rotate-180" : ""
+                                                    }`}
                                             />
                                         )}
                                     </button>
@@ -187,15 +182,14 @@ const Sidebar = ({
                                             <li>
                                                 <NavLink
                                                     href="/admin/dashboard"
-                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
-                                                        pathname ===
-                                                            "/admin/dashboard" ||
+                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${pathname ===
+                                                        "/admin/dashboard" ||
                                                         pathname.includes(
                                                             "dashboard"
                                                         )
-                                                            ? "bg-brand-500/20 text-brand-300 font-semibold"
-                                                            : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                                                    }`}
+                                                        ? "bg-brand-500/20 text-brand-300 font-semibold"
+                                                        : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                                                        }`}
                                                 >
                                                     Analytics
                                                 </NavLink>
@@ -226,15 +220,13 @@ const Sidebar = ({
                                         onClick={(e) =>
                                             handleItemClick(e, handleClick)
                                         }
-                                        className={`group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
-                                            sidebarCollapsed
-                                                ? "justify-center"
-                                                : "justify-between"
-                                        } ${
-                                            isGroupActive
+                                        className={`group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${sidebarCollapsed
+                                            ? "justify-center"
+                                            : "justify-between"
+                                            } ${isGroupActive
                                                 ? "bg-brand-500/15 text-brand-300 font-semibold border border-brand-500/30"
                                                 : "text-slate-300 hover:bg-slate-800/70 hover:text-white"
-                                        }`}
+                                            }`}
                                     >
                                         <div className="flex items-center gap-3 min-w-0">
                                             <LuDatabase className="h-5 w-5 shrink-0 text-slate-400 group-hover:text-white" />
@@ -246,9 +238,8 @@ const Sidebar = ({
                                         </div>
                                         {!sidebarCollapsed && (
                                             <LuChevronDown
-                                                className={`h-4 w-4 shrink-0 transition-transform duration-200 text-slate-400 ${
-                                                    open ? "rotate-180" : ""
-                                                }`}
+                                                className={`h-4 w-4 shrink-0 transition-transform duration-200 text-slate-400 ${open ? "rotate-180" : ""
+                                                    }`}
                                             />
                                         )}
                                     </button>
@@ -258,13 +249,12 @@ const Sidebar = ({
                                             <li>
                                                 <NavLink
                                                     href="/admin/data/settings"
-                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
-                                                        pathname.includes(
-                                                            "settings"
-                                                        )
-                                                            ? "bg-brand-500/20 text-brand-300 font-semibold"
-                                                            : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                                                    }`}
+                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${pathname.includes(
+                                                        "settings"
+                                                    )
+                                                        ? "bg-brand-500/20 text-brand-300 font-semibold"
+                                                        : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                                                        }`}
                                                 >
                                                     Settings
                                                 </NavLink>
@@ -272,13 +262,12 @@ const Sidebar = ({
                                             <li>
                                                 <NavLink
                                                     href="/admin/data/camat-keuchik"
-                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
-                                                        pathname.includes(
-                                                            "camat-keuchik"
-                                                        )
-                                                            ? "bg-brand-500/20 text-brand-300 font-semibold"
-                                                            : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                                                    }`}
+                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${pathname.includes(
+                                                        "camat-keuchik"
+                                                    )
+                                                        ? "bg-brand-500/20 text-brand-300 font-semibold"
+                                                        : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                                                        }`}
                                                 >
                                                     Camat & Keuchik
                                                 </NavLink>
@@ -286,13 +275,12 @@ const Sidebar = ({
                                             <li>
                                                 <NavLink
                                                     href="/admin/data/kepsek-pamong"
-                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
-                                                        pathname.includes(
-                                                            "kepsek-pamong"
-                                                        )
-                                                            ? "bg-brand-500/20 text-brand-300 font-semibold"
-                                                            : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                                                    }`}
+                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${pathname.includes(
+                                                        "kepsek-pamong"
+                                                    )
+                                                        ? "bg-brand-500/20 text-brand-300 font-semibold"
+                                                        : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                                                        }`}
                                                 >
                                                     Pamong & Kepsek
                                                 </NavLink>
@@ -300,13 +288,12 @@ const Sidebar = ({
                                             <li>
                                                 <NavLink
                                                     href="/admin/data/master-sekolah"
-                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
-                                                        pathname.includes(
-                                                            "master-sekolah"
-                                                        )
-                                                            ? "bg-brand-500/20 text-brand-300 font-semibold"
-                                                            : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                                                    }`}
+                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${pathname.includes(
+                                                        "master-sekolah"
+                                                    )
+                                                        ? "bg-brand-500/20 text-brand-300 font-semibold"
+                                                        : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                                                        }`}
                                                 >
                                                     Master Sekolah
                                                 </NavLink>
@@ -314,13 +301,12 @@ const Sidebar = ({
                                             <li>
                                                 <NavLink
                                                     href="/admin/data/master-desa"
-                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
-                                                        pathname.includes(
-                                                            "master-desa"
-                                                        )
-                                                            ? "bg-brand-500/20 text-brand-300 font-semibold"
-                                                            : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                                                    }`}
+                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${pathname.includes(
+                                                        "master-desa"
+                                                    )
+                                                        ? "bg-brand-500/20 text-brand-300 font-semibold"
+                                                        : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                                                        }`}
                                                 >
                                                     Master Desa
                                                 </NavLink>
@@ -351,15 +337,13 @@ const Sidebar = ({
                                         onClick={(e) =>
                                             handleItemClick(e, handleClick)
                                         }
-                                        className={`group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
-                                            sidebarCollapsed
-                                                ? "justify-center"
-                                                : "justify-between"
-                                        } ${
-                                            isGroupActive
+                                        className={`group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${sidebarCollapsed
+                                            ? "justify-center"
+                                            : "justify-between"
+                                            } ${isGroupActive
                                                 ? "bg-brand-500/15 text-brand-300 font-semibold border border-brand-500/30"
                                                 : "text-slate-300 hover:bg-slate-800/70 hover:text-white"
-                                        }`}
+                                            }`}
                                     >
                                         <div className="flex items-center gap-3 min-w-0">
                                             <RiCommunityLine className="h-5 w-5 shrink-0 text-slate-400 group-hover:text-white" />
@@ -371,9 +355,8 @@ const Sidebar = ({
                                         </div>
                                         {!sidebarCollapsed && (
                                             <LuChevronDown
-                                                className={`h-4 w-4 shrink-0 transition-transform duration-200 text-slate-400 ${
-                                                    open ? "rotate-180" : ""
-                                                }`}
+                                                className={`h-4 w-4 shrink-0 transition-transform duration-200 text-slate-400 ${open ? "rotate-180" : ""
+                                                    }`}
                                             />
                                         )}
                                     </button>
@@ -383,13 +366,12 @@ const Sidebar = ({
                                             <li>
                                                 <NavLink
                                                     href="/admin/kpm/tempatkpm"
-                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
-                                                        pathname.includes(
-                                                            "tempatkpm"
-                                                        )
-                                                            ? "bg-brand-500/20 text-brand-300 font-semibold"
-                                                            : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                                                    }`}
+                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${pathname.includes(
+                                                        "tempatkpm"
+                                                    )
+                                                        ? "bg-brand-500/20 text-brand-300 font-semibold"
+                                                        : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                                                        }`}
                                                 >
                                                     Tempat KPM
                                                 </NavLink>
@@ -397,13 +379,12 @@ const Sidebar = ({
                                             <li>
                                                 <NavLink
                                                     href="/admin/kpm/kpm-alocations"
-                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
-                                                        pathname.includes(
-                                                            "kpm-alocations"
-                                                        )
-                                                            ? "bg-brand-500/20 text-brand-300 font-semibold"
-                                                            : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                                                    }`}
+                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${pathname.includes(
+                                                        "kpm-alocations"
+                                                    )
+                                                        ? "bg-brand-500/20 text-brand-300 font-semibold"
+                                                        : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                                                        }`}
                                                 >
                                                     Alokasi KPM
                                                 </NavLink>
@@ -432,15 +413,13 @@ const Sidebar = ({
                                         onClick={(e) =>
                                             handleItemClick(e, handleClick)
                                         }
-                                        className={`group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
-                                            sidebarCollapsed
-                                                ? "justify-center"
-                                                : "justify-between"
-                                        } ${
-                                            isGroupActive
+                                        className={`group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${sidebarCollapsed
+                                            ? "justify-center"
+                                            : "justify-between"
+                                            } ${isGroupActive
                                                 ? "bg-brand-500/15 text-brand-300 font-semibold border border-brand-500/30"
                                                 : "text-slate-300 hover:bg-slate-800/70 hover:text-white"
-                                        }`}
+                                            }`}
                                     >
                                         <div className="flex items-center gap-3 min-w-0">
                                             <LuGraduationCap className="h-5 w-5 shrink-0 text-slate-400 group-hover:text-white" />
@@ -452,9 +431,8 @@ const Sidebar = ({
                                         </div>
                                         {!sidebarCollapsed && (
                                             <LuChevronDown
-                                                className={`h-4 w-4 shrink-0 transition-transform duration-200 text-slate-400 ${
-                                                    open ? "rotate-180" : ""
-                                                }`}
+                                                className={`h-4 w-4 shrink-0 transition-transform duration-200 text-slate-400 ${open ? "rotate-180" : ""
+                                                    }`}
                                             />
                                         )}
                                     </button>
@@ -464,13 +442,12 @@ const Sidebar = ({
                                             <li>
                                                 <NavLink
                                                     href="/admin/ppl/sekolah"
-                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
-                                                        pathname.includes(
-                                                            "/admin/ppl/sekolah"
-                                                        )
-                                                            ? "bg-brand-500/20 text-brand-300 font-semibold"
-                                                            : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                                                    }`}
+                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${pathname.includes(
+                                                        "/admin/ppl/sekolah"
+                                                    )
+                                                        ? "bg-brand-500/20 text-brand-300 font-semibold"
+                                                        : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                                                        }`}
                                                 >
                                                     Tempat PPL
                                                 </NavLink>
@@ -501,15 +478,13 @@ const Sidebar = ({
                                         onClick={(e) =>
                                             handleItemClick(e, handleClick)
                                         }
-                                        className={`group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
-                                            sidebarCollapsed
-                                                ? "justify-center"
-                                                : "justify-between"
-                                        } ${
-                                            isGroupActive
+                                        className={`group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${sidebarCollapsed
+                                            ? "justify-center"
+                                            : "justify-between"
+                                            } ${isGroupActive
                                                 ? "bg-brand-500/15 text-brand-300 font-semibold border border-brand-500/30"
                                                 : "text-slate-300 hover:bg-slate-800/70 hover:text-white"
-                                        }`}
+                                            }`}
                                     >
                                         <div className="flex items-center gap-3 min-w-0">
                                             <SiGoogleclassroom className="h-5 w-5 shrink-0 text-slate-400 group-hover:text-white" />
@@ -521,9 +496,8 @@ const Sidebar = ({
                                         </div>
                                         {!sidebarCollapsed && (
                                             <LuChevronDown
-                                                className={`h-4 w-4 shrink-0 transition-transform duration-200 text-slate-400 ${
-                                                    open ? "rotate-180" : ""
-                                                }`}
+                                                className={`h-4 w-4 shrink-0 transition-transform duration-200 text-slate-400 ${open ? "rotate-180" : ""
+                                                    }`}
                                             />
                                         )}
                                     </button>
@@ -533,13 +507,12 @@ const Sidebar = ({
                                             <li>
                                                 <NavLink
                                                     href="/admin/classroom-kpm/tugas"
-                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
-                                                        pathname.includes(
-                                                            "tugas"
-                                                        )
-                                                            ? "bg-brand-500/20 text-brand-300 font-semibold"
-                                                            : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                                                    }`}
+                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${pathname.includes(
+                                                        "tugas"
+                                                    )
+                                                        ? "bg-brand-500/20 text-brand-300 font-semibold"
+                                                        : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                                                        }`}
                                                 >
                                                     Tugas KPM
                                                 </NavLink>
@@ -547,13 +520,12 @@ const Sidebar = ({
                                             <li>
                                                 <NavLink
                                                     href="/admin/classroom-kpm/student-score"
-                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
-                                                        pathname.includes(
-                                                            "classroom-kpm/student-score"
-                                                        )
-                                                            ? "bg-brand-500/20 text-brand-300 font-semibold"
-                                                            : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                                                    }`}
+                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${pathname.includes(
+                                                        "classroom-kpm/student-score"
+                                                    )
+                                                        ? "bg-brand-500/20 text-brand-300 font-semibold"
+                                                        : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                                                        }`}
                                                 >
                                                     Nilai KPM
                                                 </NavLink>
@@ -561,13 +533,12 @@ const Sidebar = ({
                                             <li>
                                                 <NavLink
                                                     href="/admin/classroom-ppl/student-score"
-                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
-                                                        pathname.includes(
-                                                            "classroom-ppl/student-score"
-                                                        )
-                                                            ? "bg-brand-500/20 text-brand-300 font-semibold"
-                                                            : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                                                    }`}
+                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${pathname.includes(
+                                                        "classroom-ppl/student-score"
+                                                    )
+                                                        ? "bg-brand-500/20 text-brand-300 font-semibold"
+                                                        : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                                                        }`}
                                                 >
                                                     Nilai PPL
                                                 </NavLink>
@@ -596,15 +567,13 @@ const Sidebar = ({
                                         onClick={(e) =>
                                             handleItemClick(e, handleClick)
                                         }
-                                        className={`group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
-                                            sidebarCollapsed
-                                                ? "justify-center"
-                                                : "justify-between"
-                                        } ${
-                                            isGroupActive
+                                        className={`group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${sidebarCollapsed
+                                            ? "justify-center"
+                                            : "justify-between"
+                                            } ${isGroupActive
                                                 ? "bg-brand-500/15 text-brand-300 font-semibold border border-brand-500/30"
                                                 : "text-slate-300 hover:bg-slate-800/70 hover:text-white"
-                                        }`}
+                                            }`}
                                     >
                                         <div className="flex items-center gap-3 min-w-0">
                                             <LuAward className="h-5 w-5 shrink-0 text-slate-400 group-hover:text-white" />
@@ -616,9 +585,8 @@ const Sidebar = ({
                                         </div>
                                         {!sidebarCollapsed && (
                                             <LuChevronDown
-                                                className={`h-4 w-4 shrink-0 transition-transform duration-200 text-slate-400 ${
-                                                    open ? "rotate-180" : ""
-                                                }`}
+                                                className={`h-4 w-4 shrink-0 transition-transform duration-200 text-slate-400 ${open ? "rotate-180" : ""
+                                                    }`}
                                             />
                                         )}
                                     </button>
@@ -628,13 +596,12 @@ const Sidebar = ({
                                             <li>
                                                 <NavLink
                                                     href="/admin/certificate/nilai-ppkpm"
-                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
-                                                        pathname.includes(
-                                                            "nilai-ppkpm"
-                                                        )
-                                                            ? "bg-brand-500/20 text-brand-300 font-semibold"
-                                                            : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                                                    }`}
+                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${pathname.includes(
+                                                        "nilai-ppkpm"
+                                                    )
+                                                        ? "bg-brand-500/20 text-brand-300 font-semibold"
+                                                        : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                                                        }`}
                                                 >
                                                     Nilai PPKPM
                                                 </NavLink>
@@ -642,13 +609,12 @@ const Sidebar = ({
                                             <li>
                                                 <NavLink
                                                     href="/admin/certificate/settings"
-                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
-                                                        pathname.includes(
-                                                            "settings"
-                                                        )
-                                                            ? "bg-brand-500/20 text-brand-300 font-semibold"
-                                                            : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                                                    }`}
+                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${pathname.includes(
+                                                        "settings"
+                                                    )
+                                                        ? "bg-brand-500/20 text-brand-300 font-semibold"
+                                                        : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                                                        }`}
                                                 >
                                                     Certificate Settings
                                                 </NavLink>
@@ -677,15 +643,13 @@ const Sidebar = ({
                                         onClick={(e) =>
                                             handleItemClick(e, handleClick)
                                         }
-                                        className={`group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
-                                            sidebarCollapsed
-                                                ? "justify-center"
-                                                : "justify-between"
-                                        } ${
-                                            isGroupActive
+                                        className={`group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${sidebarCollapsed
+                                            ? "justify-center"
+                                            : "justify-between"
+                                            } ${isGroupActive
                                                 ? "bg-brand-500/15 text-brand-300 font-semibold border border-brand-500/30"
                                                 : "text-slate-300 hover:bg-slate-800/70 hover:text-white"
-                                        }`}
+                                            }`}
                                     >
                                         <div className="flex items-center gap-3 min-w-0">
                                             <LuUsers className="h-5 w-5 shrink-0 text-slate-400 group-hover:text-white" />
@@ -697,9 +661,8 @@ const Sidebar = ({
                                         </div>
                                         {!sidebarCollapsed && (
                                             <LuChevronDown
-                                                className={`h-4 w-4 shrink-0 transition-transform duration-200 text-slate-400 ${
-                                                    open ? "rotate-180" : ""
-                                                }`}
+                                                className={`h-4 w-4 shrink-0 transition-transform duration-200 text-slate-400 ${open ? "rotate-180" : ""
+                                                    }`}
                                             />
                                         )}
                                     </button>
@@ -709,13 +672,12 @@ const Sidebar = ({
                                             <li>
                                                 <NavLink
                                                     href="/admin/users/admin/list"
-                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
-                                                        pathname.includes(
-                                                            "/admin/users/admin/list"
-                                                        )
-                                                            ? "bg-brand-500/20 text-brand-300 font-semibold"
-                                                            : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                                                    }`}
+                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${pathname.includes(
+                                                        "/admin/users/admin/list"
+                                                    )
+                                                        ? "bg-brand-500/20 text-brand-300 font-semibold"
+                                                        : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                                                        }`}
                                                 >
                                                     Admin
                                                 </NavLink>
@@ -723,13 +685,12 @@ const Sidebar = ({
                                             <li>
                                                 <NavLink
                                                     href="/admin/users/student"
-                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
-                                                        pathname.includes(
-                                                            "/admin/users/student"
-                                                        )
-                                                            ? "bg-brand-500/20 text-brand-300 font-semibold"
-                                                            : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                                                    }`}
+                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${pathname.includes(
+                                                        "/admin/users/student"
+                                                    )
+                                                        ? "bg-brand-500/20 text-brand-300 font-semibold"
+                                                        : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                                                        }`}
                                                 >
                                                     Mahasiswa
                                                 </NavLink>
@@ -737,13 +698,12 @@ const Sidebar = ({
                                             <li>
                                                 <NavLink
                                                     href="/admin/users/dispensasi-syarat"
-                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
-                                                        pathname.includes(
-                                                            "dispensasi-syarat"
-                                                        )
-                                                            ? "bg-brand-500/20 text-brand-300 font-semibold"
-                                                            : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                                                    }`}
+                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${pathname.includes(
+                                                        "dispensasi-syarat"
+                                                    )
+                                                        ? "bg-brand-500/20 text-brand-300 font-semibold"
+                                                        : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                                                        }`}
                                                 >
                                                     Dispensasi Syarat
                                                 </NavLink>
@@ -751,13 +711,12 @@ const Sidebar = ({
                                             <li>
                                                 <NavLink
                                                     href="/admin/users/admin-sekolah/list"
-                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
-                                                        pathname.includes(
-                                                            "admin-sekolah"
-                                                        )
-                                                            ? "bg-brand-500/20 text-brand-300 font-semibold"
-                                                            : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                                                    }`}
+                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${pathname.includes(
+                                                        "admin-sekolah"
+                                                    )
+                                                        ? "bg-brand-500/20 text-brand-300 font-semibold"
+                                                        : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                                                        }`}
                                                 >
                                                     Admin Sekolah
                                                 </NavLink>
@@ -765,13 +724,12 @@ const Sidebar = ({
                                             <li>
                                                 <NavLink
                                                     href="/admin/users/admin-kecamatan/list"
-                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
-                                                        pathname.includes(
-                                                            "admin-kecamatan"
-                                                        )
-                                                            ? "bg-brand-500/20 text-brand-300 font-semibold"
-                                                            : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                                                    }`}
+                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${pathname.includes(
+                                                        "admin-kecamatan"
+                                                    )
+                                                        ? "bg-brand-500/20 text-brand-300 font-semibold"
+                                                        : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                                                        }`}
                                                 >
                                                     Admin Kecamatan
                                                 </NavLink>
@@ -779,13 +737,12 @@ const Sidebar = ({
                                             <li>
                                                 <NavLink
                                                     href="/admin/users/supervisor-kpm"
-                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
-                                                        pathname.includes(
-                                                            "supervisor-kpm"
-                                                        )
-                                                            ? "bg-brand-500/20 text-brand-300 font-semibold"
-                                                            : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                                                    }`}
+                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${pathname.includes(
+                                                        "supervisor-kpm"
+                                                    )
+                                                        ? "bg-brand-500/20 text-brand-300 font-semibold"
+                                                        : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                                                        }`}
                                                 >
                                                     Supervisor
                                                 </NavLink>
@@ -806,9 +763,8 @@ const Sidebar = ({
                     type="button"
                     onClick={toggleSidebarCollapsed}
                     title={sidebarCollapsed ? "Buka Sidebar Penuh" : "Kecilkan Sidebar"}
-                    className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-slate-400 hover:bg-slate-800 hover:text-white transition-all duration-150 w-full ${
-                        sidebarCollapsed ? "justify-center" : "justify-between"
-                    }`}
+                    className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-slate-400 hover:bg-slate-800 hover:text-white transition-all duration-150 w-full ${sidebarCollapsed ? "justify-center" : "justify-between"
+                        }`}
                 >
                     {!sidebarCollapsed && <span>Kecilkan Sidebar</span>}
                     {sidebarCollapsed ? (

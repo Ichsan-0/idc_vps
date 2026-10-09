@@ -29,19 +29,19 @@ class LowonganPPLController extends Controller
                     'lowongan_ppl_tbl.name',
                     'ptbl.name as nama_prodi',
                     'ptbl.id as id_prodi',
-                    DB::raw('SUM(lowongan_ppl_tbl.quota) as total_quota'),
-                    DB::raw('COUNT(lppl.username_mahasiswa) as total_terisi')
+                    'lowongan_ppl_tbl.quota as total_quota',
+                    DB::raw('COUNT(DISTINCT lppl.id) as total_terisi')
                 )
-                ->leftJoin('lamaran_ppl_tbl as lppl', 'lowongan_ppl_tbl.id', '=', 'lppl.id_lowongan_ppl')
+                ->leftJoin('lamaran_ppl_tbl as lppl', function ($join) {
+                    $join->on('lowongan_ppl_tbl.id', '=', 'lppl.id_lowongan_ppl')
+                        ->where('lppl.status', '=', 'accepted');
+                })
                 ->join('prodi_tbl as ptbl', 'lowongan_ppl_tbl.id_prodi', '=', 'ptbl.id')
                 ->where('lowongan_ppl_tbl.id_sekolah', $idSekolah)
-                ->where(function ($q) {
-                    $q->whereNull('lppl.status')
-                        ->orWhere('lppl.status', 'accepted');
-                })
                 ->groupBy(
                     'lowongan_ppl_tbl.id',
                     'lowongan_ppl_tbl.name',
+                    'lowongan_ppl_tbl.quota',
                     'ptbl.name',
                     'ptbl.id',
                     'lowongan_ppl_tbl.id_sekolah'
@@ -64,12 +64,12 @@ class LowonganPPLController extends Controller
             $mappedSort = [
                 'name' => 'lowongan_ppl_tbl.name',
                 'nama_prodi' => 'ptbl.name',
-                'total_quota' => 'total_quota',
+                'total_quota' => 'lowongan_ppl_tbl.quota',
                 'total_terisi' => 'total_terisi',
             ];
 
             if (in_array($sortBy, $allowedSortColumns)) {
-                if (in_array($sortBy, ['total_quota', 'total_terisi'])) {
+                if ($sortBy === 'total_terisi') {
                     $query->orderByRaw("$mappedSort[$sortBy] $sortOrder");
                 } else {
                     $query->orderBy($mappedSort[$sortBy], $sortOrder);

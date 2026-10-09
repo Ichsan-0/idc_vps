@@ -334,20 +334,7 @@ class TempatPPLController extends Controller
             $import = new TempatPPLImport($idGelombang);
             Excel::import($import, $request->file('file'));
 
-            // 1. Cek jika data lokasi sudah ada di database untuk tahun ajaran / gelombang ini
-            $existingSchools = $import->getExistingSchools();
-            if (!empty($existingSchools)) {
-                $namesStr = implode(', ', $existingSchools);
-                $errorMsg = "Data tempat / lokasi PPL sudah ada pada tahun ajaran yang dipilih: {$namesStr}.";
-
-                return response()->json([
-                    'message' => $errorMsg,
-                    'error' => $errorMsg,
-                    'existing_schools' => $existingSchools,
-                ], 422);
-            }
-
-            // 2. Cek jika terdapat duplikasi di dalam file yang diunggah
+            // 1. Cek jika terdapat duplikasi di dalam file yang diunggah
             $duplicateInFile = $import->getDuplicateInFile();
             if (!empty($duplicateInFile)) {
                 $dupStr = implode(', ', $duplicateInFile);
@@ -361,25 +348,33 @@ class TempatPPLController extends Controller
             }
 
             $imported = $import->getImportedCount();
+            $updated = $import->getUpdatedCount();
             $lowonganCount = $import->getLowonganCreatedCount();
 
-            if ($imported === 0) {
+            if ($imported === 0 && $updated === 0 && $lowonganCount === 0) {
                 return response()->json([
                     'message' => 'Tidak ada data tempat PPL yang valid untuk diimpor dari file Excel.',
                     'error' => 'Data Excel kosong atau nama sekolah tidak ditemukan.',
                 ], 422);
             }
 
-            $msg = "Berhasil mengimpor {$imported} data Tempat PPL";
-            if ($lowonganCount > 0) {
-                $msg .= " dan {$lowonganCount} kuota jurusan";
+            $parts = [];
+            if ($imported > 0) {
+                $parts[] = "{$imported} data sekolah baru ditambahkan";
             }
-            $msg .= ".";
+            if ($updated > 0) {
+                $parts[] = "{$updated} data sekolah diperbarui";
+            }
+            if ($lowonganCount > 0) {
+                $parts[] = "{$lowonganCount} kuota jurusan disinkronkan";
+            }
+            $msg = "Berhasil mengimpor: " . implode(', ', $parts) . ".";
 
             return response()->json([
                 'message' => $msg,
                 'data' => [
                     'imported' => $imported,
+                    'updated' => $updated,
                     'lowongan_count' => $lowonganCount,
                 ],
             ], 200);
@@ -391,9 +386,10 @@ class TempatPPLController extends Controller
         }
     }
 
-    public function downloadTemplate()
+    public function downloadTemplate(Request $request)
     {
-        return Excel::download(new TempatPPLTemplateExport, 'template_import_tempat_ppl.xlsx');
+        $idGelombang = $request->query('id_gelombang');
+        return Excel::download(new TempatPPLTemplateExport($idGelombang), 'template_import_tempat_ppl.xlsx');
     }
 
     public function downloadPesertaTemplate(Request $request)

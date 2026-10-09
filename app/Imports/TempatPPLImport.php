@@ -44,6 +44,11 @@ class TempatPPLImport implements WithMultipleSheets
         return $this->dataImport->getImportedCount();
     }
 
+    public function getUpdatedCount(): int
+    {
+        return $this->dataImport->getUpdatedCount();
+    }
+
     public function getSkippedCount(): int
     {
         return $this->dataImport->getSkippedCount();
@@ -64,6 +69,7 @@ class TempatPPLDataImport implements ToCollection
 {
     protected $idGelombang;
     protected $importedCount = 0;
+    protected $updatedCount = 0;
     protected $skippedCount = 0;
     protected $lowonganCreatedCount = 0;
     protected $existingSchools = [];
@@ -157,11 +163,10 @@ class TempatPPLDataImport implements ToCollection
             $nameIndex = isset($firstRowValues[1]) ? 1 : 0;
         }
 
-        // 2. Pre-analisis baris: Cek duplikasi di file dan apakah lokasi sudah ada di database untuk gelombang ini
+        // 2. Pre-analisis baris: Cek duplikasi di dalam file yang diunggah
         $seenInFile = [];
-        $existingInDb = [];
         $duplicateInFile = [];
-        $pendingRows = [];
+        $validRows = [];
 
         foreach ($dataRows as $row) {
             $rowValues = is_array($row) ? $row : $row->toArray();
@@ -181,49 +186,21 @@ class TempatPPLDataImport implements ToCollection
                 $seenInFile[$normalizedName] = true;
             }
 
-            // Cek apakah lokasi sekolah sudah ada pada tabel lokasi PPL (sekolah_tbl) untuk gelombang ini
-            $master = SekolahMaster::where(function ($q) use ($schoolName) {
-                $q->where('name', 'LIKE', $schoolName)
-                  ->orWhereRaw('TRIM(name) LIKE ?', [$schoolName]);
-            })->first();
-
-            $alreadyExists = Sekolah::where('id_gelombang', $this->idGelombang)
-                ->where(function ($q) use ($master, $schoolName) {
-                    if ($master) {
-                        $q->where('id_sekolah', $master->id);
-                    }
-                    $q->orWhere('name', 'LIKE', $schoolName)
-                      ->orWhereRaw('TRIM(name) LIKE ?', [$schoolName]);
-                })
-                ->exists();
-
-            if ($alreadyExists) {
-                $existingInDb[] = $schoolName;
-            } else {
-                $pendingRows[] = [
-                    'schoolName' => $schoolName,
-                    'rowValues' => $rowValues,
-                    'master' => $master,
-                ];
-            }
+            $validRows[] = [
+                'schoolName' => $schoolName,
+                'rowValues' => $rowValues,
+            ];
         }
 
         if (!empty($duplicateInFile)) {
             $this->duplicateInFile = array_values(array_unique($duplicateInFile));
-        }
-
-        if (!empty($existingInDb)) {
-            $this->existingSchools = array_values(array_unique($existingInDb));
-            // Sesuai permintaan: jika data lokasi sudah ada pada tabel lokasi ppl di tahun ajaran yang dipilih,
-            // batalkan proses dan jangan simpan data ke database agar memunculkan pesan error
             return;
         }
 
-        // 3. Jika tidak ada error lokasi sudah ada atau duplikasi, lakukan penyimpanan data baru
-        foreach ($pendingRows as $item) {
+        // 3. Proses penyimpanan & sinkronisasi data
+        foreach ($validRows as $item) {
             $schoolName = $item['schoolName'];
             $rowValues = $item['rowValues'];
-            $master = $item['master'];
 
             $supervisorVal = ($supervisorIndex !== null && isset($rowValues[$supervisorIndex]))
                 ? trim((string)$rowValues[$supervisorIndex])
@@ -284,12 +261,17 @@ class TempatPPLDataImport implements ToCollection
                 }
             }
 
+            // 2. Resolve SekolahMaster
+            $master = SekolahMaster::where(function ($q) use ($schoolName) {
+                $q->where('name', 'LIKE', $schoolName)
+                  ->orWhereRaw('TRIM(name) LIKE ?', [$schoolName]);
+            })->first();
+
             // Fallback ke supervisor dari data master jika baris excel kosong
             if (empty($usernameSupervisor) && $master && !empty($master->username_supervisor)) {
                 $usernameSupervisor = $master->username_supervisor;
             }
 
-            // 2. Resolve or create SekolahMaster
             if (!$master) {
                 $master = SekolahMaster::create([
                     'name' => $schoolName,
@@ -300,7 +282,7 @@ class TempatPPLDataImport implements ToCollection
                 ]);
             } else {
                 $masterUpdates = [];
-                if (!empty($usernameSupervisor)) {
+                if (!empty($usernameSupervisor) && empty($master->username_supervisor)) {
                     $masterUpdates['username_supervisor'] = $usernameSupervisor;
                 }
                 if (empty($master->regency) && !empty($kabupatenVal)) $masterUpdates['regency'] = $kabupatenVal;
@@ -311,20 +293,58 @@ class TempatPPLDataImport implements ToCollection
                 }
             }
 
-            // 3. Create Sekolah di sekolah_tbl untuk gelombang ini
-            $sekolah = Sekolah::create([
-                'name' => $schoolName,
-                'id_sekolah' => $master->id,
-                'id_gelombang' => $this->idGelombang,
-                'username_supervisor' => $usernameSupervisor ?: ($master ? $master->username_supervisor : null),
-                'province' => '11',
-                'regency' => $kabupatenVal ?: $master->regency,
-                'sub_district' => $kecamatanVal ?: $master->sub_district,
-                'village' => $desaVal ?: $master->village,
-            ]);
-            $this->importedCount++;
+            // 3. Cek apakah sekolah sudah ada di sekolah_tbl untuk gelombang ini
+            $sekolah = Sekolah::where('id_gelombang', $this->idGelombang)
+                ->where(function ($q) use ($master, $schoolName) {
+                    if ($master) {
+                        $q->where('id_sekolah', $master->id);
+                    }
+                    $q->orWhere('name', 'LIKE', $schoolName)
+                      ->orWhereRaw('TRIM(name) LIKE ?', [$schoolName]);
+                })
+                ->first();
 
-            // 4. Proses kuota lowongan prodi untuk sekolah ini
+            if ($sekolah) {
+                // Perbarui data sekolah yang sudah ada jika ada perubahan
+                $sekolahUpdates = [];
+                if (!empty($usernameSupervisor) && $sekolah->username_supervisor !== $usernameSupervisor) {
+                    $sekolahUpdates['username_supervisor'] = $usernameSupervisor;
+                }
+                if (!empty($kabupatenVal) && $sekolah->regency !== $kabupatenVal) {
+                    $sekolahUpdates['regency'] = $kabupatenVal;
+                }
+                if (!empty($kecamatanVal) && $sekolah->sub_district !== $kecamatanVal) {
+                    $sekolahUpdates['sub_district'] = $kecamatanVal;
+                }
+                if (!empty($desaVal) && $sekolah->village !== $desaVal) {
+                    $sekolahUpdates['village'] = $desaVal;
+                }
+                if ($master && $sekolah->id_sekolah !== $master->id) {
+                    $sekolahUpdates['id_sekolah'] = $master->id;
+                }
+                if (!empty($sekolahUpdates)) {
+                    $sekolah->update($sekolahUpdates);
+                }
+
+                $this->updatedCount++;
+            } else {
+                // Tambahkan sekolah baru ke sekolah_tbl
+                $sekolah = Sekolah::create([
+                    'name' => $schoolName,
+                    'id_sekolah' => $master->id,
+                    'id_gelombang' => $this->idGelombang,
+                    'username_supervisor' => $usernameSupervisor ?: ($master ? $master->username_supervisor : null),
+                    'province' => '11',
+                    'regency' => $kabupatenVal ?: $master->regency,
+                    'sub_district' => $kecamatanVal ?: $master->sub_district,
+                    'village' => $desaVal ?: $master->village,
+                ]);
+
+                $this->importedCount++;
+            }
+
+            // 4. Proses kuota lowongan prodi untuk sekolah ini (baik sekolah baru maupun yang sudah ada)
+            $schoolDisplayName = $sekolah->name ?: ($master ? $master->name : $schoolName);
             foreach ($quotaCols as $colIdx => $prodi) {
                 $quotaRaw = trim((string)($rowValues[$colIdx] ?? ''));
                 if ($quotaRaw !== '' && is_numeric($quotaRaw)) {
@@ -336,12 +356,20 @@ class TempatPPLDataImport implements ToCollection
                                 'id_prodi' => $prodi->id,
                             ],
                             [
-                                'name' => 'PPL ' . $prodi->name . ' ' . $sekolah->name,
+                                'name' => 'PPL ' . $prodi->name . ' ' . $schoolDisplayName,
                                 'quota' => $quotaNum,
-                                'description' => 'Lowongan PPL Jurusan ' . $prodi->name . ' di ' . $sekolah->name,
+                                'description' => 'Lowongan PPL Jurusan ' . $prodi->name . ' di ' . $schoolDisplayName,
                             ]
                         );
                         $this->lowonganCreatedCount++;
+                    } elseif ($quotaNum === 0) {
+                        $existingLowongan = LowonganPPL::where('id_sekolah', $sekolah->id)
+                            ->where('id_prodi', $prodi->id)
+                            ->first();
+                        if ($existingLowongan && $existingLowongan->quota != 0) {
+                            $existingLowongan->update(['quota' => 0]);
+                            $this->lowonganCreatedCount++;
+                        }
                     }
                 }
             }
@@ -361,6 +389,11 @@ class TempatPPLDataImport implements ToCollection
     public function getImportedCount(): int
     {
         return $this->importedCount;
+    }
+
+    public function getUpdatedCount(): int
+    {
+        return $this->updatedCount;
     }
 
     public function getSkippedCount(): int

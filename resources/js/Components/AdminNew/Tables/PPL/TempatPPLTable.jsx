@@ -365,7 +365,11 @@ const TempatPPLTable = () => {
     }, []);
 
     const handleDownloadTemplate = () => {
-        window.location.href = `${config.base_url}/admin/ppl/sekolah/template-import`;
+        const gelombangId = importGelombang?.id || selectedGelombangData?.id;
+        const url = gelombangId
+            ? `${config.base_url}/admin/ppl/sekolah/template-import?id_gelombang=${gelombangId}`
+            : `${config.base_url}/admin/ppl/sekolah/template-import`;
+        window.location.href = url;
     };
 
     const handleDragOver = (e) => {

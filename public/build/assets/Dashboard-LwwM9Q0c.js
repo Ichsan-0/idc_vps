@@ -1,1 +1,0 @@
-import{j as r}from"./app-Dz68wUJK.js";import{O as a}from"./OperatorKecamatanLayout-Cv3qgaSu.js";import"./AppFooter-Bekv_uat.js";import"./NavLink-YOUzgwSk.js";function e(){return r.jsx(a,{children:"Dashboard"})}export{e as default};

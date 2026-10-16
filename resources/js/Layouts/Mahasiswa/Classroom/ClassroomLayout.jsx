@@ -1,49 +1,52 @@
-import Header from "@/Components/Mahasiswa/Classroom/Header/Header";
-import NavLink from "@/Components/Mahasiswa/Classroom/Header/NavLink";
-import Sidebar from "@/Components/Mahasiswa/Classroom/Sidebar/Sidebar";
-import AppFooter from "@/Components/Common/AppFooter";
-import { usePage } from "@inertiajs/react";
-import React, { useState } from "react";
+import React from "react";
+import Header from "@/Components/frontpage/Header";
+import ButtomFooter from "@/Components/frontpage/ButtomFooter";
+import Navigation from "@/Components/Mahasiswa/Navigation";
+import { ThemeProvider, createTheme } from "@mui/material/styles";
+
+const theme = createTheme({
+    palette: {
+        primary: {
+            main: "#06359f",
+            light: "#3d5fb3",
+            dark: "#042574",
+        },
+        secondary: {
+            main: "#008a01",
+            light: "#66b967",
+            dark: "#006e01",
+        },
+        background: {
+            default: "#f8fafc",
+            paper: "#ffffff",
+        },
+    },
+    typography: {
+        fontFamily: "'Inter', 'Segoe UI', Roboto, sans-serif",
+    },
+});
 
 const ClassroomLayout = ({ children }) => {
-    const [sidebarOpen, setSidebarOpen] = useState(false);
-    const { url, component } = usePage();
-    const { pathname, search } = new URL(url, window.location.origin);
-
     return (
-        <div className="dark:bg-boxdark-2 dark:text-bodydark font-satoshi bg-white">
-            {/* <!-- ===== Page Wrapper Start ===== --> */}
-            <div className="flex h-screen overflow-hidden">
-                {/* <!-- ===== Sidebar Start ===== --> */}
-                {/* <Sidebar
-                    sidebarOpen={sidebarOpen}
-                    setSidebarOpen={setSidebarOpen}
-                /> */}
-                {/* <!-- ===== Sidebar End ===== --> */}
+        <ThemeProvider theme={theme}>
+            <div className="min-h-screen flex flex-col bg-[#f8fafc] font-satoshi text-slate-800">
+                {/* Header Sesuai Gambar 2 */}
+                <Header />
 
-                {/* <!-- ===== Content Area Start ===== --> */}
-                <div className="relative flex flex-1 flex-col overflow-y-auto overflow-x-hidden min-w-0">
-                    {/* <!-- ===== Header Start ===== --> */}
-                    <Header
-                        sidebarOpen={sidebarOpen}
-                        setSidebarOpen={setSidebarOpen}
-                    />
+                {/* Main Content Area */}
+                <main className="flex-1 w-full flex flex-col items-center">
+                    <div className="mx-auto max-w-screen-lg p-4 md:p-6 2xl:p-10 flex-1 w-full relative">
+                        {children}
+                    </div>
+                </main>
 
-                    {/* <!-- ===== Header End ===== --> */}
+                {/* Footer Sesuai Gambar 2 */}
+                <ButtomFooter />
 
-                    {/* <!-- ===== Main Content Start ===== --> */}
-                    <main className="flex-1 flex flex-col justify-between">
-                        <div className="mx-auto max-w-screen-lg p-4 md:p-6 2xl:p-10 justify-center flex flex-1 w-full">
-                            {children}
-                        </div>
-                        <AppFooter />
-                    </main>
-                    {/* <!-- ===== Main Content End ===== --> */}
-                </div>
-                {/* <!-- ===== Content Area End ===== --> */}
+                {/* Mobile Bottom Navigation */}
+                <Navigation />
             </div>
-            {/* <!-- ===== Page Wrapper End ===== --> */}
-        </div>
+        </ThemeProvider>
     );
 };
 

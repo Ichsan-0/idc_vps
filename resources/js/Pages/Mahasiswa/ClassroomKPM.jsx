@@ -14,9 +14,10 @@ import {
     alpha,
     Fade,
     Zoom,
+    CircularProgress,
 } from "@mui/material";
 import { styled, ThemeProvider, createTheme } from "@mui/material/styles";
-import React from "react";
+import React, { useState } from "react";
 import { Head, router } from "@inertiajs/react";
 import Header from "@/Components/frontpage/Header";
 import Footer from "@/Components/frontpage/Footer";
@@ -161,18 +162,48 @@ const ProgramBadge = ({ type }) => {
 const ClassroomCard = ({ classroom, type }) => {
     const isKPM = type === "kpm";
     const programColor = isKPM ? "secondary" : "info";
+    const [isNavigating, setIsNavigating] = useState(false);
 
     const handleClick = () => {
+        if (isNavigating) return;
+        setIsNavigating(true);
         if (isKPM) {
-            router.visit(`/student/classroom/${classroom.id}/task`);
+            router.visit(`/student/classroom/${classroom.id}/task`, {
+                onFinish: () => setIsNavigating(false),
+            });
         } else {
-            router.visit(`/student/classroom-ppl/tasks`);
+            router.visit(`/student/classroom-ppl/tasks`, {
+                onFinish: () => setIsNavigating(false),
+            });
         }
     };
 
     return (
         <Zoom in={true}>
-            <GradientCard color={programColor} elevation={2}>
+            <GradientCard color={programColor} elevation={2} sx={{ position: "relative" }}>
+                {/* Local Card Loading Overlay */}
+                {isNavigating && (
+                    <Box
+                        sx={{
+                            position: "absolute",
+                            inset: 0,
+                            zIndex: 10,
+                            backgroundColor: "rgba(255, 255, 255, 0.8)",
+                            backdropFilter: "blur(2px)",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 1,
+                        }}
+                    >
+                        <CircularProgress size={32} color={programColor} />
+                        <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary" }}>
+                            Membuka Kelas...
+                        </Typography>
+                    </Box>
+                )}
+
                 {/* Badge */}
                 <ProgramBadge type={type} />
 
@@ -295,18 +326,12 @@ const ClassroomCard = ({ classroom, type }) => {
                     </Box>
 
                     {/* Enter Button */}
-                    <Box
-                        sx={{
-                            opacity: 0,
-                            transform: "translateY(10px)",
-                            transition: "all 0.3s ease",
-                        }}
-                        className="enter-button"
-                    >
+                    <Box sx={{ mt: 2 }}>
                         <Button
                             fullWidth
                             variant="contained"
-                            endIcon={<ArrowForward />}
+                            disabled={isNavigating}
+                            endIcon={!isNavigating ? <ArrowForward /> : null}
                             onClick={handleClick}
                             sx={{
                                 borderRadius: 2,
@@ -320,7 +345,7 @@ const ClassroomCard = ({ classroom, type }) => {
                                 },
                             }}
                         >
-                            Masuk Kelas
+                            {isNavigating ? "Membuka Kelas..." : "Masuk Kelas"}
                         </Button>
                     </Box>
                 </CardContent>

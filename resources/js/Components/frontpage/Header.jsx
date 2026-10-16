@@ -20,7 +20,7 @@ import {
     LogOut
 } from "lucide-react";
 
-const navigationItems = [
+const navigationItemsMahasiswa = [
     {
         id: "Lowongan KPM",
         icon: MapPinHouse,
@@ -49,28 +49,94 @@ const navigationItems = [
     { id: "Profile", icon: User, label: "Profile", path: "/profil" },
 ];
 
+const navigationItemsSupervisorKPM = [
+    {
+        id: "Classroom",
+        icon: SquareLibrary,
+        label: "Kelas Bimbingan",
+        path: "/supervisor/classroom/home",
+    },
+];
+
+const navigationItemsSupervisorPPL = [
+    {
+        id: "Dashboard",
+        icon: SquareLibrary,
+        label: "Dashboard",
+        path: "/supervisor/dashboard",
+    },
+    {
+        id: "MahasiswaPPL",
+        icon: School,
+        label: "Mahasiswa PPL",
+        path: "/supervisor/daftarmahasiswappl",
+    },
+    {
+        id: "Classroom",
+        icon: SquareLibrary,
+        label: "Kelas Bimbingan",
+        path: "/supervisor/classroom/home",
+    },
+];
+
 const Header = () => {
     const { props, url } = usePage();
     const hasUser = props.auth && props.auth.user;
+    const role = props.auth?.user?.role;
+    const isMahasiswa = hasUser && role === "user";
+    const isSupervisorKPM = hasUser && role === "supervisor_kpm";
+    const isSupervisor = hasUser && role === "supervisor";
     const pathname = url ? new URL(url, window.location.origin).pathname : "";
+
+    // Cek apakah mahasiswa sudah memiliki data lokasi KPM atau PPL
+    const hasLokasiFromPage = Boolean(
+        (props.data?.classroom_kpm && props.data.classroom_kpm.length > 0) ||
+        (props.data?.classroom_ppl && props.data.classroom_ppl.length > 0)
+    );
+    const hasLokasi = Boolean(
+        props.auth?.has_lokasi ||
+        props.auth?.has_lokasi_kpm ||
+        props.auth?.has_lokasi_ppl ||
+        hasLokasiFromPage
+    );
+
+    const filteredNavigationItems = React.useMemo(() => {
+        if (isSupervisorKPM) {
+            return navigationItemsSupervisorKPM;
+        }
+        if (isSupervisor) {
+            return navigationItemsSupervisorPPL;
+        }
+        return navigationItemsMahasiswa.filter((item) => {
+            if (isMahasiswa && hasLokasi) {
+                // Hilangkan menu: Lowongan KPM, Lowongan PPL, Lamaranku
+                if (["Lowongan KPM", "Lowongan PPL", "Lamaranku"].includes(item.id)) {
+                    return false;
+                }
+            }
+            return true;
+        });
+    }, [isMahasiswa, hasLokasi, isSupervisorKPM, isSupervisor]);
+
+    const homeUrl = isSupervisorKPM ? "/supervisor/classroom/home" : isSupervisor ? "/supervisor/dashboard" : "/";
 
     const [anchorElNav, setAnchorElNav] = React.useState(null);
     return (
-        <header className="flex z-[100] w-full  sticky top-0 shadow-md bg-[#06359f] justify-center items-center ">
+        <header className="flex z-[100] w-full sticky top-0 shadow-md bg-[#06359f] justify-center items-center">
             <div className="flex w-full px-5 max-w-7xl h-fit py-2 lg:px-20 md:px-10 justify-between items-center">
                 {/* Left Section */}
                 <div className="flex items-center">
                     <Link
-                        href="/"
+                        href={homeUrl}
                         className="ml-3 text-2xl font-semibold flex items-center gap-2 text-white cursor-pointer"
                     >
                         <img
                             src="/Lambang_UIN_Ar-Raniry.png"
                             className="w-14 h-14"
                         />
-                        <div className="flex flex-col ">
+                        <div className="flex flex-col">
                             <span>IDC</span>
-                            <span className=" md:block hidden font-normal text-sm">
+                            <span className="md:block hidden font-normal text-sm">
                                 Instructional Development Center
                             </span>
                         </div>
@@ -110,9 +176,16 @@ const Header = () => {
                                         mt: "10px",
                                     }}
                                 >
-                                    {navigationItems.map((item) => {
+                                    {filteredNavigationItems.map((item) => {
                                         const IconComponent = item.icon;
-                                        const isActive = pathname === item.path || pathname.startsWith(item.path + '/') || (item.path === '/kpm-vacancies' && pathname === '/');
+                                        const isClassroomActive = item.id === 'Classroom' && (
+                                            pathname.startsWith('/student/classroom') ||
+                                            pathname.startsWith('/classroom') ||
+                                            pathname.startsWith('/supervisor/classroom') ||
+                                            pathname.startsWith('/supervisor-kpm') ||
+                                            pathname.startsWith('/supervisor-ppl')
+                                        );
+                                        const isActive = pathname === item.path || pathname.startsWith(item.path + '/') || (item.path === '/kpm-vacancies' && pathname === '/') || isClassroomActive;
                                         return (
                                             <MenuItem
                                                 key={item.id}
@@ -140,9 +213,16 @@ const Header = () => {
 
                             {/* Desktop Navigation */}
                             <nav className="hidden lg:flex items-center gap-1.5 mr-2">
-                            {navigationItems.map((item) => {
+                            {filteredNavigationItems.map((item) => {
                                 const IconComponent = item.icon;
-                                const isActive = pathname === item.path || pathname.startsWith(item.path + '/') || (item.path === '/kpm-vacancies' && pathname === '/');
+                                const isClassroomActive = item.id === 'Classroom' && (
+                                    pathname.startsWith('/student/classroom') ||
+                                    pathname.startsWith('/classroom') ||
+                                    pathname.startsWith('/supervisor/classroom') ||
+                                    pathname.startsWith('/supervisor-kpm') ||
+                                    pathname.startsWith('/supervisor-ppl')
+                                );
+                                const isActive = pathname === item.path || pathname.startsWith(item.path + '/') || (item.path === '/kpm-vacancies' && pathname === '/') || isClassroomActive;
                                 return (
                                     <Link
                                         key={item.id}
@@ -160,6 +240,16 @@ const Header = () => {
                             })}
                         </nav>
                         
+                        {/* User Info Badge */}
+                        <div className="hidden sm:flex flex-col text-right mr-1">
+                            <span className="text-white text-xs font-semibold leading-tight max-w-[170px] truncate">
+                                {props.auth?.user?.name}
+                            </span>
+                            <span className="text-emerald-300 text-[10px] font-medium tracking-wider uppercase">
+                                {isSupervisorKPM ? "Dosen Supervisor" : isSupervisor ? "Supervisor PPL" : "Mahasiswa"}
+                            </span>
+                        </div>
+
                         {/* Logout Button */}
                         <button
                             onClick={() => router.post("/logout")}

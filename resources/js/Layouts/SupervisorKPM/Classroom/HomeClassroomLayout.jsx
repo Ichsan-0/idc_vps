@@ -1,47 +1,47 @@
-import AppFooter from "@/Components/Common/AppFooter";
-import Header from "@/Components/SupervisorKPM/HomeClassroom/Header/Header";
-import { usePage } from "@inertiajs/react";
-import React, { useState } from "react";
+import React from "react";
+import Header from "@/Components/frontpage/Header";
+import ButtomFooter from "@/Components/frontpage/ButtomFooter";
+import { ThemeProvider, createTheme } from "@mui/material/styles";
+
+const theme = createTheme({
+    palette: {
+        primary: {
+            main: "#06359f",
+            light: "#3d5fb3",
+            dark: "#042574",
+        },
+        secondary: {
+            main: "#008a01",
+            light: "#66b967",
+            dark: "#006e01",
+        },
+        info: {
+            main: "#0288d1",
+            light: "#03a9f4",
+        },
+        background: {
+            default: "#f8fafc",
+            paper: "#ffffff",
+        },
+    },
+    typography: {
+        fontFamily: "'Inter', 'Segoe UI', Roboto, sans-serif",
+    },
+});
 
 const HomeClassroomLayout = ({ children }) => {
-    const [sidebarOpen, setSidebarOpen] = useState(false);
-    const { url, component } = usePage();
-    const { pathname, search } = new URL(url, window.location.origin);
-
     return (
-        <div className="dark:bg-boxdark-2 dark:text-bodydark font-satoshi bg-white">
-            {/* <!-- ===== Page Wrapper Start ===== --> */}
-            <div className="flex h-screen overflow-hidden">
-                {/* <!-- ===== Sidebar Start ===== --> */}
-                {/* <Sidebar
-                    sidebarOpen={sidebarOpen}
-                    setSidebarOpen={setSidebarOpen}
-                /> */}
-                {/* <!-- ===== Sidebar End ===== --> */}
-
-                {/* <!-- ===== Content Area Start ===== --> */}
-                <div className="relative flex flex-1 flex-col overflow-y-auto overflow-x-hidden min-w-0">
-                    {/* <!-- ===== Header Start ===== --> */}
-                    <Header
-                        sidebarOpen={sidebarOpen}
-                        setSidebarOpen={setSidebarOpen}
-                    />
-
-                    {/* <!-- ===== Header End ===== --> */}
-
-                    {/* <!-- ===== Main Content Start ===== --> */}
-                    <main className="flex-1 flex flex-col justify-between">
-                        <div className="mx-auto max-w-screen-lg p-4 md:p-6 2xl:p-10 justify-center flex flex-1 w-full">
-                            {children}
-                        </div>
-                        <AppFooter />
-                    </main>
-                    {/* <!-- ===== Main Content End ===== --> */}
-                </div>
-                {/* <!-- ===== Content Area End ===== --> */}
+        <ThemeProvider theme={theme}>
+            <div className="min-h-screen flex flex-col bg-[#f8fafc] font-satoshi text-slate-800">
+                <Header />
+                <main className="flex-1 w-full flex flex-col items-center">
+                    <div className="mx-auto max-w-screen-xl p-4 md:p-6 2xl:p-10 flex-1 w-full relative">
+                        {children}
+                    </div>
+                </main>
+                <ButtomFooter />
             </div>
-            {/* <!-- ===== Page Wrapper End ===== --> */}
-        </div>
+        </ThemeProvider>
     );
 };
 

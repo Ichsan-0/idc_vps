@@ -21,4 +21,9 @@ class Sekolah extends Model
     {
         return $this->belongsTo(SekolahMaster::class, 'id_sekolah', 'id');
     }
+
+    public function gelombang()
+    {
+        return $this->belongsTo(Gelombang::class, 'id_gelombang', 'id');
+    }
 }

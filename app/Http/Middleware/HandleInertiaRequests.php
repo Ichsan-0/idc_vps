@@ -3,6 +3,8 @@
 namespace App\Http\Middleware;
 
 use App\Models\LamaranKPM;
+use App\Models\LamaranPPL;
+use App\Models\Mahasiswa;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -30,16 +32,40 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+        $isMahasiswa = $user && $user->role === 'user';
+
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $request->user(),
-                'data_kelas' => fn() => $request->user() && $request->user()->role === 'user'
-                    ? LamaranKPM::where('username_mahasiswa', $request->user()->username)
+                'user' => $user,
+                'data_kelas' => fn() => $isMahasiswa
+                    ? LamaranKPM::where('username_mahasiswa', $user->username)
                     ->where('lamaran_kpm_tbl.status', 'accepted')
                     ->select('lamaran_kpm_tbl.id_tempat_kpm')
                     ->first()
                     : null,
+                'has_lokasi' => fn() => $isMahasiswa
+                    ? (
+                        LamaranKPM::where('username_mahasiswa', $user->username)->where('status', 'accepted')->exists()
+                        || LamaranPPL::where('username_mahasiswa', $user->username)->where('status', 'accepted')->exists()
+                        || Mahasiswa::where('nim', $user->username)->where(function ($q) {
+                            $q->whereNotNull('id_tempat_kpm')->orWhereNotNull('id_lowongan_ppl');
+                        })->exists()
+                    )
+                    : false,
+                'has_lokasi_kpm' => fn() => $isMahasiswa
+                    ? (
+                        LamaranKPM::where('username_mahasiswa', $user->username)->where('status', 'accepted')->exists()
+                        || Mahasiswa::where('nim', $user->username)->whereNotNull('id_tempat_kpm')->exists()
+                    )
+                    : false,
+                'has_lokasi_ppl' => fn() => $isMahasiswa
+                    ? (
+                        LamaranPPL::where('username_mahasiswa', $user->username)->where('status', 'accepted')->exists()
+                        || Mahasiswa::where('nim', $user->username)->whereNotNull('id_lowongan_ppl')->exists()
+                    )
+                    : false,
             ],
             'flash' => [
                 'message'       => fn() => $request->session()->get('message'),

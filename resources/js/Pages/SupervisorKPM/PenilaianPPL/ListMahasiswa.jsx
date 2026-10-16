@@ -1,5 +1,5 @@
 import React from "react";
-import { Head, router } from "@inertiajs/react";
+import { Head, Link, router } from "@inertiajs/react";
 import { Alert, AlertTitle, Button, Chip } from "@mui/material";
 
 import { useState } from "react";
@@ -173,7 +173,17 @@ const ListMahasiswa = ({
         <SekolahProvider data={data}>
             <SupervisorPPLLayout>
                 <Head title="Mahasiswa PPL" />
-                <div className="px-3">
+                <div className="px-1 py-2">
+                    <div className="flex items-center gap-2 mb-3 text-sm text-slate-600 font-medium">
+                        <Link
+                            href="/supervisor/classroom/home"
+                            className="text-[#06359f] hover:underline flex items-center gap-1"
+                        >
+                            &larr; Portal Supervisor
+                        </Link>
+                        <span>/</span>
+                        <span className="text-slate-800">Daftar Mahasiswa PPL</span>
+                    </div>
                     <div className="flex w-full justify-start gap-x-2 py-2">
                         {/* <Button
                             variant="contained"

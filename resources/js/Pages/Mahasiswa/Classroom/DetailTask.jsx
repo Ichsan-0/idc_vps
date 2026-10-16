@@ -302,12 +302,15 @@ const DetailTask = ({ base_url, data, auth }) => {
     return (
         <ClassroomLayout>
             <Head title="Detail" />
-            {loading && (
-                <div className="absolute z-10 w-full h-full flex items-center justify-center bg-white/70">
-                    <ThreeDot color="#4F61E3" size="medium" />
-                </div>
-            )}
-            <div className="flex w-full max-w-screen-xl">
+            <div className="relative min-h-[400px] flex w-full max-w-screen-xl">
+                {loading && (
+                    <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-white/85 backdrop-blur-sm rounded-xl">
+                        <ThreeDot color="#06359f" size="medium" />
+                        <span className="mt-3 text-sm font-semibold text-slate-600">
+                            Memproses data...
+                        </span>
+                    </div>
+                )}
                 <div className="flex w-full">
                     <div className="w-full  rounded-lg p-3 flex gap-x-8 bg-white ">
                         {responseError}

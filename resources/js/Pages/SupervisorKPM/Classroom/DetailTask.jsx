@@ -147,12 +147,15 @@ const DetailTask = ({ base_url, data, auth }) => {
     return (
         <ClassroomLayout>
             <Head title="Detail" />
-            {loading && (
-                <div className="absolute z-10 w-full h-full flex items-center justify-center bg-white/70">
-                    <ThreeDot color="#4F61E3" size="medium" />
-                </div>
-            )}
-            <div className="flex min-h-screen h-fit w-full border p-5 rounded-3xl max-w-screen-lg flex-col gap-3">
+            <div className="relative min-h-[400px] flex h-fit w-full border border-slate-200 bg-white p-5 rounded-3xl max-w-screen-lg flex-col gap-3 shadow-xs">
+                {loading && (
+                    <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-white/85 backdrop-blur-sm rounded-3xl">
+                        <ThreeDot color="#06359f" size="medium" />
+                        <span className="mt-3 text-sm font-semibold text-slate-600">
+                            Memproses data...
+                        </span>
+                    </div>
+                )}
                 <div className="w-full">
                     <div className="py-4">
                         <Breadcrumbs>

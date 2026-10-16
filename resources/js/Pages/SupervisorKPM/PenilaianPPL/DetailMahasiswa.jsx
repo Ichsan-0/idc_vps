@@ -337,8 +337,11 @@ const ListMahasiswa = ({ base_url, auth, data }) => {
 
                         <div className="relative overflow-x-auto min-h-50 py-3">
                             {loading && (
-                                <div className="absolute z-10 w-full h-full flex items-center justify-center bg-white/70">
-                                    <ThreeDot color="#4F61E3" size="medium" />
+                                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/85 backdrop-blur-sm rounded-lg">
+                                    <ThreeDot color="#06359f" size="medium" />
+                                    <span className="mt-3 text-sm font-semibold text-slate-600">
+                                        Memproses data...
+                                    </span>
                                 </div>
                             )}
                             <div className="grid grid-cols-1 justify-items-start md:grid-cols-2 w-full align-top">

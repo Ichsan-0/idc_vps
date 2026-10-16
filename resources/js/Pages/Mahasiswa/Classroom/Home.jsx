@@ -37,12 +37,15 @@ const Home = ({ base_url, id }) => {
     return (
         <ClassroomLayout>
             <Head title="Tugas kelas" />
-            {loading && (
-                <div className="absolute z-10 w-full h-full flex items-center justify-center bg-white/70">
-                    <ThreeDot color="#4F61E3" size="medium" />
-                </div>
-            )}
-            <div className="bg-white w-full  flex flex-col gap-y-3">
+            <div className="relative min-h-[360px] bg-white w-full rounded-2xl shadow-sm border border-slate-200 p-4 md:p-6 flex flex-col gap-y-4">
+                {loading && (
+                    <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-white/85 backdrop-blur-sm rounded-2xl">
+                        <ThreeDot color="#06359f" size="medium" />
+                        <span className="mt-3 text-sm font-semibold text-slate-600">
+                            Memuat tugas kelas...
+                        </span>
+                    </div>
+                )}
                 <div className="w-full relative">
                     <img
                         src={banner}

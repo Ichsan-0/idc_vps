@@ -27,7 +27,10 @@ class ClassroomController extends Controller
             ->orderBy('tempat_kpm_tbl.id_gelombang', 'DESC')
             ->get();
         $latestGelombang = Gelombang::latest()->first();
-        $kelas_ppl = Sekolah::where('username_supervisor', Auth::user()->username)->get();
+        $kelas_ppl = Sekolah::where('username_supervisor', Auth::user()->username)
+            ->with(['gelombang'])
+            ->orderBy('id_gelombang', 'DESC')
+            ->get();
 
         return Inertia::render(
             'SupervisorKPM/Classroom/Home',

@@ -1,36 +1,54 @@
-import AppFooter from "@/Components/Common/AppFooter";
-import Header from "@/Components/SupervisorKPM/Classroom/Header/Header";
-import { Head, usePage } from "@inertiajs/react";
-import React, { useState } from "react";
+import React from "react";
+import Header from "@/Components/frontpage/Header";
+import ButtomFooter from "@/Components/frontpage/ButtomFooter";
+import { Head } from "@inertiajs/react";
+import { ThemeProvider, createTheme } from "@mui/material/styles";
 
-const ClassroomLayout = ({ children, title, disableScroll=false }) => {
-    const [sidebarOpen, setSidebarOpen] = useState(false);
-    const { url, component } = usePage();
-    const { pathname, search } = new URL(url, window.location.origin);
+const theme = createTheme({
+    palette: {
+        primary: {
+            main: "#06359f",
+            light: "#3d5fb3",
+            dark: "#042574",
+        },
+        secondary: {
+            main: "#008a01",
+            light: "#66b967",
+            dark: "#006e01",
+        },
+        info: {
+            main: "#0288d1",
+            light: "#03a9f4",
+        },
+        background: {
+            default: "#f8fafc",
+            paper: "#ffffff",
+        },
+    },
+    typography: {
+        fontFamily: "'Inter', 'Segoe UI', Roboto, sans-serif",
+    },
+});
 
+const ClassroomLayout = ({ children, title, disableScroll = false }) => {
     return (
-        <div className={`dark:bg-boxdark-2 dark:text-bodydark ${disableScroll ? "overflow-hidden" : ""} font-satoshi bg-white min-h-screen flex flex-col`}>
-            <Head title={title}/>
-            {/* <!-- ===== Page Wrapper Start ===== --> */}
-            <div className="flex flex-1 flex-col">
-                {/* <!-- ===== Header Start ===== --> */}
-                <Header
-                    sidebarOpen={sidebarOpen}
-                    setSidebarOpen={setSidebarOpen}
-                />
-                {/* <!-- ===== Header End ===== --> */}
+        <ThemeProvider theme={theme}>
+            <div className={`min-h-screen flex flex-col bg-[#f8fafc] font-satoshi text-slate-800 ${disableScroll ? "overflow-hidden" : ""}`}>
+                {title && <Head title={title} />}
+                {/* Modern IDC Header */}
+                <Header />
 
-                {/* <!-- ===== Main Content Start ===== --> */}
-                <main className="flex-1 flex flex-col justify-between">
-                    <div className="justify-center w-full flex flex-1">
+                {/* Main Content Area */}
+                <main className="flex-1 w-full flex flex-col items-center">
+                    <div className="mx-auto max-w-screen-xl p-4 md:p-6 2xl:p-10 flex-1 w-full relative">
                         {children}
                     </div>
-                    <AppFooter />
                 </main>
-                {/* <!-- ===== Main Content End ===== --> */}
+
+                {/* Modern IDC Footer */}
+                <ButtomFooter />
             </div>
-            {/* <!-- ===== Page Wrapper End ===== --> */}
-        </div>
+        </ThemeProvider>
     );
 };
 

@@ -43,6 +43,7 @@ use App\Http\Controllers\Mahasiswa\ClassroomPPLController as MahasiswaClassroomP
 use App\Http\Controllers\Mahasiswa\MahasiswaController;
 use App\Http\Controllers\Mahasiswa\NilaiController;
 use App\Http\Controllers\MahasiswaKPM;
+use App\Http\Controllers\BimbinganController;
 use App\Http\Controllers\SchoolCertificateController;
 use App\Http\Controllers\SuperAdmin\GelombangController;
 use App\Http\Controllers\SuperAdmin\ImportDataController;
@@ -318,6 +319,16 @@ Route::post('/admin/data/kepsek-pamong/edit', [KepsekkPamongController::class, '
 Route::middleware(['auth:sanctum', 'admin_api'])->group(function() {
     Route::get('/admin/users/student/list', [MahsiswaController::class, 'listMahasiswa']);
     Route::post('/admin/users/student/export', [MahsiswaController::class, 'exportData']);
+});
+
+Route::middleware(['web', 'auth'])->group(function () {
+    Route::get('/bimbingan', [BimbinganController::class, 'getMahasiswaBimbingan']);
+    Route::post('/bimbingan', [BimbinganController::class, 'storeMahasiswaBimbingan']);
+    Route::post('/bimbingan/{id}/update', [BimbinganController::class, 'updateMahasiswaBimbingan']);
+    Route::delete('/bimbingan/{id}', [BimbinganController::class, 'deleteMahasiswaBimbingan']);
+
+    Route::get('/supervisor/bimbingan/{tipe}/{id_kelas}', [BimbinganController::class, 'getSupervisorBimbingan']);
+    Route::post('/supervisor/bimbingan/{id}/validate', [BimbinganController::class, 'validateSupervisorBimbingan']);
 });
 
 // Public API route — tanpa login, dengan Rate Limiting untuk keamanan

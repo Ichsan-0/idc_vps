@@ -1,16 +1,13 @@
-import React from "react";
+import React, { useState, useEffect, useRef, createContext } from "react";
 import { Head, Link, router } from "@inertiajs/react";
-import { Alert, AlertTitle, Button, Chip } from "@mui/material";
-
-import { useState } from "react";
-import { useEffect } from "react";
+import { Alert, AlertTitle, Button, Chip, Box, Tabs, Tab } from "@mui/material";
 import { ThreeDot } from "react-loading-indicators";
-import { useRef } from "react";
 import axios from "axios";
 import SupervisorPPLLayout from "@/Layouts/SupervisorKPM/ClassroomPPL/SupervisorPPLLayout";
-import { createContext } from "react";
 import SekolahProvider from "@/Context/SekolahContext";
 import { MdOpenInNew } from "react-icons/md";
+import { CheckCircleOutline, School, Assignment } from "@mui/icons-material";
+import SupervisorBimbinganPanel from "@/Components/Bimbingan/SupervisorBimbinganPanel";
 
 const ListMahasiswa = ({
     daftarmahasiswa,
@@ -20,6 +17,7 @@ const ListMahasiswa = ({
     data_opt,
     data,
 }) => {
+    const [activeTab, setActiveTab] = useState("penilaian"); // 'penilaian' or 'bimbingan'
     const [openDialog, setOpenDialog] = useState(false);
     const [idObjToDelete, setIdObjToDelete] = useState(null);
     const [notify, setNotify] = useState(flash.message !== null ? true : false);
@@ -184,39 +182,53 @@ const ListMahasiswa = ({
                         <span>/</span>
                         <span className="text-slate-800">Daftar Mahasiswa PPL</span>
                     </div>
-                    <div className="flex w-full justify-start gap-x-2 py-2">
-                        {/* <Button
-                            variant="contained"
-                            disableElevation
-                            sx={{ textTransform: "capitalize" }}
-                            onClick={(e) => {
-                                e.preventDefault();
-                                // router.visit("/admin/addmahasiswa");
+                    {/* Tab Navigasi: Penilaian vs Bimbingan Mahasiswa */}
+                    <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 3, bgcolor: "white", p: 1, borderRadius: 3 }}>
+                        <Tabs
+                            value={activeTab}
+                            onChange={(e, val) => setActiveTab(val)}
+                            textColor="primary"
+                            indicatorColor="primary"
+                            sx={{
+                                "& .MuiTab-root": {
+                                    textTransform: "none",
+                                    fontWeight: 700,
+                                    fontSize: "0.95rem",
+                                    minHeight: 48,
+                                    px: 3,
+                                },
                             }}
                         >
-                            Import
-                        </Button> */}
-                        {/* <Button
-                        variant="contained"
-                        disableElevation
-                        disabled={loading}
-                        sx={{ textTransform: "capitalize" }}
-                        onClick={(e) => {
-                            // e.preventDefault();
-                            router.visit(
-                                "/operator-sekolah/data/kepsek_pamong/add"
-                            );
-                        }}
-                    >
-                        Tambah
-                    </Button> */}
-                    </div>
+                            <Tab
+                                value="penilaian"
+                                icon={<School sx={{ fontSize: 20 }} />}
+                                iconPosition="start"
+                                label={`Daftar Mahasiswa & Penilaian (${dataMahasiswa?.length || 0})`}
+                            />
+                            <Tab
+                                value="bimbingan"
+                                icon={<CheckCircleOutline sx={{ fontSize: 20 }} />}
+                                iconPosition="start"
+                                label="Bimbingan Mahasiswa PPL"
+                            />
+                        </Tabs>
+                    </Box>
 
-                    <p>{error}</p>
-                    <div className="bg-white dark:bg-gray-800 gap-y-2 flex flex-col p-3 relative shadow-md sm:rounded-lg overflow-hidden">
-                        <Alert severity="info">
-                            <AlertTitle>Petunjuk</AlertTitle>
-                            <ol class="!list-decimal pl-5 space-y-2">
+                    {activeTab === "bimbingan" && (
+                        <SupervisorBimbinganPanel
+                            tipe="ppl"
+                            idKelas={data.id_sekolah}
+                            base_url={base_url}
+                        />
+                    )}
+
+                    {activeTab === "penilaian" && (
+                        <>
+                            <p>{error}</p>
+                            <div className="bg-white dark:bg-gray-800 gap-y-2 flex flex-col p-3 relative shadow-md sm:rounded-lg overflow-hidden">
+                                <Alert severity="info">
+                                    <AlertTitle>Petunjuk</AlertTitle>
+                                    <ol className="!list-decimal pl-5 space-y-2">
                                 <li>
                                     Isi nilai mahasiswa dengan status belum
                                     dinilai
@@ -553,6 +565,8 @@ const ListMahasiswa = ({
                         </ul>
                     </nav> */}
                     </div>
+                        </>
+                    )}
                 </div>
             </SupervisorPPLLayout>
         </SekolahProvider>

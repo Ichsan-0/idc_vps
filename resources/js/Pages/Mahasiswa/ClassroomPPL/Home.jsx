@@ -1,21 +1,23 @@
 import ClassroomLayout from "@/Layouts/Mahasiswa/Classroom/ClassroomLayout";
-import React from "react";
+import React, { useState } from "react";
 import banner from "../../../../../public/assets/img_backtoschool.jpg";
-import { BiTask } from "react-icons/bi";
-import { Head, router } from "@inertiajs/react";
-import { useState } from "react";
-import axios from "axios";
-import { useEffect } from "react";
+import { Head, usePage } from "@inertiajs/react";
 import { ThreeDot } from "react-loading-indicators";
+import { Box, Tabs, Tab } from "@mui/material";
+import { Assignment, CheckCircleOutline } from "@mui/icons-material";
+import MahasiswaBimbinganView from "@/Components/Bimbingan/MahasiswaBimbinganView";
+import TaskInlineItem from "@/Components/Classroom/TaskInlineItem";
 
 const Home = ({ base_url, data }) => {
-    const [responseError, setResponseError] = useState(null);
+    const { auth } = usePage().props;
     const [loading, setLoading] = useState(false);
+    const [activeTab, setActiveTab] = useState("tasks"); // 'tasks' or 'bimbingan'
+    const [expandedTaskId, setExpandedTaskId] = useState(null);
 
     return (
         <ClassroomLayout>
-            <Head title="Tugas kelas PPL" />
-            <div className="relative min-h-[360px] bg-white w-full rounded-2xl shadow-sm border border-slate-200 p-4 md:p-6 flex flex-col gap-y-4">
+            <Head title={`Kelas PPL ${data?.data_kelas?.nama_tempat || ""} - IDC`} />
+            <div className="relative min-h-[360px] bg-white w-full rounded-2xl shadow-sm border border-slate-200 p-4 md:p-6 flex flex-col gap-y-5">
                 {loading && (
                     <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-white/85 backdrop-blur-sm rounded-2xl">
                         <ThreeDot color="#06359f" size="medium" />
@@ -24,57 +26,94 @@ const Home = ({ base_url, data }) => {
                         </span>
                     </div>
                 )}
+
+                {/* Banner Sekolah PPL */}
                 <div className="w-full relative">
                     <img
                         src={banner}
-                        className="w-full relative object-cover rounded-md"
-                    ></img>
-                    <div className="absolute inset-0 flex flex-col justify-end text-white bg-black-2/25 rounded-md">
-                        <ul className="p-4">
-                            <li className="font-bold text-xl md:text-2xl lg:text-4xl ">
-                                {data?.data_kelas?.nama_tempat}
-                            </li>
-                            <li className="text-md md:text-lg lg:text-xl">
-                                PPKPM Ganjil 2025/2026
-                            </li>
-                        </ul>
+                        className="w-full relative object-cover rounded-xl max-h-48"
+                        alt="Banner Sekolah PPL"
+                    />
+                    <div className="absolute inset-0 flex flex-col justify-end text-white bg-black/40 rounded-xl p-5">
+                        <h2 className="font-bold text-xl md:text-2xl lg:text-3xl text-white">
+                            {data?.data_kelas?.nama_tempat || "Sekolah Mitra PPL"}
+                        </h2>
+                        <p className="text-sm md:text-base text-white/90">
+                            Praktik Pengalaman Lapangan (PPL)
+                        </p>
                     </div>
                 </div>
-                {/* #129eaf */}
-                <ul className="flex flex-col gap-y-3">
-                    {data?.tasks?.map((item) => (
-                        <li
-                            key={item.id}
-                            className="w-full border-2 rounded-lg p-3 flex gap-x-3 bg-white hover:bg-primary/5 cursor-pointer"
-                            onClick={(e) =>
-                                router.visit(
-                                    `/student/classroom-ppl/tasks/${item?.id}`
-                                )
-                            }
-                        >
-                            <div className="bg-[#129eaf] w-fit h-fit p-3 rounded-full">
-                                <svg
-                                    focusable="false"
-                                    width="24"
-                                    height="24"
-                                    viewBox="0 0 24 24"
-                                    className="fill-white"
-                                >
-                                    <path d="M7 15h7v2H7zm0-4h10v2H7zm0-4h10v2H7z"></path>
-                                    <path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-.14 0-.27.01-.4.04a2.008 2.008 0 0 0-1.44 1.19c-.1.23-.16.49-.16.77v14c0 .27.06.54.16.78s.25.45.43.64c.27.27.62.47 1.01.55.13.02.26.03.4.03h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7-.25c.41 0 .75.34.75.75s-.34.75-.75.75-.75-.34-.75-.75.34-.75.75-.75zM19 19H5V5h14v14z"></path>
-                                </svg>
+
+                {/* Tab Navigasi: Tugas PPL vs Bimbingan Supervisor */}
+                <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+                    <Tabs
+                        value={activeTab}
+                        onChange={(e, val) => setActiveTab(val)}
+                        textColor="primary"
+                        indicatorColor="primary"
+                        sx={{
+                            "& .MuiTab-root": {
+                                textTransform: "none",
+                                fontWeight: 700,
+                                fontSize: "0.95rem",
+                                minHeight: 48,
+                                px: 3,
+                            },
+                        }}
+                    >
+                        <Tab
+                            value="tasks"
+                            icon={<Assignment sx={{ fontSize: 20 }} />}
+                            iconPosition="start"
+                            label={`Tugas Kelas (${data?.tasks?.length || 0})`}
+                        />
+                        <Tab
+                            value="bimbingan"
+                            icon={<CheckCircleOutline sx={{ fontSize: 20 }} />}
+                            iconPosition="start"
+                            label="Bimbingan Dosen Supervisor"
+                        />
+                    </Tabs>
+                </Box>
+
+                {/* TAB CONTENT 1: Tugas Kelas (In-place Expandable & Tempel Link) */}
+                {activeTab === "tasks" && (
+                    <div className="flex flex-col gap-y-3">
+                        {data?.tasks && data.tasks.length > 0 ? (
+                            <ul className="flex flex-col gap-y-3">
+                                {data.tasks.map((item) => (
+                                    <TaskInlineItem
+                                        key={item.id}
+                                        task={item}
+                                        idKelas={data?.data_kelas?.id}
+                                        tipe="ppl"
+                                        baseUrl={base_url}
+                                        usernameMahasiswa={auth?.user?.username}
+                                        isExpanded={expandedTaskId === item.id}
+                                        onToggle={() =>
+                                            setExpandedTaskId(
+                                                expandedTaskId === item.id ? null : item.id
+                                            )
+                                        }
+                                    />
+                                ))}
+                            </ul>
+                        ) : (
+                            <div className="p-8 text-center text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                                <p className="font-medium">Belum ada tugas untuk kelas PPL ini.</p>
                             </div>
-                            <div className="">
-                                <h3 className="font-bold text-[#3c4043]">
-                                    {item?.name}
-                                </h3>
-                                <p className=" text-[#3c4043]">
-                                    {item?.tenggat}
-                                </p>
-                            </div>
-                        </li>
-                    ))}
-                </ul>
+                        )}
+                    </div>
+                )}
+
+                {/* TAB CONTENT 2: Bimbingan Supervisor */}
+                {activeTab === "bimbingan" && (
+                    <MahasiswaBimbinganView
+                        tipe="ppl"
+                        idKelas={data?.data_kelas?.id}
+                        base_url={base_url}
+                    />
+                )}
             </div>
         </ClassroomLayout>
     );

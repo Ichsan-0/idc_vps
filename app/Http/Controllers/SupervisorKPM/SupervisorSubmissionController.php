@@ -149,19 +149,23 @@ class SupervisorSubmissionController extends Controller
                 ->first();
 
             if (!$submission) {
-                return new SubmissionResource(false, 'Submission tidak ditemukan', 404);
+                $submission = Task_submission::create([
+                    'id_kelas' => $request->id_kelas,
+                    'id_tugas' => $request->id_tugas,
+                    'username_mahasiswa' => $request->username_mahasiswa,
+                    'status' => $request->status ?? 'dinilai',
+                    'score' => $request->score ?? 0,
+                ]);
+            } else {
+                // Update data submission
+                $submission->status = $request->status ?? $submission->status;
+                $submission->score = $request->score ?? $submission->score;
+                $submission->save();
             }
-
-            // Update data submission
-            $submission->status = $request->status ?? $submission->status;
-            $submission->score = $request->score ?? $submission->score;
-
-            // Simpan perubahan
-            $submission->save();
 
             DB::commit();
 
-            return new SubmissionResource(true, 'Tugas berhasil diperbarui', $submission);
+            return new SubmissionResource(true, 'Nilai tugas berhasil disimpan', $submission);
         } catch (\Exception $e) {
             DB::rollBack();
             return new SubmissionResource(false, $e->getMessage(), $e->getCode());

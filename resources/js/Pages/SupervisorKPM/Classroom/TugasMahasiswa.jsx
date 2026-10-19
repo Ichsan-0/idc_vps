@@ -188,12 +188,37 @@ const TugasMahasiswa = ({ base_url, data, auth }) => {
                 {currentMahasiswa !== null ? (
                     currentMahasiswa?.status === "diserahkan" ||
                     currentMahasiswa?.status === "dinilai" ? (
-                        (currentMahasiswa?.tugas?.tipe === "File" && (
+                        ((currentMahasiswa?.link && (currentMahasiswa.link.startsWith("http://") || currentMahasiswa.link.startsWith("https://") || currentMahasiswa?.tugas?.tipe === "Link" || currentMahasiswa?.tugas?.tipe === "Link Video")) ? (
+                            <div className="flex flex-col mt-9 gap-3 w-full ml-16 mr-7">
+                                <p className="text-gray-600 font-normal">
+                                    Tautan tugas yang dikumpulkan mahasiswa:
+                                </p>
+                                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono text-blue-700 break-all max-w-xl select-all">
+                                    {currentMahasiswa?.link}
+                                </div>
+                                <Button
+                                    variant="contained"
+                                    onClick={() =>
+                                        window.open(currentMahasiswa?.link, "_blank")
+                                    }
+                                    sx={{
+                                        width: "fit-content",
+                                        textTransform: "none",
+                                        fontWeight: 700,
+                                        bgcolor: "#06359f",
+                                        "&:hover": { bgcolor: "#042574" },
+                                        borderRadius: 2,
+                                    }}
+                                >
+                                    Buka Link Tugas Mahasiswa
+                                </Button>
+                            </div>
+                        ) : (
                             <div className="flex w-full overflow-y-auto pl-14 pr-7">
                                 <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.4.120/build/pdf.worker.min.js">
                                     <Viewer
                                         plugins={[defaultLayoutPluginInstance]}
-                                        fileUrl={`${base_url}/storage/${currentMahasiswa.link.replace(
+                                        fileUrl={`${base_url}/storage/${(currentMahasiswa.link || "").replace(
                                             /^public\//,
                                             ""
                                         )}`}
@@ -212,36 +237,6 @@ const TugasMahasiswa = ({ base_url, data, auth }) => {
                                         )}
                                     ></Viewer>
                                 </Worker>
-                            </div>
-                        )) //||
-                        // (currentMahasiswa?.tugas?.tipe === "Link Video" && (
-                        //     <div className="flex w-full pl-14 pr-7">
-                        //         <YouTubeEmbed />
-                        //     </div>
-                        // )) ||
-                        ||
-                        ((currentMahasiswa?.tugas?.tipe === "Link" || currentMahasiswa?.tugas?.tipe === "Link Video") && (
-                            <div className="flex flex-col mt-9 gap-3 w-full ml-16 mr-7">
-                                <p className="text-gray-600 font-normal">
-                                    Klik link tombol dibawah ini untuk melihat
-                                    tugas mahasiswa
-                                </p>
-                                <Button
-                                    onClick={() =>
-                                        window.open(
-                                            currentMahasiswa?.link,
-                                            "_blank",
-
-                                            `width=${
-                                                screen.width * 0.8
-                                            }, height=${
-                                                screen.height * 0.6
-                                            }, left=100, top=100`
-                                        )
-                                    }
-                                >
-                                    Lihat
-                                </Button>
                             </div>
                         ))
                     ) : (

@@ -19,9 +19,9 @@ class User
             if ($request->user()->role === 'admin') {
                 return redirect('admin/dashboard');
             } else if ($request->user()->role === 'opt-kecamatan') {
-                return redirect('/operator-kecamatan/data/camat-keuchik');
+                return redirect('/operator-kecamatan/dashboard');
             } else if ($request->user()->role === 'opt-sekolah') {
-                return redirect('/operator-sekolah/data/kepsek-pamong');
+                return redirect('/operator-sekolah/dashboard');
             } else if ($request->user()->role === 'supervisor_kpm') {
                 return redirect('/supervisor/classroom/home');
             } else if($request->user()->role() === 'supervisor'){

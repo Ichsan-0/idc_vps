@@ -54,6 +54,7 @@ use Maatwebsite\Excel\Row;
 
 Route::middleware(['auth', 'opt-sekolah'])->group(function () {
     Route::get('/operator-sekolah/dashboard', [OpratorSekolahController::class, 'index']);
+    Route::get('/operator-sekolah/classroom/{id}', [OpratorSekolahController::class, 'viewKelas']);
     Route::get('/operator-sekolah/data/kepsek-pamong', [OpratorSekolahController::class, 'kepsek_pamong']);
     Route::get('/operator-sekolah/data/kepsek_pamong/add', [OpratorSekolahController::class, 'kepsek_pamong_add']);
     Route::get('/operator-sekolah/data/kepsek_pamong/detail/{id}', [OpratorSekolahController::class, 'kepsek_pamong_detail']);
@@ -62,6 +63,7 @@ Route::middleware(['auth', 'opt-sekolah'])->group(function () {
 
 Route::middleware(['auth', 'opt-kecamatan'])->group(function () {
     Route::get('/operator-kecamatan/dashboard', [OperatorKecamatanController::class, 'index']);
+    Route::get('/operator-kecamatan/classroom/{id}', [OperatorKecamatanController::class, 'viewKelas']);
     Route::get('/operator-kecamatan/data/camat-keuchik', [OperatorKecamatanController::class, 'camat_keuchik']);
     Route::get('/operator-kecamatan/data/camat-keuchik/add', [OperatorKecamatanController::class, 'camat_keuchik_add']);
     Route::get('/operator-kecamatan/data/camat-keuchik/detail/{id}', [OperatorKecamatanController::class, 'camat_keuchik_detail']);
@@ -290,7 +292,7 @@ Route::middleware(['auth', 'user', 'verified'])->group(function () {
 Route::get('/', [MahasiswaProfilController::class, 'default']);
 
 
-Route::get('/pw', [testcontroller::class, 'index'])->name('index');
+Route::get('/pw', [testcontroller::class, 'index'])->middleware(['auth', 'admin'])->name('index');
 Route::get('/certificate', function () {
     return view('certificate');
 });

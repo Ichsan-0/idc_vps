@@ -21,8 +21,8 @@ class OptKecamatan
             } else if ($request->user()->role === 'admin') {
                 return redirect('/admin/dashboard');
             } else if ($request->user()->role === 'opt-sekolah') {
-                return redirect('/operator-sekolah/data/kepsek-pamong');
-            } else if ($request->user()->role = 'supervisor_kpm') {
+                return redirect('/operator-sekolah/dashboard');
+            } else if ($request->user()->role === 'supervisor_kpm') {
                 return redirect('/supervisor/classroom/home');
             } else {
                 return redirect('supervisor/dashboard');

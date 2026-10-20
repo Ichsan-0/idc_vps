@@ -23,7 +23,204 @@ class OpratorSekolahController extends Controller
 {
     public function index()
     {
-        return Inertia::render('OperatorSekolah/Dashboard');
+        $data_opt = AdminSekolah::where('email', Auth::user()->email)->first();
+        $idSekolah = $data_opt ? $data_opt->id_sekolah : null;
+
+        $kelas_ppl = [];
+        $sekolahInfo = null;
+        $totalPamong = 0;
+        $totalMahasiswa = 0;
+
+        if ($idSekolah) {
+            $sekolahInfo = DB::table('sekolah_master')->where('id', $idSekolah)->first();
+
+            $kelas_ppl = Sekolah::where('id_sekolah', $idSekolah)
+                ->leftJoin('users as u', 'sekolah_tbl.username_supervisor', '=', 'u.username')
+                ->with(['gelombang'])
+                ->select('sekolah_tbl.*', 'u.name as nama_supervisor')
+                ->orderBy('sekolah_tbl.id_gelombang', 'DESC')
+                ->get();
+
+            foreach ($kelas_ppl as $item) {
+                $item->total_mahasiswa = DB::table('ampraham_ppl_tbl')
+                    ->where('id_sekolah', $idSekolah)
+                    ->where('id_gelombang', $item->id_gelombang)
+                    ->whereNotNull('username_mahasiswa')
+                    ->distinct('username_mahasiswa')
+                    ->count('username_mahasiswa');
+
+                if ($item->total_mahasiswa === 0) {
+                    $item->total_mahasiswa = DB::table('lamaran_ppl_tbl as lp')
+                        ->join('lowongan_ppl_tbl as low', 'lp.id_lowongan_ppl', '=', 'low.id')
+                        ->where('low.id_sekolah', $idSekolah)
+                        ->whereIn('lp.status', ['accepted', 'lulus'])
+                        ->count();
+                }
+
+                $item->total_pamong = DB::table('ampraham_ppl_tbl')
+                    ->where('id_sekolah', $idSekolah)
+                    ->where('id_gelombang', $item->id_gelombang)
+                    ->where('jabatan', 'Guru Pamong')
+                    ->count();
+
+                $kepsek = DB::table('ampraham_ppl_tbl')
+                    ->where('id_sekolah', $idSekolah)
+                    ->where('id_gelombang', $item->id_gelombang)
+                    ->where('jabatan', 'like', '%Kepala Sekolah%')
+                    ->first();
+
+                $item->nama_kepsek = $kepsek ? $kepsek->name : null;
+            }
+
+            $totalPamong = DB::table('ampraham_ppl_tbl')
+                ->where('id_sekolah', $idSekolah)
+                ->where('jabatan', 'Guru Pamong')
+                ->count();
+
+            $totalMahasiswa = DB::table('ampraham_ppl_tbl')
+                ->where('id_sekolah', $idSekolah)
+                ->whereNotNull('username_mahasiswa')
+                ->distinct('username_mahasiswa')
+                ->count('username_mahasiswa');
+        }
+
+        $latestGelombang = Gelombang::where('active', 1)->first() ?? Gelombang::latest()->first();
+
+        return Inertia::render('OperatorSekolah/Dashboard', [
+            'kelas_ppl' => $kelas_ppl,
+            'sekolahInfo' => $sekolahInfo,
+            'latestGelombang' => $latestGelombang,
+            'data_opt' => $data_opt,
+            'totalPamong' => $totalPamong,
+            'totalMahasiswa' => $totalMahasiswa,
+            'base_url' => url('/')
+        ]);
+    }
+
+    public function viewKelas($id)
+    {
+        $data_opt = AdminSekolah::where('email', Auth::user()->email)->first();
+
+        return Inertia::render('OperatorSekolah/Classroom/ViewKelas', [
+            'base_url' => url('/'),
+            'data' => [
+                'id_sekolah_tbl' => $id
+            ],
+            'data_opt' => $data_opt
+        ]);
+    }
+
+    public function getClassroomData($id)
+    {
+        try {
+            $sekolah = Sekolah::where('sekolah_tbl.id', $id)
+                ->leftJoin('sekolah_master as sm', 'sekolah_tbl.id_sekolah', '=', 'sm.id')
+                ->leftJoin('users as u', 'sekolah_tbl.username_supervisor', '=', 'u.username')
+                ->with(['gelombang'])
+                ->select(
+                    'sekolah_tbl.*',
+                    'sm.name as nama_sekolah_master',
+                    'u.name as nama_supervisor'
+                )
+                ->first();
+
+            if (!$sekolah) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Kelas Sekolah tidak ditemukan'
+                ], 404);
+            }
+
+            // Mahasiswa from ampraham_ppl_tbl
+            $mahasiswaAmpraham = DB::table('ampraham_ppl_tbl as a')
+                ->leftJoin('users as u', 'a.username_mahasiswa', '=', 'u.username')
+                ->leftJoin('mahasiswa_tbl as m', 'a.username_mahasiswa', '=', 'm.nim')
+                ->leftJoin('prodi_tbl as p', 'm.id_prodi', '=', 'p.id')
+                ->where('a.id_sekolah', $sekolah->id_sekolah)
+                ->where('a.id_gelombang', $sekolah->id_gelombang)
+                ->whereNotNull('a.username_mahasiswa')
+                ->select(
+                    'a.id as id_ampraham',
+                    'a.username_mahasiswa as nim',
+                    'u.name as nama_mahasiswa',
+                    'p.name as prodi',
+                    'm.no_hp_wa as no_hp',
+                    'a.name as nama_pamong',
+                    'a.nip as nip_pamong',
+                    'a.link_document',
+                    'a.status'
+                )
+                ->get();
+
+            $existingNims = $mahasiswaAmpraham->pluck('nim')->filter()->toArray();
+
+            // Also check if any students from lamaran_ppl_tbl that haven't been added to ampraham yet
+            $lamaranMahasiswa = DB::table('lamaran_ppl_tbl as lp')
+                ->join('lowongan_ppl_tbl as low', 'lp.id_lowongan_ppl', '=', 'low.id')
+                ->join('users as u', 'lp.username_mahasiswa', '=', 'u.username')
+                ->leftJoin('mahasiswa_tbl as m', 'u.username', '=', 'm.nim')
+                ->leftJoin('prodi_tbl as p', 'm.id_prodi', '=', 'p.id')
+                ->where('low.id_sekolah', $sekolah->id_sekolah)
+                ->whereIn('lp.status', ['accepted', 'lulus'])
+                ->whereNotIn('lp.username_mahasiswa', $existingNims)
+                ->select(
+                    DB::raw('NULL as id_ampraham'),
+                    'u.username as nim',
+                    'u.name as nama_mahasiswa',
+                    'p.name as prodi',
+                    'm.no_hp_wa as no_hp',
+                    DB::raw('NULL as nama_pamong'),
+                    DB::raw('NULL as nip_pamong'),
+                    DB::raw('NULL as link_document'),
+                    'lp.status'
+                )
+                ->get();
+
+            $mahasiswa = $mahasiswaAmpraham->concat($lamaranMahasiswa)->values();
+
+            // Tasks from task_ppl with submissions
+            $tasks = DB::table('task_ppl')->get();
+            foreach ($tasks as $task) {
+                $submissions = DB::table('task_ppl_submission as tps')
+                    ->join('users as u', 'tps.username_mahasiswa', '=', 'u.username')
+                    ->leftJoin('mahasiswa_tbl as m', 'u.username', '=', 'm.nim')
+                    ->leftJoin('prodi_tbl as p', 'm.id_prodi', '=', 'p.id')
+                    ->where(function($q) use ($id, $sekolah) {
+                        $q->where('tps.id_kelas', $id)
+                          ->orWhere('tps.id_kelas', $sekolah->id_sekolah);
+                    })
+                    ->where('tps.id_tugas', $task->id)
+                    ->select(
+                        'tps.*',
+                        'u.name as nama_mahasiswa',
+                        'p.name as prodi'
+                    )
+                    ->get();
+                $task->submissions = $submissions;
+                $task->submitted_count = $submissions->count();
+            }
+
+            // Pamong & Kepsek ampraham
+            $ampraham = DB::table('ampraham_ppl_tbl')
+                ->where('id_sekolah', $sekolah->id_sekolah)
+                ->where('id_gelombang', $sekolah->id_gelombang)
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'sekolah' => $sekolah,
+                    'mahasiswa' => $mahasiswa,
+                    'tasks' => $tasks,
+                    'ampraham' => $ampraham
+                ]
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function kepsek_pamong()

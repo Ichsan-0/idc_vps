@@ -79,6 +79,36 @@ const navigationItemsSupervisorPPL = [
     },
 ];
 
+const navigationItemsOptKecamatan = [
+    {
+        id: "ClassroomKPM",
+        icon: MapPinHouse,
+        label: "Kelas KPM",
+        path: "/operator-kecamatan/dashboard",
+    },
+    {
+        id: "CamatKeuchik",
+        icon: User,
+        label: "Data Camat & Keuchik",
+        path: "/operator-kecamatan/data/camat-keuchik",
+    },
+];
+
+const navigationItemsOptSekolah = [
+    {
+        id: "ClassroomPPL",
+        icon: School,
+        label: "Kelas PPL",
+        path: "/operator-sekolah/dashboard",
+    },
+    {
+        id: "KepsekPamong",
+        icon: User,
+        label: "Data Kepsek & Pamong",
+        path: "/operator-sekolah/data/kepsek-pamong",
+    },
+];
+
 const Header = () => {
     const { props, url } = usePage();
     const hasUser = props.auth && props.auth.user;
@@ -86,6 +116,8 @@ const Header = () => {
     const isMahasiswa = hasUser && role === "user";
     const isSupervisorKPM = hasUser && role === "supervisor_kpm";
     const isSupervisor = hasUser && role === "supervisor";
+    const isOptKecamatan = hasUser && role === "opt-kecamatan";
+    const isOptSekolah = hasUser && role === "opt-sekolah";
     const pathname = url ? new URL(url, window.location.origin).pathname : "";
 
     // Cek apakah mahasiswa sudah memiliki data lokasi KPM atau PPL
@@ -101,6 +133,12 @@ const Header = () => {
     );
 
     const filteredNavigationItems = React.useMemo(() => {
+        if (isOptKecamatan) {
+            return navigationItemsOptKecamatan;
+        }
+        if (isOptSekolah) {
+            return navigationItemsOptSekolah;
+        }
         if (isSupervisorKPM) {
             return navigationItemsSupervisorKPM;
         }
@@ -116,9 +154,17 @@ const Header = () => {
             }
             return true;
         });
-    }, [isMahasiswa, hasLokasi, isSupervisorKPM, isSupervisor]);
+    }, [isMahasiswa, hasLokasi, isSupervisorKPM, isSupervisor, isOptKecamatan, isOptSekolah]);
 
-    const homeUrl = isSupervisorKPM ? "/supervisor/classroom/home" : isSupervisor ? "/supervisor/dashboard" : "/";
+    const homeUrl = isOptKecamatan
+        ? "/operator-kecamatan/dashboard"
+        : isOptSekolah
+        ? "/operator-sekolah/dashboard"
+        : isSupervisorKPM
+        ? "/supervisor/classroom/home"
+        : isSupervisor
+        ? "/supervisor/dashboard"
+        : "/";
 
     const [anchorElNav, setAnchorElNav] = React.useState(null);
     return (
@@ -178,12 +224,14 @@ const Header = () => {
                                 >
                                     {filteredNavigationItems.map((item) => {
                                         const IconComponent = item.icon;
-                                        const isClassroomActive = item.id === 'Classroom' && (
+                                        const isClassroomActive = item.id.includes('Classroom') && (
                                             pathname.startsWith('/student/classroom') ||
                                             pathname.startsWith('/classroom') ||
                                             pathname.startsWith('/supervisor/classroom') ||
                                             pathname.startsWith('/supervisor-kpm') ||
-                                            pathname.startsWith('/supervisor-ppl')
+                                            pathname.startsWith('/supervisor-ppl') ||
+                                            pathname.startsWith('/operator-kecamatan/classroom') ||
+                                            pathname.startsWith('/operator-sekolah/classroom')
                                         );
                                         const isActive = pathname === item.path || pathname.startsWith(item.path + '/') || (item.path === '/kpm-vacancies' && pathname === '/') || isClassroomActive;
                                         return (
@@ -215,12 +263,14 @@ const Header = () => {
                             <nav className="hidden lg:flex items-center gap-1.5 mr-2">
                             {filteredNavigationItems.map((item) => {
                                 const IconComponent = item.icon;
-                                const isClassroomActive = item.id === 'Classroom' && (
+                                const isClassroomActive = item.id.includes('Classroom') && (
                                     pathname.startsWith('/student/classroom') ||
                                     pathname.startsWith('/classroom') ||
                                     pathname.startsWith('/supervisor/classroom') ||
                                     pathname.startsWith('/supervisor-kpm') ||
-                                    pathname.startsWith('/supervisor-ppl')
+                                    pathname.startsWith('/supervisor-ppl') ||
+                                    pathname.startsWith('/operator-kecamatan/classroom') ||
+                                    pathname.startsWith('/operator-sekolah/classroom')
                                 );
                                 const isActive = pathname === item.path || pathname.startsWith(item.path + '/') || (item.path === '/kpm-vacancies' && pathname === '/') || isClassroomActive;
                                 return (
@@ -246,7 +296,15 @@ const Header = () => {
                                 {props.auth?.user?.name}
                             </span>
                             <span className="text-emerald-300 text-[10px] font-medium tracking-wider uppercase">
-                                {isSupervisorKPM ? "Dosen Supervisor" : isSupervisor ? "Supervisor PPL" : "Mahasiswa"}
+                                {isOptKecamatan
+                                    ? "Admin Kecamatan"
+                                    : isOptSekolah
+                                    ? "Admin Sekolah"
+                                    : isSupervisorKPM
+                                    ? "Dosen Supervisor"
+                                    : isSupervisor
+                                    ? "Supervisor PPL"
+                                    : "Mahasiswa"}
                             </span>
                         </div>
 

@@ -19,8 +19,8 @@ class SuperAdmin
 
         return match ($user?->role) {
             'user' => redirect('/'),
-            'opt-kecamatan' => redirect('/operator-kecamatan/data/camat-keuchik'),
-            'opt-sekolah' => redirect('/operator-sekolah/data/kepsek-pamong'),
+            'opt-kecamatan' => redirect('/operator-kecamatan/dashboard'),
+            'opt-sekolah' => redirect('/operator-sekolah/dashboard'),
             'supervisor_kpm' => redirect('/supervisor/classroom/home'),
             'admin' => redirect('/admin/dashboard'),
             "supervisor" => redirect('/supervisor/dashboard'),

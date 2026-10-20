@@ -19,9 +19,9 @@ class SupervisorKPM
             if ($request->user()->role === 'user') {
                 return redirect('/');
             } else if ($request->user()->role === 'opt-kecamatan') {
-                return redirect('/operator-kecamatan/data/camat-keuchik');
+                return redirect('/operator-kecamatan/dashboard');
             } else if ($request->user()->role === 'opt-sekolah') {
-                return redirect('/operator-sekolah/data/kepsek-pamong');
+                return redirect('/operator-sekolah/dashboard');
             } else if ($request->user()->role === 'admin') {
                 return redirect('/admin/dashboard');
             } else {

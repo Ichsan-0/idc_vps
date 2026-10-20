@@ -5,6 +5,8 @@ namespace App\Http\Controllers\OperatorKecamatan;
 use App\Http\Controllers\Controller;
 use App\Models\AdminKecamatan;
 use App\Models\AmprahamKPM;
+use App\Models\Gelombang;
+use App\Models\TempatKPM;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,10 +16,179 @@ use Inertia\Inertia;
 
 class OperatorKecamatanController extends Controller
 {
-    // public function index()
-    // {
-    //     return Inertia::render('OperatorSekolah/Dashboard');
-    // }
+    public function index()
+    {
+        $data_opt = AdminKecamatan::where('email', Auth::user()->email)->first();
+        $idKecamatan = $data_opt ? $data_opt->id_kecamatan : null;
+
+        $kelas = [];
+        $kecamatanName = null;
+        $totalCamatKeuchik = 0;
+
+        if ($idKecamatan) {
+            $kelas = TempatKPM::where(function ($q) use ($idKecamatan) {
+                    $q->where('tempat_kpm_tbl.sub_district', $idKecamatan)
+                      ->orWhereIn('tempat_kpm_tbl.id_desa', function ($sub) use ($idKecamatan) {
+                          $sub->select('id')->from('master_desa_tbl')->where('sub_district', $idKecamatan);
+                      });
+                })
+                ->leftJoin('master_desa_tbl as md', 'tempat_kpm_tbl.id_desa', '=', 'md.id')
+                ->leftJoin('users as u', 'tempat_kpm_tbl.username_supervisor', '=', 'u.username')
+                ->with(['gelombang'])
+                ->select(
+                    'tempat_kpm_tbl.*',
+                    'md.name as nama_desa_master',
+                    'u.name as nama_supervisor'
+                )
+                ->orderBy('tempat_kpm_tbl.id_gelombang', 'DESC')
+                ->get();
+
+            foreach ($kelas as $k) {
+                $k->total_mahasiswa = DB::table('lamaran_kpm_tbl')
+                    ->where('id_tempat_kpm', $k->id)
+                    ->whereIn('status', ['accepted', 'lulus'])
+                    ->count();
+                $keuchik = DB::table('ampraham_kpm_tbl')
+                    ->where('id_kecamatan', $idKecamatan)
+                    ->where(function($q) use ($k) {
+                        $q->where('id_desa', $k->id_desa)
+                          ->orWhere('desa', 'like', '%' . ($k->name ?? '') . '%');
+                    })
+                    ->first();
+                $k->nama_keuchik = $keuchik ? $keuchik->name : null;
+            }
+
+            $sampleAmp = DB::table('ampraham_kpm_tbl')->where('id_kecamatan', $idKecamatan)->first();
+            if ($sampleAmp) {
+                $kecamatanName = $sampleAmp->kecamatan;
+            }
+            $totalCamatKeuchik = DB::table('ampraham_kpm_tbl')->where('id_kecamatan', $idKecamatan)->count();
+        }
+
+        $latestGelombang = Gelombang::where('active', 1)->first() ?? Gelombang::latest()->first();
+
+        return Inertia::render('OperatorKecamatan/Dashboard', [
+            'kelas' => $kelas,
+            'latestGelombang' => $latestGelombang,
+            'data_opt' => $data_opt,
+            'kecamatanName' => $kecamatanName ?? Auth::user()->name,
+            'totalCamatKeuchik' => $totalCamatKeuchik,
+            'base_url' => url('/')
+        ]);
+    }
+
+    public function viewKelas($id)
+    {
+        $data_opt = AdminKecamatan::where('email', Auth::user()->email)->first();
+
+        return Inertia::render('OperatorKecamatan/Classroom/ViewKelas', [
+            'base_url' => url('/'),
+            'data' => [
+                'id_kelas' => $id
+            ],
+            'data_opt' => $data_opt
+        ]);
+    }
+
+    public function getClassroomData($id)
+    {
+        try {
+            $kelas = TempatKPM::where('tempat_kpm_tbl.id', $id)
+                ->leftJoin('master_desa_tbl as md', 'tempat_kpm_tbl.id_desa', '=', 'md.id')
+                ->leftJoin('users as u', 'tempat_kpm_tbl.username_supervisor', '=', 'u.username')
+                ->with(['gelombang'])
+                ->select(
+                    'tempat_kpm_tbl.*',
+                    'md.name as nama_desa_master',
+                    'u.name as nama_supervisor'
+                )
+                ->first();
+
+            if (!$kelas) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Kelas tidak ditemukan'
+                ], 404);
+            }
+
+            $mahasiswa = DB::table('lamaran_kpm_tbl as l')
+                ->join('users as u', 'l.username_mahasiswa', '=', 'u.username')
+                ->leftJoin('mahasiswa_tbl as m', 'u.username', '=', 'm.nim')
+                ->leftJoin('prodi_tbl as p', 'm.id_prodi', '=', 'p.id')
+                ->where('l.id_tempat_kpm', $id)
+                ->whereIn('l.status', ['accepted', 'lulus'])
+                ->select(
+                    'u.name',
+                    'u.username as nim',
+                    'l.status',
+                    'p.name as prodi',
+                    'm.no_hp_wa as no_hp'
+                )
+                ->get();
+
+            foreach ($mahasiswa as $m) {
+                $m->bimbingan_count = DB::table('bimbingan_tbl')
+                    ->where('id_kelas', $id)
+                    ->where('username_mahasiswa', $m->nim)
+                    ->where('tipe', 'kpm')
+                    ->where('status', 'approved')
+                    ->count();
+                $m->total_bimbingan = DB::table('bimbingan_tbl')
+                    ->where('id_kelas', $id)
+                    ->where('username_mahasiswa', $m->nim)
+                    ->where('tipe', 'kpm')
+                    ->count();
+            }
+
+            $tasks = DB::table('task')->orderBy('created_at', 'desc')->get();
+            foreach ($tasks as $task) {
+                $submissions = DB::table('task_submission as ts')
+                    ->join('users as u', 'ts.username_mahasiswa', '=', 'u.username')
+                    ->leftJoin('mahasiswa_tbl as m', 'u.username', '=', 'm.nim')
+                    ->leftJoin('prodi_tbl as p', 'm.id_prodi', '=', 'p.id')
+                    ->where('ts.id_kelas', $id)
+                    ->where('ts.id_tugas', $task->id)
+                    ->select(
+                        'ts.*',
+                        'u.name as nama_mahasiswa',
+                        'p.name as prodi'
+                    )
+                    ->get();
+                $task->submissions = $submissions;
+                $task->submitted_count = $submissions->count();
+            }
+
+            $subDistrict = $kelas->sub_district ?? ($kelas->id_desa ? DB::table('master_desa_tbl')->where('id', $kelas->id_desa)->value('sub_district') : null);
+            $keuchik = DB::table('ampraham_kpm_tbl')
+                ->where('id_kecamatan', $subDistrict)
+                ->where(function($q) use ($kelas) {
+                    $q->where('id_desa', $kelas->id_desa)
+                      ->orWhere('desa', 'like', '%' . ($kelas->name ?? '') . '%');
+                })
+                ->first();
+
+            $camat = DB::table('ampraham_kpm_tbl')
+                ->where('id_kecamatan', $subDistrict)
+                ->where('jabatan', 'like', '%Camat%')
+                ->first();
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'kelas' => $kelas,
+                    'mahasiswa' => $mahasiswa,
+                    'tasks' => $tasks,
+                    'keuchik' => $keuchik,
+                    'camat' => $camat
+                ]
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
     public function camat_keuchik_save(Request $request)
     {
 

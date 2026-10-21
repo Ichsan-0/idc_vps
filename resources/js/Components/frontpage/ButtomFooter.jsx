@@ -1,5 +1,6 @@
 import { Link } from "@inertiajs/react";
 import { Twitter, Instagram, MapPin, Mail, Globe, Facebook } from "lucide-react";
+import DeveloperCredit from "@/Components/DeveloperCredit";
 
 const socialMedia = [
     { 
@@ -197,9 +198,10 @@ const Footer = () => {
                         <p className="mt-1 text-xs lg:text-sm">
                             Jl. Syaikh Abdul Rauf, Kopelma Darussalam, Kec. Syiah Kuala, Kota Banda Aceh
                         </p>
-                        <p className="mt-1 text-xs text-gray-400">
-                            Developed by : <span className="font-semibold text-gray-200">Muhammad Ichsan, S.Kom</span>, FTK UIN Ar-Raniry Banda Aceh
-                        </p>
+                        <DeveloperCredit
+                            variant="dark"
+                            className="mt-2 text-xs"
+                        />
                     </div>
                     
                     <div className="flex gap-6 text-sm text-gray-400">

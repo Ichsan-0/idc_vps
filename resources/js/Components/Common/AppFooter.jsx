@@ -1,4 +1,5 @@
 import React from "react";
+import DeveloperCredit from "@/Components/DeveloperCredit";
 
 const AppFooter = ({ className = "" }) => {
     return (
@@ -9,13 +10,10 @@ const AppFooter = ({ className = "" }) => {
                 <p className="font-normal text-gray-500 dark:text-gray-400">
                     © {new Date().getFullYear()} IDC • FTK UIN Ar-Raniry Banda Aceh
                 </p>
-                <p className="text-gray-600 dark:text-gray-300 text-center sm:text-right">
-                    Developed by :{" "}
-                    <span className="font-semibold text-brand-600 dark:text-brand-400">
-                        Muhammad Ichsan, S.Kom
-                    </span>
-                    , FTK UIN Ar-Raniry Banda Aceh
-                </p>
+                <DeveloperCredit
+                    variant="light"
+                    className="text-center sm:text-right"
+                />
             </div>
         </footer>
     );

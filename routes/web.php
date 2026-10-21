@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AccountSettingsController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\AdminKecamatanController;
 use App\Http\Controllers\Admin\AdminSekolahController;
@@ -313,9 +314,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    Route::get('/pengaturan-akun', [AccountSettingsController::class, 'edit'])->name('account.settings');
+    Route::patch('/pengaturan-akun', [AccountSettingsController::class, 'update'])->name('account.settings.update');
 });
 
 
 
 require __DIR__ . '/auth.php';
 require __DIR__ . '/super_admin.php';
+  

@@ -17,6 +17,7 @@ import {
     User,
     MapPinHouse,
     Menu as MenuIcon,
+    Settings,
     LogOut
 } from "lucide-react";
 
@@ -118,6 +119,16 @@ const Header = () => {
     const isSupervisor = hasUser && role === "supervisor";
     const isOptKecamatan = hasUser && role === "opt-kecamatan";
     const isOptSekolah = hasUser && role === "opt-sekolah";
+    const canManageAccount = ["supervisor", "supervisor_kpm", "opt-sekolah", "opt-kecamatan"].includes(role);
+    const roleLabel = isOptKecamatan
+        ? "Admin Kecamatan"
+        : isOptSekolah
+        ? "Admin Sekolah"
+        : isSupervisorKPM
+        ? "Dosen Supervisor"
+        : isSupervisor
+        ? "Supervisor PPL"
+        : "Mahasiswa";
     const pathname = url ? new URL(url, window.location.origin).pathname : "";
 
     // Cek apakah mahasiswa sudah memiliki data lokasi KPM atau PPL
@@ -291,22 +302,41 @@ const Header = () => {
                         </nav>
                         
                         {/* User Info Badge */}
-                        <div className="hidden sm:flex flex-col text-right mr-1">
-                            <span className="text-white text-xs font-semibold leading-tight max-w-[170px] truncate">
-                                {props.auth?.user?.name}
-                            </span>
-                            <span className="text-emerald-300 text-[10px] font-medium tracking-wider uppercase">
-                                {isOptKecamatan
-                                    ? "Admin Kecamatan"
-                                    : isOptSekolah
-                                    ? "Admin Sekolah"
-                                    : isSupervisorKPM
-                                    ? "Dosen Supervisor"
-                                    : isSupervisor
-                                    ? "Supervisor PPL"
-                                    : "Mahasiswa"}
-                            </span>
-                        </div>
+                        {canManageAccount ? (
+                            <Link
+                                href="/pengaturan-akun"
+                                title="Pengaturan Akun"
+                                className="hidden sm:flex flex-col text-right mr-1 rounded-xl px-2 py-1 transition-colors hover:bg-white/10 group"
+                            >
+                                <span className="flex items-center justify-end gap-1.5 text-white text-xs font-semibold leading-tight max-w-[170px] truncate">
+                                    {props.auth?.user?.name}
+                                    <Settings className="w-3.5 h-3.5 text-white/70 group-hover:text-white transition-colors" />
+                                </span>
+                                <span className="text-emerald-300 text-[10px] font-medium tracking-wider uppercase">
+                                    {roleLabel}
+                                </span>
+                            </Link>
+                        ) : (
+                            <div className="hidden sm:flex flex-col text-right mr-1">
+                                <span className="text-white text-xs font-semibold leading-tight max-w-[170px] truncate">
+                                    {props.auth?.user?.name}
+                                </span>
+                                <span className="text-emerald-300 text-[10px] font-medium tracking-wider uppercase">
+                                    {roleLabel}
+                                </span>
+                            </div>
+                        )}
+
+                        {/* Pengaturan Akun (mobile) */}
+                        {canManageAccount && (
+                            <button
+                                onClick={() => router.get("/pengaturan-akun")}
+                                title="Pengaturan Akun"
+                                className="flex sm:hidden items-center justify-center rounded-xl p-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+                            >
+                                <Settings className="w-4 h-4" />
+                            </button>
+                        )}
 
                         {/* Logout Button */}
                         <button

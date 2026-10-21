@@ -31,35 +31,59 @@ class ClassroomPPLController extends Controller
 
     public function list_mahasiswa(Request $request)
     {
+        $request->validate([
+            'id_sekolah' => 'required',
+        ], [
+            'id_sekolah.required' => 'Kelas PPL wajib dipilih.',
+        ]);
 
         try {
-            $data = LamaranPPL::join('lowongan_ppl_tbl as l_ppl', 'lamaran_ppl_tbl.id_lowongan_ppl', '=', 'l_ppl.id')
+            $query = LamaranPPL::join('lowongan_ppl_tbl as l_ppl', 'lamaran_ppl_tbl.id_lowongan_ppl', '=', 'l_ppl.id')
                 ->join('users as us', 'lamaran_ppl_tbl.username_mahasiswa', '=', 'us.username')
                 ->join('mahasiswa_tbl as m_tbl', 'lamaran_ppl_tbl.username_mahasiswa', '=', 'm_tbl.nim')
                 ->join('prodi_tbl as p_tbl', 'm_tbl.id_prodi', '=', 'p_tbl.id')
                 ->join('sekolah_tbl as s_tbl', 'l_ppl.id_sekolah', '=', 's_tbl.id')
-                ->selectRaw(
-                    'ROW_NUMBER() OVER (ORDER BY lamaran_ppl_tbl.username_mahasiswa) AS number,
-                    us.name as nama_mahasiswa,
-                    lamaran_ppl_tbl.username_mahasiswa as nim,
-                    p_tbl.name as nama_prodi,
-                    s_tbl.name as nama_sekolah,
-                    m_tbl.nilai_supervisor_ppl,
-                    m_tbl.nilai_pamong,
-                    CASE WHEN m_tbl.nilai_supervisor_ppl IS NULL AND nilai_pamong IS NULL AND link_instrument_penilaian IS NULL THEN "Belum Dinilai" ELSE "Sudah Dinilai" END AS status
-                    '
-                )
                 ->where('lamaran_ppl_tbl.status', 'accepted')
-                ->where('l_ppl.id_sekolah', $request->id_sekolah)
-                ->get();
-            return response()->json(
-                ['success' => true, 'data' => $data]
-            );
+                ->where('l_ppl.id_sekolah', $request->id_sekolah);
+
+            if ($request->filled('search_key')) {
+                $search = $request->input('search_key');
+                $query->where(function ($subQuery) use ($search) {
+                    $subQuery->where('us.name', 'like', "%{$search}%")
+                        ->orWhere('lamaran_ppl_tbl.username_mahasiswa', 'like', "%{$search}%")
+                        ->orWhere('p_tbl.name', 'like', "%{$search}%");
+                });
+            }
+
+            $data = $query->selectRaw(
+                'ROW_NUMBER() OVER (ORDER BY us.name) AS number,
+                us.name as nama_mahasiswa,
+                lamaran_ppl_tbl.username_mahasiswa as nim,
+                p_tbl.name as nama_prodi,
+                s_tbl.name as nama_sekolah,
+                m_tbl.nilai_supervisor_ppl,
+                m_tbl.nilai_pamong,
+                m_tbl.link_instrument_penilaian,
+                (SELECT tps.link FROM task_ppl_submission tps WHERE tps.username_mahasiswa = lamaran_ppl_tbl.username_mahasiswa AND tps.id_kelas = s_tbl.id ORDER BY tps.id DESC LIMIT 1) AS link_laporan,
+                CASE WHEN m_tbl.nilai_supervisor_ppl IS NULL AND m_tbl.nilai_pamong IS NULL AND m_tbl.link_instrument_penilaian IS NULL THEN "Belum Dinilai" ELSE "Sudah Dinilai" END AS status
+                '
+            )->get();
+
+            $data->transform(function ($item) {
+                $item->link_instrument_penilaian = $item->link_instrument_penilaian ?: null;
+                $item->link_laporan = $item->link_laporan ?: null;
+                return $item;
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => $data,
+            ]);
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
-            ]);
+                'message' => $e->getMessage(),
+            ], 500);
         }
     }
 
@@ -92,50 +116,78 @@ class ClassroomPPLController extends Controller
 
     public function updateNilai(Request $request, $nim)
     {
+        $request->validate([
+            'nilai_pamong' => 'required|numeric|min:0|max:100',
+            'nilai_supervisor_ppl' => 'required|numeric|min:0|max:100',
+            'instrument' => 'nullable|file|mimes:pdf|max:500',
+        ], [
+            'nilai_pamong.required' => 'Nilai pamong wajib diisi.',
+            'nilai_pamong.numeric' => 'Nilai pamong harus berupa angka.',
+            'nilai_pamong.min' => 'Nilai pamong minimal 0.',
+            'nilai_pamong.max' => 'Nilai pamong maksimal 100.',
+            'nilai_supervisor_ppl.required' => 'Nilai supervisor wajib diisi.',
+            'nilai_supervisor_ppl.numeric' => 'Nilai supervisor harus berupa angka.',
+            'nilai_supervisor_ppl.min' => 'Nilai supervisor minimal 0.',
+            'nilai_supervisor_ppl.max' => 'Nilai supervisor maksimal 100.',
+            'instrument.mimes' => 'Instrument penilaian harus berformat PDF.',
+            'instrument.max' => 'Ukuran instrument penilaian maksimal 500 KB.',
+        ]);
 
         try {
             DB::beginTransaction();
+
             $mahasiswa = Mahasiswa::where('nim', $nim)->first();
+            if (!$mahasiswa) {
+                throw new Exception('Mahasiswa tidak ditemukan', 404);
+            }
+
             $data = [
                 'nilai_pamong' => $request->nilai_pamong,
-                'nilai_supervisor_ppl' => $request->nilai_supervisor_ppl
+                'nilai_supervisor_ppl' => $request->nilai_supervisor_ppl,
             ];
+
+            if ($request->hasFile('instrument')) {
+                $file = $request->file('instrument');
+                $filename = time() . '_' . $file->getClientOriginalName();
+                $path = $file->storeAs('public/instrument_ppl', $filename);
+                $data['link_instrument_penilaian'] = $path;
+
+                if ($mahasiswa->link_instrument_penilaian) {
+                    Storage::delete($mahasiswa->link_instrument_penilaian);
+                }
+            } elseif (!$mahasiswa->link_instrument_penilaian) {
+                throw new Exception('Instrument penilaian wajib diunggah.', 400);
+            }
+
+            $mahasiswa->update($data);
 
             $submission = TaskPPLSubmission::where('id_kelas', $request->id_kelas)
                 ->where('id_tugas', $request->id_tugas)
                 ->where('username_mahasiswa', $request->username_mahasiswa)
                 ->first();
-            if ($mahasiswa) {
-                if ($request->hasFile('instrument')) {
-                    $file = $request->file('instrument');
-                    $filename = time() . '_' . $file->getClientOriginalName();
-                    $path = $file->storeAs('public/instrument_ppl', $filename);
-                    $data['link_instrument_penilaian'] = $path;
-                    if ($mahasiswa->link_instrument_penilaian) {
-                        Storage::delete($mahasiswa->link_instrument_penilaian);
-                    }
-                    $mahasiswa->update($data);
-                    $submission->update(['status' => 'dinilai']);
-                    DB::commit();
-                    return response()->json([
-                        'success' => true,
-                        'message' => "Berhasil memperbaharui data mahasiswa",
 
-                    ], 200);
-                } else {
-                    throw new Exception('Instrument wajib diunggah', 400);
-                    DB::rollBack();
-                }
-            } else {
-                throw new Exception('Mahasiswa tidak ditemukan', 404);
-                DB::rollBack();
+            if ($submission) {
+                $submission->update(['status' => 'dinilai']);
             }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Berhasil memperbaharui data mahasiswa',
+                'data' => [
+                    'nilai_pamong' => $mahasiswa->nilai_pamong,
+                    'nilai_supervisor_ppl' => $mahasiswa->nilai_supervisor_ppl,
+                    'link_instrument_penilaian' => $mahasiswa->link_instrument_penilaian,
+                ],
+            ], 200);
         } catch (Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
-            ], $e->getCode());
+                'message' => $e->getMessage(),
+            ], $e->getCode() ?: 500);
         }
     }
 

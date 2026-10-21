@@ -1,7 +1,4 @@
 import React from "react";
-
-import Dropdown from "@/Components/Dropdown";
-import { deepOrange } from "@mui/material/colors";
 import {
     Avatar,
     Box,
@@ -11,33 +8,60 @@ import {
     Tooltip,
     Typography,
 } from "@mui/material";
-import { router } from "@inertiajs/react";
+import { deepOrange } from "@mui/material/colors";
+import SettingsIcon from "@mui/icons-material/Settings";
+import LogoutIcon from "@mui/icons-material/Logout";
+import { router, usePage } from "@inertiajs/react";
 
-const settings = ["Profile", "Logout"];
-
-const Header = ({ user }) => {
+const Header = ({ user: propUser }) => {
     const [anchorElUser, setAnchorElUser] = React.useState(null);
+    const pageUser = usePage().props.auth?.user;
+    const user = pageUser || propUser?.user || propUser;
+    const roleLabel = user?.role === "supervisor_kpm" ? "Supervisor KPM" : "Supervisor PPL";
+    const initials = user?.name
+        ? user.name
+              .split(" ")
+              .filter(Boolean)
+              .map((word) => word[0])
+              .slice(0, 2)
+              .join("")
+              .toUpperCase()
+        : "U";
 
     const handleOpenUserMenu = (event) => {
         setAnchorElUser(event.currentTarget);
     };
-    const handleCloseUserMenu = (e, value) => {
+
+    const handleCloseUserMenu = () => {
         setAnchorElUser(null);
-        if (value === 0) {
-        } else if (value === 1) {
-            router.post("/logout");
-        }
     };
 
     return (
         <header className="header flex bg-white py-2 z-[100] w-full sticky top-0 shadow-md px-5">
             <div className="flex-grow"></div>
-            <Box sx={{ flexGrow: 0 }}>
-                <Tooltip title="Open settings">
+            <Box sx={{ flexGrow: 0, display: "flex", alignItems: "center", gap: 1.5 }}>
+                <Box
+                    onClick={handleOpenUserMenu}
+                    sx={{
+                        display: { xs: "none", sm: "block" },
+                        textAlign: "right",
+                        cursor: "pointer",
+                    }}
+                >
+                    <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
+                        {user?.name || "Pengguna"}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                        {roleLabel}
+                    </Typography>
+                </Box>
+
+                <Tooltip title="Pengaturan Akun">
                     <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-                        <Avatar sx={{ bgcolor: deepOrange[500] }}>RU</Avatar>
+                        <Avatar sx={{ bgcolor: deepOrange[500] }}>{initials}</Avatar>
                     </IconButton>
                 </Tooltip>
+
                 <Menu
                     sx={{ mt: "45px" }}
                     id="menu-appbar"
@@ -54,18 +78,24 @@ const Header = ({ user }) => {
                     open={Boolean(anchorElUser)}
                     onClose={handleCloseUserMenu}
                 >
-                    {settings.map((setting, index) => (
-                        <MenuItem
-                            key={setting}
-                            onClick={(e) => {
-                                handleCloseUserMenu(e, index);
-                            }}
-                        >
-                            <Typography textAlign="center">
-                                {setting}
-                            </Typography>
-                        </MenuItem>
-                    ))}
+                    <MenuItem
+                        onClick={() => {
+                            handleCloseUserMenu();
+                            router.get("/pengaturan-akun");
+                        }}
+                    >
+                        <SettingsIcon fontSize="small" sx={{ mr: 1 }} />
+                        <Typography textAlign="center">Pengaturan Akun</Typography>
+                    </MenuItem>
+                    <MenuItem
+                        onClick={() => {
+                            handleCloseUserMenu();
+                            router.post("/logout");
+                        }}
+                    >
+                        <LogoutIcon fontSize="small" sx={{ mr: 1 }} />
+                        <Typography textAlign="center">Logout</Typography>
+                    </MenuItem>
                 </Menu>
             </Box>
         </header>

@@ -136,70 +136,24 @@ const Sidebar = ({
 
                 <ul className="flex flex-col gap-1">
                     {/* 1. Dashboard */}
-                    <SidebarLinkGroup
-                        activeCondition={
-                            pathname === "/" || pathname.includes("dashboard")
-                        }
-                    >
-                        {(handleClick, open) => {
-                            const isGroupActive =
-                                pathname === "/" ||
-                                pathname.includes("dashboard");
-                            return (
-                                <React.Fragment>
-                                    <button
-                                        type="button"
-                                        title="Dashboard"
-                                        onClick={(e) =>
-                                            handleItemClick(e, handleClick)
-                                        }
-                                        className={`group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${sidebarCollapsed
-                                            ? "justify-center"
-                                            : "justify-between"
-                                            } ${isGroupActive
-                                                ? "bg-brand-500/15 text-brand-300 font-semibold border border-brand-500/30"
-                                                : "text-slate-300 hover:bg-slate-800/70 hover:text-white"
-                                            }`}
-                                    >
-                                        <div className="flex items-center gap-3 min-w-0">
-                                            <LuLayoutDashboard className="h-5 w-5 shrink-0 text-slate-400 group-hover:text-white" />
-                                            {!sidebarCollapsed && (
-                                                <span className="truncate">
-                                                    Dashboard
-                                                </span>
-                                            )}
-                                        </div>
-                                        {!sidebarCollapsed && (
-                                            <LuChevronDown
-                                                className={`h-4 w-4 shrink-0 transition-transform duration-200 text-slate-400 ${open ? "rotate-180" : ""
-                                                    }`}
-                                            />
-                                        )}
-                                    </button>
-
-                                    {!sidebarCollapsed && open && (
-                                        <ul className="my-1 ml-4 flex flex-col gap-1 border-l border-slate-800/80 pl-3">
-                                            <li>
-                                                <NavLink
-                                                    href="/admin/dashboard"
-                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${pathname ===
-                                                        "/admin/dashboard" ||
-                                                        pathname.includes(
-                                                            "dashboard"
-                                                        )
-                                                        ? "bg-brand-500/20 text-brand-300 font-semibold"
-                                                        : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                                                        }`}
-                                                >
-                                                    Analytics
-                                                </NavLink>
-                                            </li>
-                                        </ul>
-                                    )}
-                                </React.Fragment>
-                            );
-                        }}
-                    </SidebarLinkGroup>
+                    <li>
+                        <NavLink
+                            href="/admin/dashboard"
+                            title="Dashboard"
+                            className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+                                sidebarCollapsed ? "justify-center" : ""
+                            } ${
+                                pathname.includes("dashboard")
+                                    ? "bg-brand-500/15 text-brand-300 font-semibold border border-brand-500/30"
+                                    : "text-slate-300 hover:bg-slate-800/70 hover:text-white"
+                            }`}
+                        >
+                            <LuLayoutDashboard className="h-5 w-5 shrink-0 text-slate-400 group-hover:text-white" />
+                            {!sidebarCollapsed && (
+                                <span className="truncate">Dashboard</span>
+                            )}
+                        </NavLink>
+                    </li>
 
                     {/* 2. Data */}
                     <SidebarLinkGroup

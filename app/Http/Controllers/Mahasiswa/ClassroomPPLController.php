@@ -11,6 +11,7 @@ use App\Models\TaskPPLSubmission;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class ClassroomPPLController extends Controller
@@ -24,12 +25,88 @@ class ClassroomPPLController extends Controller
             ->where('username_mahasiswa', Auth::user()->username)
             ->where('lamaran_ppl_tbl.status', 'accepted')
             ->first();
+
+        $mahasiswa = Mahasiswa::where('nim', Auth::user()->username)->first();
+        $instrumentPath = $mahasiswa?->link_instrument_penilaian;
+        $instrument = null;
+
+        if ($instrumentPath) {
+            $instrument = [
+                'link' => $instrumentPath,
+                'url' => url('/storage/' . ltrim(preg_replace('/^public\//', '', $instrumentPath), '/')),
+                'nama_file' => preg_replace('/^\d+_/', '', basename($instrumentPath)),
+            ];
+        }
+
         return Inertia::render('Mahasiswa/ClassroomPPL/Home', [
+            'base_url' => url('/'),
             'data' => [
                 'tasks' => $tasks,
                 'data_kelas' => $dataKelas
-            ]
+            ],
+            'instrumen' => $instrument,
         ]);
+    }
+
+    public function uploadInstrument(Request $request)
+    {
+        $request->validate([
+            'instrument' => 'required|file|mimes:pdf|max:2048',
+        ], [
+            'instrument.required' => 'Berkas instrumen wajib dipilih.',
+            'instrument.file' => 'Berkas instrumen tidak valid.',
+            'instrument.mimes' => 'Instrumen penilaian harus berformat PDF.',
+            'instrument.max' => 'Ukuran instrumen penilaian maksimal 2 MB.',
+        ]);
+
+        $user = Auth::user();
+        $mahasiswa = Mahasiswa::where('nim', $user->username)->first();
+
+        if (!$mahasiswa) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data mahasiswa tidak ditemukan.',
+            ], 404);
+        }
+
+        $hasAcceptedPpl = LamaranPPL::where('username_mahasiswa', $user->username)
+            ->where('status', 'accepted')
+            ->exists();
+
+        if (!$hasAcceptedPpl) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda belum terdaftar sebagai peserta PPL.',
+            ], 403);
+        }
+
+        try {
+            $file = $request->file('instrument');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $path = $file->storeAs('public/instrument_ppl', $filename);
+
+            if ($mahasiswa->link_instrument_penilaian) {
+                Storage::delete($mahasiswa->link_instrument_penilaian);
+            }
+
+            $mahasiswa->link_instrument_penilaian = $path;
+            $mahasiswa->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Instrumen penilaian berhasil diunggah dan dapat dilihat oleh dosen supervisor.',
+                'data' => [
+                    'link' => $path,
+                    'url' => url('/storage/' . ltrim(preg_replace('/^public\//', '', $path), '/')),
+                    'nama_file' => $file->getClientOriginalName(),
+                ],
+            ]);
+        } catch (Exception $exception) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengunggah instrumen: ' . $exception->getMessage(),
+            ], 500);
+        }
     }
 
     public function detailTask(Request $request, $id_task)

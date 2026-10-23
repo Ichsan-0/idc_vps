@@ -7,8 +7,9 @@ import { Box, Tabs, Tab } from "@mui/material";
 import { Assignment, CheckCircleOutline } from "@mui/icons-material";
 import MahasiswaBimbinganView from "@/Components/Bimbingan/MahasiswaBimbinganView";
 import TaskInlineItem from "@/Components/Classroom/TaskInlineItem";
+import PplInstrumentUpload from "@/Components/Classroom/PplInstrumentUpload";
 
-const Home = ({ base_url, data }) => {
+const Home = ({ base_url, data, instrumen }) => {
     const { auth } = usePage().props;
     const [loading, setLoading] = useState(false);
     const [activeTab, setActiveTab] = useState("tasks"); // 'tasks' or 'bimbingan'
@@ -43,6 +44,12 @@ const Home = ({ base_url, data }) => {
                         </p>
                     </div>
                 </div>
+
+                {/* Instrumen Penilaian dari Pamong */}
+                <PplInstrumentUpload
+                    baseUrl={base_url}
+                    initialInstrument={instrumen}
+                />
 
                 {/* Tab Navigasi: Tugas PPL vs Bimbingan Supervisor */}
                 <Box sx={{ borderBottom: 1, borderColor: "divider" }}>

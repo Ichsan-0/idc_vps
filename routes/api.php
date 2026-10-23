@@ -353,6 +353,7 @@ Route::middleware(['auth:sanctum', 'role:admin,user,supervisor,supervisor_kpm'])
     Route::get('/classroom-ppl/task', [MahasiswaClassroomPPLController::class, 'getTask']);
     Route::get('/student/classroom-ppl/task/submission', [MahasiswaClassroomPPLController::class, 'getSubmission']);
     Route::post('/student/classroom-ppl/task/submission/create', [MahasiswaClassroomPPLController::class, 'createSubmission']);
+    Route::post('/student/classroom-ppl/instrument', [MahasiswaClassroomPPLController::class, 'uploadInstrument']);
     Route::post('/student/classroom-ppl/task/comment', [MahasiswaClassroomPPLController::class, 'createComment']);
     Route::get('/student/classroom-ppl/task/comment', [MahasiswaClassroomPPLController::class, 'getPrivateComment']);
 });

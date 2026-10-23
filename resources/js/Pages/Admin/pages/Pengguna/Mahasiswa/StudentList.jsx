@@ -1,4 +1,3 @@
-import TempatKPMTable from "@/Components/AdminNew/Tables/TempatKPMTable";
 import StudentListTable from "@/Components/AdminNew/Tables/Users/StudentListTable";
 import Card from "@/Components/Card";
 import PageBreadcrumb from "@/Components/PageBreadcrumb";

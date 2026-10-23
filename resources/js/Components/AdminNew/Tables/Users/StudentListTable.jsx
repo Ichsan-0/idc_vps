@@ -10,6 +10,7 @@ import axios from "axios";
 import React from "react";
 import { useEffect } from "react";
 import { useState } from "react";
+import { useRef } from "react";
 import { PiSortAscending, PiSortDescending } from "react-icons/pi";
 import { FaRegTrashCan } from "react-icons/fa6";
 import { TfiPencil } from "react-icons/tfi";
@@ -36,6 +37,7 @@ const StudentListTable = () => {
     const [validationError, setValidationError] = useState(null);
     const [searchKey, setSearchKey] = useState(null);
     const [searchInput, setSearchInput] = useState(null);
+    const searchTimer = useRef(null);
     const [selectedData, setSelectedData] = useState(null);
     const [statusFilter, setStatusFilter] = useState("");
 
@@ -230,11 +232,11 @@ const StudentListTable = () => {
                     response.data?.data[response.data?.data.length - 1];
                 setSelectedGelombangData(gelombang);
                 setFormData({ ...formData, id_gelombang: gelombang.id });
+            } else {
+                setLoading(false);
             }
         } catch (error) {
             setLoading(false);
-        } finally {
-            getData();
         }
     };
     
@@ -258,12 +260,26 @@ const StudentListTable = () => {
     }, []);
 
     const handleSearchChange = (e) => {
-        setSearchInput(e.target.value);
-        setTimeout(() => {
-            setSearchKey(e.target.value);
-            console.log("search");
-        }, 2500);
+        const value = e.target.value;
+        setSearchInput(value);
+
+        if (searchTimer.current) {
+            clearTimeout(searchTimer.current);
+        }
+
+        searchTimer.current = setTimeout(() => {
+            setSearchKey(value);
+            setCurrentPage(1);
+        }, 400);
     };
+
+    useEffect(() => {
+        return () => {
+            if (searchTimer.current) {
+                clearTimeout(searchTimer.current);
+            }
+        };
+    }, []);
     
     const handleStatusFilterChange = (e) => {
         setStatusFilter(e.target.value);

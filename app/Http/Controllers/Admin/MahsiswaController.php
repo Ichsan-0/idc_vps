@@ -24,13 +24,9 @@ class MahsiswaController extends Controller
 {
     public function index(Request $request)
     {
-        $daftarmahasiswa = Mahasiswa::join('users', 'users.username', '=', 'mahasiswa_tbl.nim')
-            ->leftjoin('prodi_tbl', 'prodi_tbl.id', '=', 'mahasiswa_tbl.id_prodi')
-            ->select('users.name', 'prodi_tbl.name as nama_prodi', 'mahasiswa_tbl.*')
-            ->orderBy('mahasiswa_tbl.status', 'desc')
-            ->get();
-
-        return Inertia::render('Admin/pages/Pengguna/Mahasiswa/StudentList', ['daftarmahasiswa' => $daftarmahasiswa]);
+        // Data mahasiswa dimuat oleh tabel melalui API terpisah.
+        // Jangan memuat seluruh mahasiswa di sini karena payload-nya besar.
+        return Inertia::render('Admin/pages/Pengguna/Mahasiswa/StudentList');
     }
 
     public function updateStatus(Request $request, $id)

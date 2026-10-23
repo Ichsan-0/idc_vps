@@ -23,11 +23,23 @@ class ClassroomController extends Controller
 
     public function tugas_add()
     {
+        if (!auth()->user()?->is_superadmin) {
+            return redirect('/admin/classroom-kpm/tugas')->with('message', [
+                'error' => 'Hanya Super Admin yang dapat menambah tugas KPM.',
+            ]);
+        }
+
         return Inertia::render('Admin/pages/ClassroomKPM/Tugas/Add', ['base_url' => url('/')]);
     }
 
     public function tugas_edit($id)
     {
+        if (!auth()->user()?->is_superadmin) {
+            return redirect('/admin/classroom-kpm/tugas')->with('message', [
+                'error' => 'Hanya Super Admin yang dapat mengubah tugas KPM.',
+            ]);
+        }
+
         return Inertia::render('Admin/pages/ClassroomKPM/Tugas/Edit', [
             'id' => $id,
             'base_url' => url('/')

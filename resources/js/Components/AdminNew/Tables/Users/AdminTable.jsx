@@ -29,6 +29,7 @@ const AdminTable = ({ base_url }) => {
     const apiBase = base_url || config.base_url || window.location.origin;
     const { auth } = usePage().props;
     const currentUserId = auth?.user?.id;
+    const isSuperAdmin = !!auth?.user?.is_superadmin;
 
     // Table data states
     const [loading, setLoading] = useState(false);
@@ -505,15 +506,21 @@ const AdminTable = ({ base_url }) => {
 
                 {/* Actions: Tambah Admin */}
                 <div className="flex flex-wrap items-center gap-2 shrink-0">
-                    <Button
-                        size="sm"
-                        variant="primary"
-                        onClick={handleOpenAdd}
-                        startIcon={<PlusIcon className="h-4 w-4" />}
-                        className="!bg-emerald-600 hover:!bg-emerald-700 shadow-xs !py-2 !px-3.5 text-xs sm:text-sm whitespace-nowrap shrink-0"
-                    >
-                        Tambah Admin
-                    </Button>
+                    {isSuperAdmin ? (
+                        <Button
+                            size="sm"
+                            variant="primary"
+                            onClick={handleOpenAdd}
+                            startIcon={<PlusIcon className="h-4 w-4" />}
+                            className="!bg-emerald-600 hover:!bg-emerald-700 shadow-xs !py-2 !px-3.5 text-xs sm:text-sm whitespace-nowrap shrink-0"
+                        >
+                            Tambah Admin
+                        </Button>
+                    ) : (
+                        <span className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-medium text-amber-700">
+                            Hanya Super Admin yang dapat menambahkan admin baru.
+                        </span>
+                    )}
                 </div>
             </div>
 
@@ -577,6 +584,8 @@ const AdminTable = ({ base_url }) => {
                                     const isCurrentLoggedIn =
                                         currentUserId &&
                                         item.id === currentUserId;
+                                    const canManageThisRow =
+                                        isSuperAdmin || !item.is_superadmin;
 
                                     return (
                                         <tr
@@ -619,48 +628,65 @@ const AdminTable = ({ base_url }) => {
                                             <td className="px-4 py-3.5 text-center">
                                                 <Badge
                                                     variant="light"
-                                                    color="primary"
+                                                    color={
+                                                        item.is_superadmin
+                                                            ? "warning"
+                                                            : "primary"
+                                                    }
                                                     size="sm"
                                                 >
-                                                    Admin
+                                                    {item.is_superadmin
+                                                        ? "Super Admin"
+                                                        : "Admin"}
                                                 </Badge>
                                             </td>
                                             <td className="px-4 py-3.5 text-center">
-                                                <div className="flex items-center justify-center gap-1.5">
-                                                    <button
-                                                        type="button"
-                                                        title="Edit Data / Reset Password"
-                                                        onClick={() =>
-                                                            handleOpenEdit(item)
-                                                        }
-                                                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-600 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-blue-400"
+                                                {canManageThisRow ? (
+                                                    <div className="flex items-center justify-center gap-1.5">
+                                                        <button
+                                                            type="button"
+                                                            title="Edit Data / Reset Password"
+                                                            onClick={() =>
+                                                                handleOpenEdit(
+                                                                    item
+                                                                )
+                                                            }
+                                                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-600 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-blue-400"
+                                                        >
+                                                            <TfiPencil className="h-3.5 w-3.5" />
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            title={
+                                                                isCurrentLoggedIn
+                                                                    ? "Akun Anda saat ini (tidak dapat dihapus)"
+                                                                    : "Hapus Admin"
+                                                            }
+                                                            disabled={
+                                                                isCurrentLoggedIn
+                                                            }
+                                                            onClick={() =>
+                                                                handleOpenDelete(
+                                                                    item
+                                                                )
+                                                            }
+                                                            className={`flex h-8 w-8 items-center justify-center rounded-lg border transition ${
+                                                                isCurrentLoggedIn
+                                                                    ? "cursor-not-allowed opacity-40 border-gray-200 text-gray-400"
+                                                                    : "border-gray-200 text-gray-600 hover:border-red-300 hover:bg-red-50 hover:text-red-600 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-red-400"
+                                                            }`}
+                                                        >
+                                                            <FaRegTrashCan className="h-3.5 w-3.5" />
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <span
+                                                        title="Hanya Super Admin yang dapat mengelola akun Super Admin."
+                                                        className="text-xs text-gray-400"
                                                     >
-                                                        <TfiPencil className="h-3.5 w-3.5" />
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        title={
-                                                            isCurrentLoggedIn
-                                                                ? "Akun Anda saat ini (tidak dapat dihapus)"
-                                                                : "Hapus Admin"
-                                                        }
-                                                        disabled={
-                                                            isCurrentLoggedIn
-                                                        }
-                                                        onClick={() =>
-                                                            handleOpenDelete(
-                                                                item
-                                                            )
-                                                        }
-                                                        className={`flex h-8 w-8 items-center justify-center rounded-lg border transition ${
-                                                            isCurrentLoggedIn
-                                                                ? "cursor-not-allowed opacity-40 border-gray-200 text-gray-400"
-                                                                : "border-gray-200 text-gray-600 hover:border-red-300 hover:bg-red-50 hover:text-red-600 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-red-400"
-                                                        }`}
-                                                    >
-                                                        <FaRegTrashCan className="h-3.5 w-3.5" />
-                                                    </button>
-                                                </div>
+                                                        —
+                                                    </span>
+                                                )}
                                             </td>
                                         </tr>
                                     );

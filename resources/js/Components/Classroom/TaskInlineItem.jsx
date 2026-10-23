@@ -25,6 +25,8 @@ import {
     ChatBubbleOutline,
     Edit,
     Undo,
+    UploadFile,
+    InsertDriveFile,
 } from "@mui/icons-material";
 import { ThreeDot } from "react-loading-indicators";
 
@@ -40,9 +42,24 @@ const TaskInlineItem = ({
     const [submission, setSubmission] = useState(null);
     const [loadingSubmission, setLoadingSubmission] = useState(false);
     const [linkInput, setLinkInput] = useState("");
+    const [fileInput, setFileInput] = useState(null);
+    const [fileError, setFileError] = useState(null);
     const [isEditingLink, setIsEditingLink] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [alertMessage, setAlertMessage] = useState(null); // { type: 'success' | 'error', text: '' }
+
+    const isFileTask =
+        tipe === "kpm" &&
+        String(task?.tipe || "").toLowerCase() === "file";
+
+    const submissionFileName = submission?.link
+        ? decodeURIComponent(
+              String(submission.link)
+                  .split("/")
+                  .pop()
+                  .replace(/^\d+_/, "")
+          )
+        : null;
 
     // Private Comments
     const [showComments, setShowComments] = useState(false);
@@ -138,21 +155,33 @@ const TaskInlineItem = ({
         }
     }, [showComments, isExpanded]);
 
-    // Handle Submit / Update Link
-    const handleSubmitLink = async (e) => {
+    // Handle Submit / Update Link or File
+    const handleSubmitTask = async (e) => {
         e.preventDefault();
         setAlertMessage(null);
+        setFileError(null);
 
         let finalLink = linkInput.trim();
-        if (!finalLink) {
-            setAlertMessage({ type: "error", text: "Tautan / link tugas tidak boleh kosong." });
-            return;
-        }
 
-        // Add https:// if user didn't specify protocol
-        if (!/^https?:\/\//i.test(finalLink)) {
-            finalLink = `https://${finalLink}`;
-            setLinkInput(finalLink);
+        if (isFileTask) {
+            if (!fileInput) {
+                setAlertMessage({
+                    type: "error",
+                    text: "Pilih berkas tugas yang akan diunggah.",
+                });
+                return;
+            }
+        } else {
+            if (!finalLink) {
+                setAlertMessage({ type: "error", text: "Tautan / link tugas tidak boleh kosong." });
+                return;
+            }
+
+            // Add https:// if user didn't specify protocol
+            if (!/^https?:\/\//i.test(finalLink)) {
+                finalLink = `https://${finalLink}`;
+                setLinkInput(finalLink);
+            }
         }
 
         setSubmitting(true);
@@ -162,8 +191,8 @@ const TaskInlineItem = ({
                 payload.append("id_kelas", idKelas);
                 payload.append("id_tugas", task.id);
                 payload.append("status", "diserahkan");
-                payload.append("link", finalLink);
                 payload.append("username_mahasiswa", usernameMahasiswa);
+                payload.append("link", isFileTask ? fileInput : finalLink);
 
                 const endpoint = submission?.id
                     ? `${baseUrl}/api/student/classroom/submission/update`
@@ -183,18 +212,45 @@ const TaskInlineItem = ({
 
             setAlertMessage({
                 type: "success",
-                text: "Tautan tugas berhasil disimpan dan diserahkan ke dosen supervisor!",
+                text: isFileTask
+                    ? "Berkas tugas berhasil diunggah dan diserahkan ke dosen supervisor!"
+                    : "Tautan tugas berhasil disimpan dan diserahkan ke dosen supervisor!",
             });
             setIsEditingLink(false);
+            setFileInput(null);
             fetchSubmission();
         } catch (err) {
             setAlertMessage({
                 type: "error",
-                text: err?.response?.data?.message || "Gagal menyimpan tautan tugas. Silakan coba lagi.",
+                text:
+                    err?.response?.data?.message ||
+                    (isFileTask
+                        ? "Gagal mengunggah berkas tugas. Silakan coba lagi."
+                        : "Gagal menyimpan tautan tugas. Silakan coba lagi."),
             });
         } finally {
             setSubmitting(false);
         }
+    };
+
+    const handleFileChange = (event) => {
+        const file = event.target.files?.[0] || null;
+
+        setFileError(null);
+
+        if (!file) {
+            setFileInput(null);
+            return;
+        }
+
+        if (file.size > 10 * 1024 * 1024) {
+            setFileError("Ukuran berkas maksimal 10 MB.");
+            setFileInput(null);
+            event.target.value = "";
+            return;
+        }
+
+        setFileInput(file);
     };
 
     // Handle Cancel Submission (Batal Serahkan)
@@ -224,10 +280,14 @@ const TaskInlineItem = ({
 
             setAlertMessage({
                 type: "success",
-                text: "Penyerahan tugas dibatalkan. Anda dapat menempelkan link baru.",
+                text: isFileTask
+                    ? "Penyerahan tugas dibatalkan. Anda dapat mengunggah berkas baru."
+                    : "Penyerahan tugas dibatalkan. Anda dapat menempelkan link baru.",
             });
             setIsEditingLink(true);
             setLinkInput("");
+            setFileInput(null);
+            setFileError(null);
             fetchSubmission();
         } catch (err) {
             setAlertMessage({
@@ -464,7 +524,9 @@ const TaskInlineItem = ({
                                                     Tugas Sudah Diserahkan
                                                 </Typography>
                                                 <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                                                    Tautan tugas Anda sudah tersimpan dan dapat diakses oleh dosen supervisor.
+                                                    {isFileTask
+                                                        ? "Berkas tugas Anda sudah tersimpan dan dapat diakses oleh dosen supervisor."
+                                                        : "Tautan tugas Anda sudah tersimpan dan dapat diakses oleh dosen supervisor."}
                                                 </Typography>
                                             </div>
                                         </div>
@@ -492,9 +554,15 @@ const TaskInlineItem = ({
                                         }}
                                     >
                                         <div className="flex items-center gap-2 min-w-0 flex-1">
-                                            <LinkIcon sx={{ color: "#06359f", fontSize: 20, shrink: 0 }} />
-                                            <span className="font-mono text-sm text-slate-700 truncate select-all">
-                                                {rawLink}
+                                            {isFileTask ? (
+                                                <InsertDriveFile sx={{ color: "#06359f", fontSize: 20, shrink: 0 }} />
+                                            ) : (
+                                                <LinkIcon sx={{ color: "#06359f", fontSize: 20, shrink: 0 }} />
+                                            )}
+                                            <span className={`${isFileTask ? "" : "font-mono"} text-sm text-slate-700 truncate select-all`}>
+                                                {isFileTask
+                                                    ? submissionFileName || rawLink
+                                                    : rawLink}
                                             </span>
                                         </div>
                                         {finalOpenUrl && (
@@ -514,7 +582,7 @@ const TaskInlineItem = ({
                                                     shrink: 0,
                                                 }}
                                             >
-                                                Buka Tautan
+                                                Buka {isFileTask ? "Berkas" : "Tautan"}
                                             </Button>
                                         )}
                                     </Box>
@@ -525,7 +593,11 @@ const TaskInlineItem = ({
                                             size="small"
                                             variant="outlined"
                                             color="inherit"
-                                            onClick={() => setIsEditingLink(true)}
+                                            onClick={() => {
+                                                setIsEditingLink(true);
+                                                setFileInput(null);
+                                                setFileError(null);
+                                            }}
                                             startIcon={<Edit sx={{ fontSize: 16 }} />}
                                             sx={{
                                                 borderRadius: 2,
@@ -535,7 +607,7 @@ const TaskInlineItem = ({
                                                 color: "#334155",
                                             }}
                                         >
-                                            Ubah Tautan
+                                            {isFileTask ? "Ganti Berkas" : "Ubah Tautan"}
                                         </Button>
                                         <Button
                                             size="small"
@@ -552,9 +624,9 @@ const TaskInlineItem = ({
                                 </Box>
                             ) : null}
 
-                            {/* Link Submission Input Form (Shown if not submitted, or when user clicks 'Ubah Tautan') */}
+                            {/* Submission Input Form (link or file depending on task type) */}
                             {(!isSubmitted || isEditingLink) && !isGraded && (
-                                <form onSubmit={handleSubmitLink} className="flex flex-col gap-y-3">
+                                <form onSubmit={handleSubmitTask} className="flex flex-col gap-y-3">
                                     <Box
                                         sx={{
                                             p: 2.5,
@@ -565,31 +637,85 @@ const TaskInlineItem = ({
                                         }}
                                     >
                                         <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "#1e293b", mb: 0.5 }}>
-                                            {isEditingLink ? "Perbarui Tautan Tugas" : "Tempelkan Link Tugas"}
+                                            {isFileTask
+                                                ? isEditingLink
+                                                    ? "Perbarui Berkas Tugas"
+                                                    : "Unggah Berkas Tugas"
+                                                : isEditingLink
+                                                ? "Perbarui Tautan Tugas"
+                                                : "Tempelkan Link Tugas"}
                                         </Typography>
                                         <Typography variant="body2" sx={{ color: "#64748b", mb: 2 }}>
-                                            Tempelkan link tugas Anda (misal: tautan Google Drive, YouTube, atau dokumen daring).
-                                            Pastikan izin tautan disetel agar dapat dibuka oleh dosen supervisor.
+                                            {isFileTask
+                                                ? "Unggah berkas tugas Anda (PDF, dokumen, spreadsheet, presentasi, atau arsip). Pastikan berkas dapat dibuka oleh dosen supervisor."
+                                                : "Tempelkan link tugas Anda (misal: tautan Google Drive, YouTube, atau dokumen daring). Pastikan izin tautan disetel agar dapat dibuka oleh dosen supervisor."}
                                         </Typography>
 
-                                        <TextField
-                                            fullWidth
-                                            size="small"
-                                            label="Link / URL Tugas"
-                                            placeholder="https://drive.google.com/... atau tautan berkas tugas Anda"
-                                            value={linkInput}
-                                            onChange={(e) => setLinkInput(e.target.value)}
-                                            required
-                                            disabled={submitting}
-                                            InputProps={{
-                                                startAdornment: (
-                                                    <InputAdornment position="start">
-                                                        <LinkIcon sx={{ color: "#06359f", fontSize: 20 }} />
-                                                    </InputAdornment>
-                                                ),
-                                            }}
-                                            helperText="Contoh: https://drive.google.com/file/d/... atau https://youtu.be/..."
-                                        />
+                                        {isFileTask ? (
+                                            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
+                                                <input
+                                                    id={`task-file-${task.id}`}
+                                                    type="file"
+                                                    onChange={handleFileChange}
+                                                    disabled={submitting}
+                                                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar,.jpg,.jpeg,.png"
+                                                    className="sr-only"
+                                                />
+                                                <label
+                                                    htmlFor={`task-file-${task.id}`}
+                                                    className={`flex cursor-pointer items-center gap-3 rounded-xl border-2 border-dashed px-4 py-3.5 transition ${
+                                                        fileError
+                                                            ? "border-rose-300 bg-rose-50/40"
+                                                            : "border-slate-300 bg-slate-50/60 hover:border-[#06359f] hover:bg-blue-50/40"
+                                                    }`}
+                                                >
+                                                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-[#06359f] shadow-sm">
+                                                        <UploadFile sx={{ fontSize: 22 }} />
+                                                    </span>
+                                                    <span className="min-w-0 flex-1">
+                                                        <span className="block truncate text-sm font-semibold text-slate-700">
+                                                            {fileInput
+                                                                ? fileInput.name
+                                                                : "Pilih berkas tugas"}
+                                                        </span>
+                                                        <span className="mt-0.5 block text-[11px] text-slate-400">
+                                                            {fileInput
+                                                                ? `${(fileInput.size / 1024 / 1024).toFixed(2)} MB`
+                                                                : "PDF, DOC, XLS, PPT, ZIP, atau gambar · maks. 10 MB"}
+                                                        </span>
+                                                    </span>
+                                                </label>
+                                                {fileError && (
+                                                    <p className="text-xs font-medium text-rose-600">
+                                                        {fileError}
+                                                    </p>
+                                                )}
+                                                {isEditingLink && submissionFileName && !fileInput && (
+                                                    <p className="text-[11px] text-slate-400">
+                                                        Berkas saat ini: {submissionFileName}
+                                                    </p>
+                                                )}
+                                            </Box>
+                                        ) : (
+                                            <TextField
+                                                fullWidth
+                                                size="small"
+                                                label="Link / URL Tugas"
+                                                placeholder="https://drive.google.com/... atau tautan berkas tugas Anda"
+                                                value={linkInput}
+                                                onChange={(e) => setLinkInput(e.target.value)}
+                                                required
+                                                disabled={submitting}
+                                                InputProps={{
+                                                    startAdornment: (
+                                                        <InputAdornment position="start">
+                                                            <LinkIcon sx={{ color: "#06359f", fontSize: 20 }} />
+                                                        </InputAdornment>
+                                                    ),
+                                                }}
+                                                helperText="Contoh: https://drive.google.com/file/d/... atau https://youtu.be/..."
+                                            />
+                                        )}
 
                                         <div className="flex items-center justify-end gap-2 mt-3 pt-2">
                                             {isEditingLink && (
@@ -600,6 +726,8 @@ const TaskInlineItem = ({
                                                     onClick={() => {
                                                         setIsEditingLink(false);
                                                         setLinkInput(submission?.link || "");
+                                                        setFileInput(null);
+                                                        setFileError(null);
                                                     }}
                                                     disabled={submitting}
                                                     sx={{ textTransform: "none", fontWeight: 600 }}
@@ -611,7 +739,12 @@ const TaskInlineItem = ({
                                                 type="submit"
                                                 variant="contained"
                                                 size="small"
-                                                disabled={submitting || !linkInput.trim()}
+                                                disabled={
+                                                    submitting ||
+                                                    (isFileTask
+                                                        ? !fileInput
+                                                        : !linkInput.trim())
+                                                }
                                                 sx={{
                                                     borderRadius: 2,
                                                     textTransform: "none",
@@ -624,7 +757,11 @@ const TaskInlineItem = ({
                                                 {submitting
                                                     ? "Menyimpan..."
                                                     : isEditingLink
-                                                    ? "Simpan Perubahan Link"
+                                                    ? isFileTask
+                                                        ? "Simpan Berkas Baru"
+                                                        : "Simpan Perubahan Link"
+                                                    : isFileTask
+                                                    ? "Unggah & Serahkan Tugas"
                                                     : "Serahkan Tugas"}
                                             </Button>
                                         </div>

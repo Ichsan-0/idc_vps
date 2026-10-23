@@ -417,13 +417,15 @@ const Sidebar = ({
                     <SidebarLinkGroup
                         activeCondition={
                             pathname.includes("classroom-kpm") ||
-                            pathname.includes("classroom-ppl")
+                            pathname.includes("classroom-ppl") ||
+                            pathname.includes("/admin/classroom/bimbingan")
                         }
                     >
                         {(handleClick, open) => {
                             const isGroupActive =
                                 pathname.includes("classroom-kpm") ||
-                                pathname.includes("classroom-ppl");
+                                pathname.includes("classroom-ppl") ||
+                                pathname.includes("/admin/classroom/bimbingan");
                             return (
                                 <React.Fragment>
                                     <button
@@ -495,6 +497,19 @@ const Sidebar = ({
                                                         }`}
                                                 >
                                                     Nilai PPL
+                                                </NavLink>
+                                            </li>
+                                            <li>
+                                                <NavLink
+                                                    href="/admin/classroom/bimbingan"
+                                                    className={`block rounded-lg px-3 py-2 text-xs font-medium transition-colors ${pathname.includes(
+                                                        "/admin/classroom/bimbingan"
+                                                    )
+                                                        ? "bg-brand-500/20 text-brand-300 font-semibold"
+                                                        : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                                                        }`}
+                                                >
+                                                    Rekap Bimbingan
                                                 </NavLink>
                                             </li>
                                         </ul>

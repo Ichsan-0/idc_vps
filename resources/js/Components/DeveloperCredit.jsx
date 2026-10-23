@@ -16,7 +16,7 @@ const DeveloperCredit = ({ variant = "light", className = "" }) => {
 
     return (
         <p className={`${baseText} ${className}`}>
-            Dikembangkan oleh{" "}
+            Developed by{" "}
             <a
                 href={EMAIL_HREF}
                 title="Kirim email"

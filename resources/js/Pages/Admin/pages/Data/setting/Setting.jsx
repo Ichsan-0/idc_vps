@@ -1,679 +1,452 @@
-import React, { useState, useEffect } from "react";
-import {
-    Box,
-    Card,
-    CardContent,
-    Typography,
-    Switch,
-    TextField,
-    Button,
-    Snackbar,
-    Alert,
-    Grid,
-    Paper,
-    Divider,
-    FormControlLabel,
-    Chip,
-    Stack,
-    CircularProgress,
-    alpha,
-    Fade,
-    Zoom,
-} from "@mui/material";
-import { Head, router, useForm } from "@inertiajs/react";
+import React, { useEffect, useState } from "react";
+import { Head, useForm } from "@inertiajs/react";
 import AdminLayout from "@/Layouts/Admin/AdminLayout";
+import PageBreadcrumb from "@/Components/PageBreadcrumb";
 import {
-    Settings,
-    Group,
-    Assignment,
-    PersonAdd,
-    Link as LinkIcon,
-    Save,
-    Refresh,
-    CheckCircle,
-    Warning,
+    AlertTriangle,
+    CheckCircle2,
+    FileText,
     Info,
-    NotificationsActive,
-    Lock,
-    LockOpen,
-} from "@mui/icons-material";
+    Link2,
+    MessageCircle,
+    RotateCcw,
+    Save,
+    UserPlus,
+    X,
+    XCircle,
+} from "lucide-react";
 
-const StatusChip = ({ isActive, label }) => (
-    <Chip
-        label={label}
-        color={isActive ? "success" : "error"}
-        variant="outlined"
-        size="small"
-        sx={{
-            borderRadius: 2,
-            fontWeight: 600,
-            borderWidth: 2,
-        }}
-    />
+const Toggle = ({ checked, onChange, disabled = false }) => (
+    <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={onChange}
+        disabled={disabled}
+        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-4 focus:ring-brand-100 disabled:cursor-not-allowed disabled:opacity-60 ${
+            checked ? "bg-brand-500" : "bg-slate-200"
+        }`}
+    >
+        <span
+            className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                checked ? "translate-x-[22px]" : "translate-x-0.5"
+            }`}
+        />
+    </button>
 );
 
-const SettingCard = ({
-    title,
-    description,
-    icon: Icon,
-    children,
-    color = "primary",
-}) => (
-    <Zoom in={true}>
-        <Card
-            elevation={2}
-            sx={{
-                borderRadius: 3,
-                border: `1px solid ${alpha("#06359f", 0.1)}`,
-                transition: "all 0.3s ease",
-                "&:hover": {
-                    transform: "translateY(-2px)",
-                    boxShadow: 4,
-                },
-            }}
-        >
-            <CardContent sx={{ p: 3 }}>
-                <Box
-                    sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 2,
-                        mb: 2,
-                    }}
-                >
-                    <Box
-                        sx={{
-                            p: 1.5,
-                            borderRadius: 2,
-                            bgcolor: `${color}.50`,
-                            color: `${color}.main`,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                        }}
-                    >
-                        <Icon sx={{ fontSize: 24 }} />
-                    </Box>
-                    <Box>
-                        <Typography
-                            variant="h6"
-                            sx={{ fontWeight: 600, color: "text.primary" }}
-                        >
-                            {title}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            {description}
-                        </Typography>
-                    </Box>
-                </Box>
-                <Divider sx={{ my: 2 }} />
-                {children}
-            </CardContent>
-        </Card>
-    </Zoom>
-);
+const TOAST_STYLES = {
+    success: {
+        wrapper: "border-emerald-200 bg-emerald-50 text-emerald-800",
+        icon: CheckCircle2,
+    },
+    error: {
+        wrapper: "border-rose-200 bg-rose-50 text-rose-800",
+        icon: XCircle,
+    },
+    info: {
+        wrapper: "border-blue-200 bg-blue-50 text-blue-800",
+        icon: Info,
+    },
+};
+
+const toBool = (value) => value === true || value === 1 || value === "1";
 
 const Setting = ({ flash, settings }) => {
-    const [notification, setNotification] = useState({
+    const [toast, setToast] = useState({
         open: false,
         message: "",
-        severity: "info",
+        severity: "success",
     });
-    const [isLoading, setIsLoading] = useState(false);
 
-    const { data, setData, post, processing } = useForm({
-        buka_pendaftaran: settings?.buka_pendaftaran || false,
-        buka_lengkapi_profil: settings?.buka_lengkapi_profil || false,
-        buka_lamaran_kpm: settings?.buka_lamaran_kpm || false,
-        buka_lamaran_ppl: settings?.buka_lamaran_ppl || false,
-        link_grup: settings?.link_grup || "",
-    });
+    const defaults = {
+        buka_pendaftaran: toBool(settings?.buka_pendaftaran),
+        buka_lengkapi_profil: toBool(settings?.buka_lengkapi_profil),
+        buka_lamaran_kpm: toBool(settings?.buka_lamaran_kpm),
+        buka_lamaran_ppl: toBool(settings?.buka_lamaran_ppl),
+        link_grup: settings?.link_grup ?? "",
+    };
+
+    const { data, setData, post, processing } = useForm(defaults);
 
     useEffect(() => {
-        if (flash?.message) {
-            let message = "";
-            let severity = "info";
+        if (!flash?.message) return;
 
-            if (typeof flash.message === "string") {
-                message = flash.message;
-            } else if (typeof flash.message === "object") {
-                if (flash.message.success) {
-                    message = flash.message.success;
-                    severity = "success";
-                } else if (flash.message.error) {
-                    message = flash.message.error;
-                    severity = "error";
-                } else if (flash.message.info) {
-                    message = flash.message.info;
-                    severity = "info";
-                }
-            }
+        let message = "";
+        let severity = "info";
 
-            if (message) {
-                setNotification({
-                    open: true,
-                    message,
-                    severity,
-                });
+        if (typeof flash.message === "string") {
+            message = flash.message;
+        } else if (typeof flash.message === "object") {
+            if (flash.message.success) {
+                message = flash.message.success;
+                severity = "success";
+            } else if (flash.message.error) {
+                message = flash.message.error;
+                severity = "error";
+            } else if (flash.message.info) {
+                message = flash.message.info;
             }
+        }
+
+        if (message) {
+            setToast({ open: true, message, severity });
         }
     }, [flash]);
 
-    const handleCloseNotification = () => {
-        setNotification((prev) => ({ ...prev, open: false }));
-    };
+    useEffect(() => {
+        if (!toast.open) return;
 
-    const handleSubmit = async (e) => {
-        e?.preventDefault();
-        setIsLoading(true);
+        const timer = setTimeout(
+            () => setToast((prev) => ({ ...prev, open: false })),
+            4000
+        );
+
+        return () => clearTimeout(timer);
+    }, [toast.open]);
+
+    const handleSubmit = (event) => {
+        event.preventDefault();
 
         post("/admin/settings/update", {
-            onSuccess: () => {
-                setNotification({
+            preserveScroll: true,
+            onSuccess: () =>
+                setToast({
                     open: true,
-                    message: "Pengaturan berhasil disimpan",
+                    message: "Pengaturan berhasil disimpan.",
                     severity: "success",
-                });
-            },
-            onError: (errors) => {
-                setNotification({
+                }),
+            onError: () =>
+                setToast({
                     open: true,
-                    message: "Terjadi kesalahan saat menyimpan pengaturan",
+                    message: "Terjadi kesalahan saat menyimpan pengaturan.",
                     severity: "error",
-                });
-            },
-            onFinish: () => {
-                setIsLoading(false);
-            },
+                }),
         });
     };
 
     const handleReset = () => {
         setData({
-            buka_pendaftaran: settings?.buka_pendaftaran || false,
-            buka_lengkapi_profil: settings?.buka_lengkapi_profil || false,
-            buka_lamaran_kpm: settings?.buka_lamaran_kpm || false,
-            buka_lamaran_ppl: settings?.buka_lamaran_ppl || false,
-            link_grup: settings?.link_grup || "",
+            buka_pendaftaran: toBool(settings?.buka_pendaftaran),
+            buka_lengkapi_profil: toBool(settings?.buka_lengkapi_profil),
+            buka_lamaran_kpm: toBool(settings?.buka_lamaran_kpm),
+            buka_lamaran_ppl: toBool(settings?.buka_lamaran_ppl),
+            link_grup: settings?.link_grup ?? "",
         });
     };
 
-    const getSystemStatus = () => {
-        const activeSettings = [
-            data.buka_pendaftaran,
-            data.buka_lengkapi_profil,
-            data.buka_lamaran_kpm,
-            data.buka_lamaran_ppl,
-        ].filter(Boolean).length;
+    const activeCount = [
+        data.buka_pendaftaran,
+        data.buka_lengkapi_profil,
+        data.buka_lamaran_kpm,
+        data.buka_lamaran_ppl,
+    ].filter(toBool).length;
 
-        let status = "inactive";
-        if (activeSettings >= 3) {
-            status = "active";
-        } else if (activeSettings >= 2) {
-            status = "partial";
-        }
+    const status =
+        activeCount === 4
+            ? {
+                  key: "active",
+                  label: "Aktif",
+                  icon: CheckCircle2,
+                  iconTone: "bg-emerald-50 text-emerald-600",
+                  badge: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+                  bar: "bg-emerald-500",
+              }
+            : activeCount > 0
+            ? {
+                  key: "partial",
+                  label: "Parsial",
+                  icon: AlertTriangle,
+                  iconTone: "bg-amber-50 text-amber-600",
+                  badge: "bg-amber-50 text-amber-700 ring-amber-200",
+                  bar: "bg-amber-500",
+              }
+            : {
+                  key: "inactive",
+                  label: "Nonaktif",
+                  icon: XCircle,
+                  iconTone: "bg-rose-50 text-rose-600",
+                  badge: "bg-rose-50 text-rose-700 ring-rose-200",
+                  bar: "bg-rose-500",
+              };
 
-        return {
-            activeCount: activeSettings,
-            totalSettings: 4,
-            status: status,
-        };
-    };
+    const StatusIcon = status.icon;
 
-    const systemStatus = getSystemStatus();
-
-    const settingGroups = [
+    const groups = [
         {
             title: "Pendaftaran Umum",
             description: "Pengaturan pendaftaran dan registrasi",
-            icon: PersonAdd,
-            color: "primary",
-            settings: [
+            icon: UserPlus,
+            tone: "bg-blue-50 text-blue-600",
+            items: [
                 {
+                    key: "buka_pendaftaran",
                     label: "Buka Pendaftaran",
                     description: "Aktifkan pendaftaran untuk mahasiswa baru",
-                    value: data.buka_pendaftaran,
-                    onChange: () =>
-                        setData("buka_pendaftaran", !data.buka_pendaftaran),
                 },
                 {
+                    key: "buka_lengkapi_profil",
                     label: "Terima Biodata",
                     description: "Izinkan mahasiswa melengkapi profil",
-                    value: data.buka_lengkapi_profil,
-                    onChange: () =>
-                        setData(
-                            "buka_lengkapi_profil",
-                            !data.buka_lengkapi_profil
-                        ),
                 },
             ],
         },
         {
             title: "Lamaran Kegiatan",
             description: "Pengaturan periode lamaran KPM dan PPL",
-            icon: Assignment,
-            color: "secondary",
-            settings: [
+            icon: FileText,
+            tone: "bg-violet-50 text-violet-600",
+            items: [
                 {
+                    key: "buka_lamaran_kpm",
                     label: "Buka Lamaran KPM",
                     description: "Aktifkan pengajuan lamaran KPM",
-                    value: data.buka_lamaran_kpm,
-                    onChange: () =>
-                        setData("buka_lamaran_kpm", !data.buka_lamaran_kpm),
                 },
                 {
+                    key: "buka_lamaran_ppl",
                     label: "Buka Lamaran PPL",
                     description: "Aktifkan pengajuan lamaran PPL",
-                    value: data.buka_lamaran_ppl,
-                    onChange: () =>
-                        setData("buka_lamaran_ppl", !data.buka_lamaran_ppl),
-                },
-            ],
-        },
-        {
-            title: "Komunikasi",
-            description: "Pengaturan tautan dan komunikasi",
-            icon: Group,
-            color: "info",
-            settings: [
-                {
-                    label: "Link Grup WhatsApp",
-                    description: "Tautan grup WhatsApp untuk komunikasi",
-                    type: "text",
-                    value: data.link_grup,
-                    onChange: (e) => setData("link_grup", e.target.value),
-                    placeholder: "https://chat.whatsapp.com/...",
                 },
             ],
         },
     ];
 
-    const getStatusColor = (status) => {
-        switch (status) {
-            case "active":
-                return "#2e7d32";
-            case "partial":
-                return "#ed6c02";
-            case "inactive":
-                return "#d32f2f";
-            default:
-                return "#d32f2f";
-        }
-    };
-
-    const getStatusIcon = (status) => {
-        switch (status) {
-            case "active":
-                return (
-                    <NotificationsActive
-                        sx={{ color: "success.main", fontSize: 32 }}
-                    />
-                );
-            case "partial":
-                return <Warning sx={{ color: "warning.main", fontSize: 32 }} />;
-            case "inactive":
-                return <Lock sx={{ color: "error.main", fontSize: 32 }} />;
-            default:
-                return <Lock sx={{ color: "error.main", fontSize: 32 }} />;
-        }
-    };
+    const ToastIcon = TOAST_STYLES[toast.severity]?.icon || Info;
 
     return (
         <AdminLayout title="Pengaturan Sistem">
             <Head title="Pengaturan Sistem" />
 
-            {/* Notification Snackbar */}
-            <Snackbar
-                open={notification.open}
-                autoHideDuration={4000}
-                onClose={handleCloseNotification}
-                anchorOrigin={{ vertical: "top", horizontal: "right" }}
-                TransitionComponent={Fade}
-            >
-                <Alert
-                    onClose={handleCloseNotification}
-                    severity={notification.severity}
-                    variant="filled"
-                    sx={{
-                        borderRadius: 2,
-                        fontWeight: 500,
-                    }}
-                    iconMapping={{
-                        success: <CheckCircle fontSize="inherit" />,
-                        error: <Warning fontSize="inherit" />,
-                        info: <Info fontSize="inherit" />,
-                    }}
+            {toast.open && (
+                <div
+                    className={`fixed right-4 top-4 z-[200] flex w-[calc(100%-2rem)] max-w-sm items-start gap-3 rounded-2xl border px-4 py-3 shadow-lg shadow-slate-900/10 ${
+                        TOAST_STYLES[toast.severity]?.wrapper ||
+                        TOAST_STYLES.info.wrapper
+                    }`}
                 >
-                    {notification.message}
-                </Alert>
-            </Snackbar>
-
-            <Box
-                sx={{ minHeight: "100vh", bgcolor: "background.default", p: 3 }}
-            >
-                {/* Header */}
-                <Box sx={{ mb: 4 }}>
-                    <Box
-                        sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 2,
-                            mb: 2,
-                        }}
+                    <ToastIcon className="mt-0.5 h-5 w-5 shrink-0" />
+                    <p className="flex-1 text-sm font-medium">
+                        {toast.message}
+                    </p>
+                    <button
+                        type="button"
+                        onClick={() =>
+                            setToast((prev) => ({ ...prev, open: false }))
+                        }
+                        className="rounded-lg p-1 opacity-70 transition hover:bg-white/50 hover:opacity-100"
+                        aria-label="Tutup notifikasi"
                     >
-                        <Box>
-                            <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                                Pengaturan Sistem
-                            </Typography>
-                            <Typography variant="body1" color="text.secondary">
-                                Kelola pengaturan pendaftaran dan sistem PPKPM
-                            </Typography>
-                        </Box>
-                    </Box>
+                        <X className="h-4 w-4" />
+                    </button>
+                </div>
+            )}
 
-                    {/* System Status */}
-                    <Paper
-                        elevation={0}
-                        sx={{
-                            p: 3,
-                            borderRadius: 3,
-                            bgcolor: alpha(
-                                getStatusColor(systemStatus.status),
-                                0.1
-                            ),
-                            border: "1px solid",
-                            borderColor: alpha(
-                                getStatusColor(systemStatus.status),
-                                0.2
-                            ),
-                        }}
-                    >
-                        <Grid container alignItems="center" spacing={2}>
-                            <Grid item xs={12} md={8}>
-                                <Box
-                                    sx={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 2,
-                                    }}
+            <div className="flex flex-col gap-y-4">
+                <PageBreadcrumb
+                    pageTitle="Pengaturan Sistem"
+                    home="/admin/dashboard"
+                />
+
+                <form onSubmit={handleSubmit} className="space-y-5">
+                    {/* Status & aksi */}
+                    <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04)] sm:p-6">
+                        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                            <div className="flex items-start gap-4">
+                                <span
+                                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${status.iconTone}`}
                                 >
-                                    {getStatusIcon(systemStatus.status)}
-                                    <Box>
-                                        <Typography
-                                            variant="h6"
-                                            sx={{ fontWeight: 600, mb: 0.5 }}
+                                    <StatusIcon className="h-6 w-6" />
+                                </span>
+
+                                <div>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <h2 className="text-base font-semibold text-slate-900">
+                                            Status Sistem
+                                        </h2>
+                                        <span
+                                            className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset ${status.badge}`}
                                         >
-                                            Status Sistem:{" "}
-                                            <StatusChip
-                                                isActive={
-                                                    systemStatus.status ===
-                                                    "active"
-                                                }
-                                                label={
-                                                    systemStatus.status ===
-                                                    "active"
-                                                        ? "Aktif"
-                                                        : systemStatus.status ===
-                                                          "partial"
-                                                        ? "Parsial"
-                                                        : "Nonaktif"
-                                                }
+                                            {status.label}
+                                        </span>
+                                    </div>
+                                    <p className="mt-1 text-sm text-slate-500">
+                                        {activeCount} dari 4 fitur aktif.
+                                        Perubahan berlaku setelah disimpan.
+                                    </p>
+
+                                    <div className="mt-3 flex items-center gap-1.5">
+                                        {[0, 1, 2, 3].map((index) => (
+                                            <span
+                                                key={index}
+                                                className={`h-1.5 w-10 rounded-full ${
+                                                    index < activeCount
+                                                        ? status.bar
+                                                        : "bg-slate-100"
+                                                }`}
                                             />
-                                        </Typography>
-                                        <Typography
-                                            variant="body2"
-                                            color="text.secondary"
-                                        >
-                                            {systemStatus.activeCount} dari{" "}
-                                            {systemStatus.totalSettings} fitur
-                                            aktif
-                                        </Typography>
-                                    </Box>
-                                </Box>
-                            </Grid>
-                            <Grid item xs={12} md={4}>
-                                <Box
-                                    sx={{
-                                        display: "flex",
-                                        justifyContent: { md: "flex-end" },
-                                        gap: 1,
-                                    }}
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={handleReset}
+                                    disabled={processing}
+                                    className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                                 >
-                                    <Button
-                                        variant="outlined"
-                                        startIcon={<Refresh />}
-                                        onClick={handleReset}
-                                        disabled={processing || isLoading}
-                                        sx={{ borderRadius: 2 }}
-                                    >
-                                        Reset
-                                    </Button>
-                                    <Button
-                                        variant="contained"
-                                        startIcon={
-                                            isLoading ? (
-                                                <CircularProgress
-                                                    size={20}
-                                                    color="inherit"
+                                    <RotateCcw className="h-4 w-4" />
+                                    Reset
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={processing}
+                                    className="inline-flex h-10 items-center gap-2 rounded-xl bg-brand-500 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                    {processing ? (
+                                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                                    ) : (
+                                        <Save className="h-4 w-4" />
+                                    )}
+                                    {processing
+                                        ? "Menyimpan..."
+                                        : "Simpan Perubahan"}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Kartu pengaturan */}
+                    <div className="grid gap-5 lg:grid-cols-3">
+                        {groups.map((group) => {
+                            const GroupIcon = group.icon;
+
+                            return (
+                                <div
+                                    key={group.title}
+                                    className="flex flex-col rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04)]"
+                                >
+                                    <div className="flex items-start gap-3 border-b border-slate-100 pb-4">
+                                        <span
+                                            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${group.tone}`}
+                                        >
+                                            <GroupIcon className="h-5 w-5" />
+                                        </span>
+                                        <div>
+                                            <h3 className="text-sm font-semibold text-slate-900">
+                                                {group.title}
+                                            </h3>
+                                            <p className="mt-0.5 text-xs text-slate-500">
+                                                {group.description}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-2 divide-y divide-slate-100">
+                                        {group.items.map((item) => (
+                                            <div
+                                                key={item.key}
+                                                className="flex items-start justify-between gap-4 py-3.5"
+                                            >
+                                                <div className="min-w-0">
+                                                    <p className="text-sm font-medium text-slate-700">
+                                                        {item.label}
+                                                    </p>
+                                                    <p className="mt-0.5 text-xs leading-relaxed text-slate-500">
+                                                        {item.description}
+                                                    </p>
+                                                </div>
+                                                <Toggle
+                                                    checked={toBool(
+                                                        data[item.key]
+                                                    )}
+                                                    disabled={processing}
+                                                    onChange={() =>
+                                                        setData(
+                                                            item.key,
+                                                            !toBool(
+                                                                data[item.key]
+                                                            )
+                                                        )
+                                                    }
                                                 />
-                                            ) : (
-                                                <Save />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        })}
+
+                        {/* Komunikasi */}
+                        <div className="flex flex-col rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+                            <div className="flex items-start gap-3 border-b border-slate-100 pb-4">
+                                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                                    <MessageCircle className="h-5 w-5" />
+                                </span>
+                                <div>
+                                    <h3 className="text-sm font-semibold text-slate-900">
+                                        Komunikasi
+                                    </h3>
+                                    <p className="mt-0.5 text-xs text-slate-500">
+                                        Pengaturan tautan dan komunikasi
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="pt-4">
+                                <label
+                                    htmlFor="link_grup"
+                                    className="text-sm font-medium text-slate-700"
+                                >
+                                    Link Grup WhatsApp
+                                </label>
+                                <div className="relative mt-2">
+                                    <Link2 className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                                    <input
+                                        id="link_grup"
+                                        type="url"
+                                        value={data.link_grup}
+                                        disabled={processing}
+                                        onChange={(event) =>
+                                            setData(
+                                                "link_grup",
+                                                event.target.value
                                             )
                                         }
-                                        onClick={handleSubmit}
-                                        disabled={processing || isLoading}
-                                        sx={{
-                                            borderRadius: 2,
-                                            textTransform: "none",
-                                            fontWeight: 600,
-                                            px: 3,
-                                        }}
-                                    >
-                                        {isLoading
-                                            ? "Menyimpan..."
-                                            : "Simpan Perubahan"}
-                                    </Button>
-                                </Box>
-                            </Grid>
-                        </Grid>
-                    </Paper>
-                </Box>
+                                        placeholder="https://chat.whatsapp.com/..."
+                                        className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm text-slate-800 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-brand-400 focus:ring-4 focus:ring-brand-100 disabled:bg-slate-50"
+                                    />
+                                </div>
+                                <p className="mt-2 text-xs leading-relaxed text-slate-400">
+                                    Tautan ini dibagikan kepada mahasiswa
+                                    sebagai kanal komunikasi resmi.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
 
-                {/* Settings Grid */}
-                <Grid container spacing={3}>
-                    {settingGroups.map((group, groupIndex) => (
-                        <Grid item xs={12} md={6} lg={4} key={groupIndex}>
-                            <SettingCard
-                                title={group.title}
-                                description={group.description}
-                                icon={group.icon}
-                                color={group.color}
-                            >
-                                <Stack spacing={2}>
-                                    {group.settings.map(
-                                        (setting, settingIndex) => (
-                                            <Box key={settingIndex}>
-                                                {setting.type === "text" ? (
-                                                    <Box>
-                                                        <Typography
-                                                            variant="subtitle2"
-                                                            sx={{
-                                                                fontWeight: 600,
-                                                                mb: 1,
-                                                            }}
-                                                        >
-                                                            {setting.label}
-                                                        </Typography>
-                                                        <TextField
-                                                            fullWidth
-                                                            size="small"
-                                                            sx={{
-                                                                "& .MuiOutlinedInput-root.Mui-focused":
-                                                                    {
-                                                                        outline:
-                                                                            "none",
-                                                                        boxShadow:
-                                                                            "none",
-                                                                    },
-                                                                "& .MuiInputBase-input:focus":
-                                                                    {
-                                                                        outline:
-                                                                            "none",
-                                                                        boxShadow:
-                                                                            "none",
-                                                                    },
-                                                                    "& .MuiOutlinedInput-root":
-                                                                    {
-                                                                        borderRadius: 2,
-                                                                    },
-                                                            }}
-                                                            value={
-                                                                setting.value ||
-                                                                ""
-                                                            }
-                                                            onChange={
-                                                                setting.onChange
-                                                            }
-                                                            placeholder={
-                                                                setting.placeholder
-                                                            }
-                                                            InputProps={{
-                                                                startAdornment:
-                                                                    (
-                                                                        <LinkIcon
-                                                                            sx={{
-                                                                                mr: 1,
-                                                                                color: "text.secondary",
-                                                                            }}
-                                                                        />
-                                                                    ),
-                                                            }}
-                                                       
-                                                        />
-                                                        {setting.description && (
-                                                            <Typography
-                                                                variant="caption"
-                                                                color="text.secondary"
-                                                                sx={{
-                                                                    mt: 1,
-                                                                    display:
-                                                                        "block",
-                                                                }}
-                                                            >
-                                                                {
-                                                                    setting.description
-                                                                }
-                                                            </Typography>
-                                                        )}
-                                                    </Box>
-                                                ) : (
-                                                    <FormControlLabel
-                                                        control={
-                                                            <Switch
-                                                                checked={
-                                                                    setting.value ||
-                                                                    false
-                                                                }
-                                                                onChange={
-                                                                    setting.onChange
-                                                                }
-                                                                color="primary"
-                                                                size="medium"
-                                                            />
-                                                        }
-                                                        label={
-                                                            <Box>
-                                                                <Typography
-                                                                    variant="subtitle2"
-                                                                    sx={{
-                                                                        fontWeight: 600,
-                                                                    }}
-                                                                >
-                                                                    {
-                                                                        setting.label
-                                                                    }
-                                                                </Typography>
-                                                                {setting.description && (
-                                                                    <Typography
-                                                                        variant="caption"
-                                                                        color="text.secondary"
-                                                                    >
-                                                                        {
-                                                                            setting.description
-                                                                        }
-                                                                    </Typography>
-                                                                )}
-                                                            </Box>
-                                                        }
-                                                        sx={{
-                                                            width: "100%",
-                                                            m: 0,
-                                                            "& .MuiFormControlLabel-label":
-                                                                {
-                                                                    flex: 1,
-                                                                },
-                                                        }}
-                                                    />
-                                                )}
-                                            </Box>
-                                        )
-                                    )}
-                                </Stack>
-                            </SettingCard>
-                        </Grid>
-                    ))}
-
-                    {/* Quick Actions */}
-                </Grid>
-
-                {/* Footer Info */}
-                <Fade in={true}>
-                    <Paper
-                        elevation={0}
-                        sx={{
-                            mt: 4,
-                            p: 3,
-                            borderRadius: 3,
-                            bgcolor: "info.50",
-                            border: "1px solid",
-                            borderColor: "info.100",
-                        }}
-                    >
-                        <Box
-                            sx={{
-                                display: "flex",
-                                alignItems: "flex-start",
-                                gap: 2,
-                            }}
-                        >
-                            <Info sx={{ color: "info.main", mt: 0.5 }} />
-                            <Box>
-                                <Typography
-                                    variant="subtitle2"
-                                    sx={{
-                                        fontWeight: 600,
-                                        mb: 1,
-                                        color: "info.main",
-                                    }}
-                                >
-                                    Informasi Pengaturan
-                                </Typography>
-                                <Typography
-                                    variant="body2"
-                                    color="text.secondary"
-                                >
-                                    • Perubahan pengaturan akan langsung berlaku
-                                    setelah disimpan
-                                    <br />
-                                    • Pastikan untuk menginformasikan perubahan
-                                    kepada pengguna terkait
-                                    <br />
-                                </Typography>
-                            </Box>
-                        </Box>
-                    </Paper>
-                </Fade>
-            </Box>
+                    {/* Info */}
+                    <div className="flex items-start gap-3 rounded-2xl border border-blue-100 bg-blue-50/60 p-4">
+                        <Info className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
+                        <div>
+                            <p className="text-sm font-semibold text-blue-800">
+                                Informasi Pengaturan
+                            </p>
+                            <ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs leading-relaxed text-blue-700/80">
+                                <li>
+                                    Perubahan pengaturan akan langsung berlaku
+                                    setelah disimpan.
+                                </li>
+                                <li>
+                                    Pastikan untuk menginformasikan perubahan
+                                    kepada pengguna terkait.
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </form>
+            </div>
         </AdminLayout>
     );
 };

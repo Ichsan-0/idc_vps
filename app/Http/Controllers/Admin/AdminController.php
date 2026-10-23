@@ -11,6 +11,11 @@ use Inertia\Inertia;
 
 class AdminController extends Controller
 {
+    private function currentUserIsSuperAdmin(): bool
+    {
+        return (bool) optional(auth()->user())->is_superadmin;
+    }
+
     public function index()
     {
         return Inertia::render('Admin/pages/Pengguna/Admin/ListAdmin', [
@@ -53,6 +58,13 @@ class AdminController extends Controller
 
     public function apiSave(Request $request)
     {
+        if (!$this->currentUserIsSuperAdmin()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya Super Admin yang dapat menambahkan akun admin.',
+            ], 403);
+        }
+
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'username' => 'required|string|max:100|unique:users,username',
@@ -107,6 +119,13 @@ class AdminController extends Controller
                 'success' => false,
                 'message' => 'Admin tidak ditemukan.'
             ], 404);
+        }
+
+        if ($user->is_superadmin && !$this->currentUserIsSuperAdmin()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya Super Admin yang dapat mengubah akun Super Admin.'
+            ], 403);
         }
 
         $validator = Validator::make($request->all(), [
@@ -169,6 +188,13 @@ class AdminController extends Controller
                 ], 404);
             }
 
+            if ($user->is_superadmin && !$this->currentUserIsSuperAdmin()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Hanya Super Admin yang dapat menghapus akun Super Admin.'
+                ], 403);
+            }
+
             if (auth()->check() && auth()->id() == $id) {
                 return response()->json([
                     'success' => false,
@@ -197,6 +223,12 @@ class AdminController extends Controller
 
     public function save(Request $request)
     {
+        if (!$this->currentUserIsSuperAdmin()) {
+            return redirect()->route('admin.daftaradmin')->with('message', [
+                'error' => 'Hanya Super Admin yang dapat menambahkan akun admin.',
+            ]);
+        }
+
         $data = [
             'name' => $request->name,
             'email' => $request->email,

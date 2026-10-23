@@ -17,6 +17,10 @@ use Exception;
 
 class TaskController extends Controller
 {
+    private function isSuperAdmin(Request $request): bool
+    {
+        return (bool) optional($request->user())->is_superadmin;
+    }
 
     public function getTask($id)
     {
@@ -39,8 +43,15 @@ class TaskController extends Controller
 
     public function createTasksByClass(Request $request)
     {
+        if (!$this->isSuperAdmin($request)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya Super Admin yang dapat menambah tugas KPM.',
+            ], 403);
+        }
+
         try {
-            $dateTime = Carbon::createFromFormat('D, d M Y H:i:s e', $request->tenggat)
+            $dateTime = Carbon::parse($request->tenggat)
                 ->setTimezone(new CarbonTimeZone('Asia/Jakarta'));
             $task = Task::create([
                 'name' => $request->name,
@@ -55,10 +66,15 @@ class TaskController extends Controller
 
     public function editTasksByClass(Request $request, $id)
     {
-
+        if (!$this->isSuperAdmin($request)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya Super Admin yang dapat mengubah tugas KPM.',
+            ], 403);
+        }
 
         try {
-            $dateTime = Carbon::createFromFormat('D, d M Y H:i:s e', $request->tenggat)
+            $dateTime = Carbon::parse($request->tenggat)
                 ->setTimezone(new CarbonTimeZone('Asia/Jakarta'));
 
             $task = [
@@ -91,7 +107,7 @@ class TaskController extends Controller
 
         if ($request->has('search_key') && !empty($request->search_key)) {
             $query->where(function ($subQuery) use ($request) {
-                $subQuery->where('task', 'like', '%' . $request->search_key . '%');
+                $subQuery->where('task.name', 'like', '%' . $request->search_key . '%');
             });
         }
 
@@ -108,8 +124,15 @@ class TaskController extends Controller
         return response()->json($data);
     }
 
-    public function deleteTasksByClass($id)
+    public function deleteTasksByClass(Request $request, $id)
     {
+        if (!$this->isSuperAdmin($request)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya Super Admin yang dapat menghapus tugas KPM.',
+            ], 403);
+        }
+
         try {
             $task = Task::find($id);
             if ($task) {

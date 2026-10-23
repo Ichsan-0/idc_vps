@@ -109,7 +109,7 @@ export default function Login({ status, canResetPassword }) {
                                                 onChange={(e) =>
                                                     setData("username", e.target.value)
                                                 }
-                                                placeholder="Masukkan username / NIP"
+                                                placeholder="Masukkan username / email / NIP"
                                                 className={`h-12 w-full rounded-xl border bg-white pl-11 pr-4 text-sm text-slate-800 shadow-sm outline-none transition placeholder:text-slate-400 focus:ring-4 ${
                                                     errors.username
                                                         ? "border-red-300 focus:border-red-400 focus:ring-red-100"

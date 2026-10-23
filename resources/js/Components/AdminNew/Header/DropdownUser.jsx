@@ -1,17 +1,76 @@
 import ClickOutside from "@/Components/ClickOutside";
 import { router, usePage } from "@inertiajs/react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { LogOut } from "lucide-react";
+import axios from "axios";
 
 import UserOne from "../../../../../public/images/user/user.png";
 
 const DropdownUser = () => {
     const [dropdownOpen, setDropdownOpen] = useState(false);
-    const user = usePage().props.auth.user;
+    const page = usePage();
+    const user = page.props.auth.user;
+    const maintenance = page.props.maintenance;
+
+    const isSuperAdmin = !!user?.is_superadmin;
+
+    const [maintenanceActive, setMaintenanceActive] = useState(!!maintenance);
+    const [maintenanceLoading, setMaintenanceLoading] = useState(false);
+    const [maintenanceNote, setMaintenanceNote] = useState({
+        type: "",
+        text: "",
+    });
+
+    useEffect(() => {
+        setMaintenanceActive(!!maintenance);
+    }, [maintenance]);
+
+    useEffect(() => {
+        if (!maintenanceNote.text) return;
+
+        const timer = setTimeout(
+            () => setMaintenanceNote({ type: "", text: "" }),
+            3500
+        );
+
+        return () => clearTimeout(timer);
+    }, [maintenanceNote.text]);
 
     const handleLogout = () => {
         setDropdownOpen(false);
         router.post(route("logout"));
+    };
+
+    const handleMaintenanceToggle = async () => {
+        if (maintenanceLoading) return;
+
+        const next = !maintenanceActive;
+
+        setMaintenanceLoading(true);
+        setMaintenanceNote({ type: "", text: "" });
+
+        try {
+            const response = await axios.post("/api/admin/maintenance", {
+                active: next,
+            });
+
+            setMaintenanceActive(!!response.data?.maintenance);
+            setMaintenanceNote({
+                type: "success",
+                text:
+                    response.data?.message ||
+                    "Pengaturan maintenance berhasil disimpan.",
+            });
+        } catch (error) {
+            setMaintenanceNote({
+                type: "error",
+                text:
+                    error.response?.data?.message ||
+                    "Gagal menyimpan pengaturan maintenance.",
+            });
+        } finally {
+            setMaintenanceLoading(false);
+        }
     };
 
     return (
@@ -28,7 +87,7 @@ const DropdownUser = () => {
                         {user?.name ?? "-"}
                     </span>
                     <span className="block text-[11px] font-medium text-slate-400">
-                        Admin
+                        {isSuperAdmin ? "Super Admin" : "Admin"}
                     </span>
                 </span>
 
@@ -62,16 +121,76 @@ const DropdownUser = () => {
             {dropdownOpen && (
                 <div
                     role="menu"
-                    className="absolute right-0 z-[150] mt-3 w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-900/10"
+                    className="absolute right-0 z-[150] mt-3 w-72 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-900/10"
                 >
                     <div className="border-b border-slate-100 px-4 py-3.5">
-                        <p className="truncate text-sm font-semibold text-slate-900">
-                            {user?.name ?? "-"}
-                        </p>
+                        <div className="flex items-center gap-2">
+                            <p className="truncate text-sm font-semibold text-slate-900">
+                                {user?.name ?? "-"}
+                            </p>
+                            {isSuperAdmin && (
+                                <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700 ring-1 ring-inset ring-amber-200">
+                                    Super Admin
+                                </span>
+                            )}
+                        </div>
                         <p className="mt-0.5 text-xs text-slate-500">
-                            Masuk sebagai Admin
+                            {isSuperAdmin
+                                ? "Masuk sebagai Super Admin"
+                                : "Masuk sebagai Admin"}
                         </p>
                     </div>
+
+                    {isSuperAdmin && (
+                        <div className="border-b border-slate-100 px-4 py-3.5">
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                    <p className="text-sm font-semibold text-slate-800">
+                                        Web Maintenance
+                                    </p>
+                                    <p className="mt-0.5 text-[11px] leading-relaxed text-slate-500">
+                                        {maintenanceActive
+                                            ? "Aktif — pengguna lain diarahkan ke halaman maintenance."
+                                            : "Nonaktif — seluruh web dapat diakses."}
+                                    </p>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    role="switch"
+                                    aria-checked={maintenanceActive}
+                                    aria-label="Aktifkan atau nonaktifkan mode maintenance"
+                                    onClick={handleMaintenanceToggle}
+                                    disabled={maintenanceLoading}
+                                    className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-4 focus:ring-amber-100 disabled:cursor-not-allowed disabled:opacity-60 ${
+                                        maintenanceActive
+                                            ? "bg-amber-500"
+                                            : "bg-slate-200"
+                                    }`}
+                                >
+                                    <span
+                                        className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                                            maintenanceActive
+                                                ? "translate-x-[22px]"
+                                                : "translate-x-0.5"
+                                        }`}
+                                    />
+                                </button>
+                            </div>
+
+                            {maintenanceNote.text && (
+                                <p
+                                    className={`mt-2 text-[11px] font-medium ${
+                                        maintenanceNote.type === "error"
+                                            ? "text-rose-600"
+                                            : "text-emerald-600"
+                                    }`}
+                                >
+                                    {maintenanceNote.text}
+                                </p>
+                            )}
+                        </div>
+                    )}
 
                     <div className="p-2">
                         <button

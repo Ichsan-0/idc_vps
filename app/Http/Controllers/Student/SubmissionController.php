@@ -84,7 +84,7 @@ class SubmissionController extends Controller
                 }
 
                 $submission->link = $path;
-            } else {
+            } elseif ($request->filled('link')) {
                 $submission->link = $request->link;
             }
 

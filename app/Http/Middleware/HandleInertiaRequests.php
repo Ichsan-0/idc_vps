@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Data;
 use App\Models\LamaranKPM;
 use App\Models\LamaranPPL;
 use App\Models\Mahasiswa;
@@ -72,6 +73,13 @@ class HandleInertiaRequests extends Middleware
                 'status'        => fn() => $request->session()->get('status'),
                 'micro_warning' => fn() => $request->session()->get('micro_warning'),
             ],
+            'maintenance' => function () {
+                try {
+                    return (bool) (Data::query()->value('maintenance') ?? false);
+                } catch (\Throwable $exception) {
+                    return false;
+                }
+            },
         ];
     }
 }

@@ -29,6 +29,7 @@ import {
     Check,
     RateReview,
     Cancel,
+    InsertDriveFile,
 } from "@mui/icons-material";
 import { ThreeDot } from "react-loading-indicators";
 
@@ -48,6 +49,8 @@ const SupervisorTaskInlineItem = ({
     const [scores, setScores] = useState({});
     const [savingScores, setSavingScores] = useState({});
     const [alertMessage, setAlertMessage] = useState(null);
+
+    const isFileTask = String(task?.tipe || "").toLowerCase() === "file";
 
     const fetchSubmissions = async () => {
         if (!idKelas || !task?.id) return;
@@ -416,6 +419,14 @@ const SupervisorTaskInlineItem = ({
                                             student.status === "diserahkan" || student.status === "dinilai";
                                         const isGraded = student.status === "dinilai";
                                         const rawLink = student.link;
+                                        const submissionFileName = rawLink
+                                            ? decodeURIComponent(
+                                                  String(rawLink)
+                                                      .split("/")
+                                                      .pop()
+                                                      .replace(/^\d+_/, "")
+                                              )
+                                            : null;
                                         const isExternalLink =
                                             rawLink &&
                                             (rawLink.startsWith("http://") || rawLink.startsWith("https://"));
@@ -522,20 +533,32 @@ const SupervisorTaskInlineItem = ({
                                                     }}
                                                 >
                                                     <div className="flex items-center gap-2 min-w-0 flex-1">
-                                                        <LinkIcon
-                                                            sx={{
-                                                                color: isSubmitted ? "#06359f" : "#94a3b8",
-                                                                fontSize: 18,
-                                                                shrink: 0,
-                                                            }}
-                                                        />
+                                                        {isFileTask ? (
+                                                            <InsertDriveFile
+                                                                sx={{
+                                                                    color: isSubmitted ? "#06359f" : "#94a3b8",
+                                                                    fontSize: 18,
+                                                                    shrink: 0,
+                                                                }}
+                                                            />
+                                                        ) : (
+                                                            <LinkIcon
+                                                                sx={{
+                                                                    color: isSubmitted ? "#06359f" : "#94a3b8",
+                                                                    fontSize: 18,
+                                                                    shrink: 0,
+                                                                }}
+                                                            />
+                                                        )}
                                                         {isSubmitted ? (
-                                                            <span className="font-mono text-xs text-slate-700 truncate select-all">
-                                                                {rawLink}
+                                                            <span className={`${isFileTask ? "" : "font-mono"} text-xs text-slate-700 truncate select-all`}>
+                                                                {isFileTask
+                                                                    ? submissionFileName || rawLink
+                                                                    : rawLink}
                                                             </span>
                                                         ) : (
                                                             <span className="text-xs text-slate-400 italic">
-                                                                Mahasiswa belum mengumpulkan tautan tugas ini.
+                                                                Mahasiswa belum mengumpulkan {isFileTask ? "berkas" : "tautan"} tugas ini.
                                                             </span>
                                                         )}
                                                     </div>
@@ -558,7 +581,7 @@ const SupervisorTaskInlineItem = ({
                                                                 shrink: 0,
                                                             }}
                                                         >
-                                                            Buka Link Tugas
+                                                            Buka {isFileTask ? "Berkas" : "Link"} Tugas
                                                         </Button>
                                                     )}
                                                 </Box>

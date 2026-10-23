@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\AdminKecamatanController;
 use App\Http\Controllers\DataRekapController;
 use App\Http\Controllers\Admin\AdminSekolahController;
+use App\Http\Controllers\Admin\BimbinganRekapController;
 use App\Http\Controllers\Admin\CamatKeuchikController;
 use App\Http\Controllers\Admin\ClassroomController as AdminClassroomController;
 use App\Http\Controllers\Admin\ClassroomPPLController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\Admin\KepsekkPamongController;
 use App\Http\Controllers\Admin\KPMAlocation;
 use App\Http\Controllers\Admin\LowonganPPLController;
 use App\Http\Controllers\Admin\MahsiswaController;
+use App\Http\Controllers\Admin\MaintenanceController;
 use App\Http\Controllers\Admin\PPL\LowonganPPLController as PPLLowonganPPLController;
 use App\Http\Controllers\Admin\PPL\PelamarPPLController;
 use App\Http\Controllers\Admin\PPL\TempatPPLController as PPLTempatPPLController;
@@ -224,6 +226,9 @@ Route::get('/prodi', [ProdiController::class, 'getProdi']);
 // Admin — manajemen pengguna, data, classroom, dan sertifikat.
 // ---------------------------------------------------------------------------
 Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+    // Mode maintenance (khusus super admin)
+    Route::post('/admin/maintenance', [MaintenanceController::class, 'toggle']);
+
     // Operator sekolah
     Route::post('/admin/admin-sekolah/generate', [AdminSekolahController::class, 'generate']);
     Route::get('/admin/admin-sekolah/query', [AdminSekolahController::class, 'query']);
@@ -285,6 +290,10 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     // Classroom PPL (admin)
     Route::get('/admin/classroom-ppl/student-score', [AdminClassroomController::class, 'getStudentsScore']);
     Route::post('/admin/classroom-ppl/student-score/export', [AdminClassroomController::class, 'exportStudentsScorePPL']);
+
+    // Rekap bimbingan
+    Route::get('/admin/bimbingan/query', [BimbinganRekapController::class, 'query']);
+    Route::post('/admin/bimbingan/export', [BimbinganRekapController::class, 'export']);
 
     // Sertifikat & rekap nilai
     Route::get('/admin/certificate/nilai-ppkpm', [CertificateController::class, 'getAllNilai']);

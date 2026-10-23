@@ -4,6 +4,7 @@ use App\Http\Controllers\AccountSettingsController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\AdminKecamatanController;
 use App\Http\Controllers\Admin\AdminSekolahController;
+use App\Http\Controllers\Admin\BimbinganRekapController;
 use App\Http\Controllers\DataRekapController;
 use App\Http\Controllers\Admin\AlokasiPPL;
 use App\Http\Controllers\Admin\CamatKeuchikController;
@@ -130,6 +131,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/classroom-kpm/tugas/add', [AdminClassroomController::class, 'tugas_add']);
     Route::get('/admin/classroom-kpm/tugas/detail/{id}', [AdminClassroomController::class, 'tugas_edit']);
     Route::get('/admin/classroom-ppl/student-score', [AdminClassroomController::class, 'nilaiPPL']);
+    Route::get('/admin/classroom/bimbingan', [BimbinganRekapController::class, 'index']);
 
     // Data
     Route::get('/admin/daftarprodi', [ProdiController::class, 'show'])->name("admin.daftarprodi");
@@ -291,6 +293,8 @@ Route::middleware(['auth', 'user', 'verified'])->group(function () {
 // })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::get('/', [MahasiswaProfilController::class, 'default']);
+
+Route::get('/maintenance', fn () => Inertia::render('Maintenance'))->name('maintenance');
 
 
 Route::get('/pw', [testcontroller::class, 'index'])->middleware(['auth', 'admin'])->name('index');

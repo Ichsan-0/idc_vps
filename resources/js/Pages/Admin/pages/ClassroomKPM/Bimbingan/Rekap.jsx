@@ -5,7 +5,7 @@ import PageBreadcrumb from "@/Components/PageBreadcrumb";
 import Card from "@/Components/Card";
 import BimbinganRekapTable from "@/Components/AdminNew/Tables/BimbinganRekapTable";
 
-const Rekap = ({ base_url, flash }) => {
+const Rekap = ({ base_url, flash, gelombang_list = [] }) => {
     return (
         <AdminLayout>
             <Head title="Rekap Bimbingan" />
@@ -16,7 +16,11 @@ const Rekap = ({ base_url, flash }) => {
                     home="/admin/dashboard"
                 />
                 <Card title="Rekap Isi Bimbingan Mahasiswa">
-                    <BimbinganRekapTable base_url={base_url} flash={flash} />
+                    <BimbinganRekapTable
+                        base_url={base_url}
+                        flash={flash}
+                        gelombangList={gelombang_list}
+                    />
                 </Card>
             </div>
         </AdminLayout>

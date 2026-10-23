@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Exports\BimbinganRekapExport;
 use App\Http\Controllers\Controller;
+use App\Models\Gelombang;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +17,11 @@ class BimbinganRekapController extends Controller
     {
         return Inertia::render('Admin/pages/ClassroomKPM/Bimbingan/Rekap', [
             'base_url' => url('/'),
+            'gelombang_list' => Gelombang::orderByDesc('id')->get([
+                'id',
+                'name',
+                'tahun',
+            ]),
         ]);
     }
 
@@ -24,8 +30,9 @@ class BimbinganRekapController extends Controller
         $search = trim((string) $request->query('search_key', ''));
         $tipe = $request->query('tipe');
         $status = $request->query('status');
+        $idGelombang = $request->query('id_gelombang');
 
-        $statsRows = $this->buildBaseQuery($search, $tipe)
+        $statsRows = $this->buildBaseQuery($search, $tipe, $idGelombang)
             ->select('bimbingan_tbl.status', DB::raw('COUNT(*) as total'))
             ->groupBy('bimbingan_tbl.status')
             ->pluck('total', 'status');
@@ -37,7 +44,7 @@ class BimbinganRekapController extends Controller
             'rejected' => (int) ($statsRows['rejected'] ?? 0),
         ];
 
-        $paginator = $this->selectColumns($this->buildBaseQuery($search, $tipe))
+        $paginator = $this->selectColumns($this->buildBaseQuery($search, $tipe, $idGelombang))
             ->when(
                 in_array($status, ['approved', 'pending', 'rejected'], true),
                 fn ($builder) => $builder->where('bimbingan_tbl.status', $status)
@@ -68,8 +75,9 @@ class BimbinganRekapController extends Controller
         $search = trim((string) $request->input('search_key', ''));
         $tipe = $request->input('tipe');
         $status = $request->input('status');
+        $idGelombang = $request->input('id_gelombang');
 
-        $query = $this->selectColumns($this->buildBaseQuery($search, $tipe))
+        $query = $this->selectColumns($this->buildBaseQuery($search, $tipe, $idGelombang))
             ->when(
                 in_array($status, ['approved', 'pending', 'rejected'], true),
                 fn ($builder) => $builder->where('bimbingan_tbl.status', $status)
@@ -77,12 +85,21 @@ class BimbinganRekapController extends Controller
             ->orderByDesc('bimbingan_tbl.tanggal')
             ->orderByDesc('bimbingan_tbl.id');
 
-        $filename = 'rekap_bimbingan_' . now()->format('Ymd_His') . '.xlsx';
+        $gelombangLabel = !empty($idGelombang)
+            ? Gelombang::where('id', $idGelombang)->value('name')
+            : null;
+
+        $filename = 'rekap_bimbingan_'
+            . ($gelombangLabel
+                ? preg_replace('/[^A-Za-z0-9]+/', '_', $gelombangLabel) . '_'
+                : '')
+            . now()->format('Ymd_His')
+            . '.xlsx';
 
         return Excel::download(new BimbinganRekapExport($query), $filename);
     }
 
-    private function buildBaseQuery(string $search, ?string $tipe)
+    private function buildBaseQuery(string $search, ?string $tipe, $idGelombang = null)
     {
         $query = DB::table('bimbingan_tbl')
             ->leftJoin('users as mhs', 'bimbingan_tbl.username_mahasiswa', '=', 'mhs.username')
@@ -98,6 +115,13 @@ class BimbinganRekapController extends Controller
 
         if (in_array($tipe, ['kpm', 'ppl'], true)) {
             $query->where('bimbingan_tbl.tipe', $tipe);
+        }
+
+        if (!empty($idGelombang)) {
+            $query->where(function ($subQuery) use ($idGelombang) {
+                $subQuery->where('tkpm.id_gelombang', $idGelombang)
+                    ->orWhere('sp.id_gelombang', $idGelombang);
+            });
         }
 
         if ($search !== '') {
@@ -133,7 +157,14 @@ class BimbinganRekapController extends Controller
             mhs.name as nama_mahasiswa,
             sup.name as nama_supervisor,
             tkpm.name as nama_tempat_kpm,
-            sp.name as nama_sekolah'
+            sp.name as nama_sekolah,
+            COALESCE(tkpm.id_gelombang, sp.id_gelombang) as id_gelombang,
+            (
+                SELECT g.name
+                FROM gelombang_tbl g
+                WHERE g.id = COALESCE(tkpm.id_gelombang, sp.id_gelombang)
+                LIMIT 1
+            ) as nama_gelombang'
         );
     }
 }

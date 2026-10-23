@@ -81,13 +81,13 @@ const StatusBadge = ({ status }) => {
     );
 };
 
-const FilterSelect = ({ value, onChange, children, label }) => (
-    <div className="relative">
+const FilterSelect = ({ value, onChange, children, label, className = "" }) => (
+    <div className={`relative ${className}`}>
         <select
             value={value}
             onChange={onChange}
             aria-label={label}
-            className="h-10 w-full cursor-pointer appearance-none rounded-xl border border-slate-200 bg-white pl-3.5 pr-9 text-sm font-medium text-slate-700 shadow-sm outline-none transition focus:border-brand-400 focus:ring-4 focus:ring-brand-100 sm:w-auto"
+            className="h-10 w-full cursor-pointer appearance-none rounded-xl border border-slate-200 bg-white pl-3.5 pr-9 text-sm font-medium text-slate-700 shadow-sm outline-none transition focus:border-brand-400 focus:ring-4 focus:ring-brand-100"
         >
             {children}
         </select>
@@ -95,7 +95,11 @@ const FilterSelect = ({ value, onChange, children, label }) => (
     </div>
 );
 
-export default function BimbinganRekapTable({ base_url = "", flash }) {
+export default function BimbinganRekapTable({
+    base_url = "",
+    flash,
+    gelombangList = [],
+}) {
     const [data, setData] = useState({
         data: [],
         total: 0,
@@ -116,6 +120,7 @@ export default function BimbinganRekapTable({ base_url = "", flash }) {
     const [searchKey, setSearchKey] = useState("");
     const [tipe, setTipe] = useState("all");
     const [status, setStatus] = useState("all");
+    const [selectedGelombang, setSelectedGelombang] = useState("all");
     const [currentPage, setCurrentPage] = useState(1);
     const [expandedId, setExpandedId] = useState(null);
     const [exportLoading, setExportLoading] = useState(false);
@@ -164,6 +169,10 @@ export default function BimbinganRekapTable({ base_url = "", flash }) {
                         search_key: searchKey,
                         tipe: tipe === "all" ? undefined : tipe,
                         status: status === "all" ? undefined : status,
+                        id_gelombang:
+                            selectedGelombang === "all"
+                                ? undefined
+                                : selectedGelombang,
                     },
                 }
             );
@@ -200,7 +209,7 @@ export default function BimbinganRekapTable({ base_url = "", flash }) {
 
     useEffect(() => {
         fetchData();
-    }, [currentPage, searchKey, tipe, status]);
+    }, [currentPage, searchKey, tipe, status, selectedGelombang]);
 
     const exportExcel = async () => {
         setExportLoading(true);
@@ -212,6 +221,10 @@ export default function BimbinganRekapTable({ base_url = "", flash }) {
                     search_key: searchKey,
                     tipe: tipe === "all" ? null : tipe,
                     status: status === "all" ? null : status,
+                    id_gelombang:
+                        selectedGelombang === "all"
+                            ? null
+                            : selectedGelombang,
                 },
                 filename: "rekap_bimbingan.xlsx",
             });
@@ -343,9 +356,9 @@ export default function BimbinganRekapTable({ base_url = "", flash }) {
             </div>
 
             {/* Toolbar */}
-            <div className="flex flex-col gap-3 pb-4 xl:flex-row xl:items-center xl:justify-between">
-                <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
-                    <div className="relative w-full sm:max-w-sm">
+            <div className="flex flex-col gap-3 pb-4 2xl:flex-row 2xl:items-center 2xl:justify-between">
+                <div className="flex flex-1 flex-col gap-3 xl:flex-row xl:items-center">
+                    <div className="relative w-full shrink-0 xl:w-[300px]">
                         <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                         <input
                             value={searchInput}
@@ -367,8 +380,26 @@ export default function BimbinganRekapTable({ base_url = "", flash }) {
                         )}
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2 xl:flex-nowrap">
                         <FilterSelect
+                            className="w-full shrink-0 sm:w-[200px]"
+                            label="Filter tahun ajaran"
+                            value={selectedGelombang}
+                            onChange={(event) => {
+                                setSelectedGelombang(event.target.value);
+                                setCurrentPage(1);
+                            }}
+                        >
+                            <option value="all">Semua tahun ajaran</option>
+                            {gelombangList.map((gelombang) => (
+                                <option key={gelombang.id} value={gelombang.id}>
+                                    {gelombang.name}
+                                </option>
+                            ))}
+                        </FilterSelect>
+
+                        <FilterSelect
+                            className="w-full shrink-0 sm:w-[150px]"
                             label="Filter kegiatan"
                             value={tipe}
                             onChange={(event) => {
@@ -382,6 +413,7 @@ export default function BimbinganRekapTable({ base_url = "", flash }) {
                         </FilterSelect>
 
                         <FilterSelect
+                            className="w-full shrink-0 sm:w-[170px]"
                             label="Filter status"
                             value={status}
                             onChange={(event) => {
@@ -396,14 +428,14 @@ export default function BimbinganRekapTable({ base_url = "", flash }) {
                         </FilterSelect>
                     </div>
 
-                    <span className="text-xs font-medium text-slate-500">
+                    <span className="shrink-0 whitespace-nowrap text-xs font-medium text-slate-500">
                         {loading
                             ? "Memuat data..."
                             : `${data.total.toLocaleString()} bimbingan`}
                     </span>
                 </div>
 
-                <div className="flex items-center gap-2 self-start xl:self-auto">
+                <div className="flex items-center gap-2 self-end 2xl:self-auto">
                     <button
                         type="button"
                         onClick={fetchData}
@@ -450,7 +482,7 @@ export default function BimbinganRekapTable({ base_url = "", flash }) {
             {/* Table */}
             <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
                 <div className="w-full overflow-x-auto">
-                    <table className="w-full min-w-[1050px] text-left text-sm text-slate-600">
+                    <table className="w-full min-w-[1180px] text-left text-sm text-slate-600">
                         <thead className="border-b border-slate-100 bg-slate-50/80 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
                             <tr>
                                 <th className="w-16 px-4 py-3.5 text-center">
@@ -460,6 +492,9 @@ export default function BimbinganRekapTable({ base_url = "", flash }) {
                                     Mahasiswa
                                 </th>
                                 <th className="px-4 py-3.5">Kegiatan</th>
+                                <th className="min-w-[150px] px-4 py-3.5">
+                                    Tahun Ajaran
+                                </th>
                                 <th className="min-w-[160px] px-4 py-3.5">
                                     Kelas / Tempat
                                 </th>
@@ -481,7 +516,7 @@ export default function BimbinganRekapTable({ base_url = "", flash }) {
                             {loading ? (
                                 [...Array(6)].map((_, rowIndex) => (
                                     <tr key={rowIndex}>
-                                        {[...Array(9)].map((_, cellIndex) => (
+                                        {[...Array(10)].map((_, cellIndex) => (
                                             <td
                                                 key={cellIndex}
                                                 className="px-4 py-4"
@@ -551,6 +586,13 @@ export default function BimbinganRekapTable({ base_url = "", flash }) {
                                                     </span>
                                                 </td>
 
+                                                <td className="px-4 py-4">
+                                                    <span className="inline-flex rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-600">
+                                                        {item.nama_gelombang ||
+                                                            "-"}
+                                                    </span>
+                                                </td>
+
                                                 <td className="px-4 py-4 text-slate-600">
                                                     {item.nama_kelas || "-"}
                                                 </td>
@@ -614,7 +656,7 @@ export default function BimbinganRekapTable({ base_url = "", flash }) {
                                             {isExpanded && (
                                                 <tr>
                                                     <td
-                                                        colSpan={9}
+                                                        colSpan={10}
                                                         className="bg-slate-50/60 px-4 pb-5 pt-1"
                                                     >
                                                         <div className="ml-16 grid gap-4 rounded-xl border border-slate-200 bg-white p-4 lg:grid-cols-2">
@@ -676,7 +718,7 @@ export default function BimbinganRekapTable({ base_url = "", flash }) {
                             ) : (
                                 <tr>
                                     <td
-                                        colSpan={9}
+                                        colSpan={10}
                                         className="px-4 py-14 text-center"
                                     >
                                         <div className="flex flex-col items-center justify-center text-slate-400">

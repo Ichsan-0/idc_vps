@@ -82,39 +82,103 @@ CustomTabPanel.propTypes = {
 const theme = createTheme({
     palette: {
         primary: {
-            main: "#008a01",
-            light: "#66b967",
-            dark: "#006e01",
+            main: "#06359f",
+            light: "#3b6ad4",
+            dark: "#042574",
             contrastText: "#fff",
         },
         secondary: {
-            main: "#1976d2",
-            light: "#42a5f5",
-            dark: "#1565c0",
+            main: "#0f766e",
+            light: "#2dd4bf",
+            dark: "#115e59",
         },
         success: {
-            main: "#2e7d32",
-            light: "#4caf50",
+            main: "#059669",
+            light: "#34d399",
         },
         warning: {
-            main: "#ed6c02",
-            light: "#ff9800",
+            main: "#d97706",
+            light: "#fbbf24",
+        },
+        error: {
+            main: "#dc2626",
+            light: "#f87171",
+        },
+        info: {
+            main: "#0284c7",
+        },
+        background: {
+            default: "#f8fafc",
+            paper: "#ffffff",
+        },
+        text: {
+            primary: "#0f172a",
+            secondary: "#64748b",
         },
     },
     typography: {
-        fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+        fontFamily: '"Outfit", "Inter", "Roboto", "Helvetica", "Arial", sans-serif',
         h4: {
-            fontWeight: 700,
+            fontWeight: 800,
+            letterSpacing: "-0.02em",
         },
         h5: {
-            fontWeight: 600,
+            fontWeight: 700,
         },
         h6: {
+            fontWeight: 700,
+        },
+        button: {
+            textTransform: "none",
             fontWeight: 600,
         },
     },
     shape: {
-        borderRadius: 12,
+        borderRadius: 14,
+    },
+    components: {
+        MuiCard: {
+            styleOverrides: {
+                root: {
+                    borderRadius: 20,
+                    border: "1px solid #e2e8f0",
+                    boxShadow: "0 1px 2px rgba(16,24,40,0.04)",
+                    backgroundImage: "none",
+                },
+            },
+        },
+        MuiPaper: {
+            styleOverrides: {
+                root: {
+                    backgroundImage: "none",
+                },
+            },
+        },
+        MuiOutlinedInput: {
+            styleOverrides: {
+                root: {
+                    borderRadius: 12,
+                    backgroundColor: "#ffffff",
+                },
+            },
+        },
+        MuiButton: {
+            styleOverrides: {
+                root: {
+                    borderRadius: 12,
+                    textTransform: "none",
+                    fontWeight: 600,
+                },
+            },
+        },
+        MuiTab: {
+            styleOverrides: {
+                root: {
+                    textTransform: "none",
+                    fontWeight: 600,
+                },
+            },
+        },
     },
 });
 
@@ -1346,6 +1410,36 @@ const Profil = ({
         );
     };
 
+    const profileStatus = mahasiswa?.data_mahasiswa?.status;
+    const profileStatusMap = {
+        submitted: {
+            label: "Sedang Direview",
+            className: "bg-amber-50 text-amber-700 ring-amber-200",
+        },
+        rejected: {
+            label: "Ditolak",
+            className: "bg-rose-50 text-rose-700 ring-rose-200",
+        },
+        accepted: {
+            label: "Diterima",
+            className: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+        },
+        revisi: {
+            label: "Perlu Revisi",
+            className: "bg-amber-50 text-amber-700 ring-amber-200",
+        },
+    };
+    const profileStatusInfo = profileStatusMap[profileStatus] ?? {
+        label: "Lengkapi Profil",
+        className: "bg-rose-50 text-rose-700 ring-rose-200",
+    };
+    const initialName = (name || "Mahasiswa")
+        .split(" ")
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part.charAt(0).toUpperCase())
+        .join("");
+
     return (
         <ThemeProvider theme={theme}>
             <Head title="Profil Mahasiswa" />
@@ -1584,60 +1678,102 @@ const Profil = ({
                 </Box>
             </Modal>
 
-            <main className="flex text-gray-600 justify-center flex-col items-center w-full px-4 md:px-6 lg:px-8 bg-gray-50 min-h-screen pt-20 pb-10">
+            <main className="flex min-h-screen w-full flex-col items-center justify-center bg-slate-50 px-4 pb-24 pt-20 text-slate-600 md:px-6 lg:px-8">
                 <div className="w-full max-w-6xl">
 
-                    {/* Header */}
                     {/* Link Grup WA */}
                     {link_grup && (
-                        <Paper elevation={0} sx={{ mb: 3, p: 3, borderRadius: 3, border: "1px solid", borderColor: "success.light", borderLeft: "6px solid", borderLeftColor: "success.main", backgroundColor: "#f0fdf4" }}>
-                            <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, alignItems: "center", justifyContent: "space-between", gap: 2 }}>
-                                <Box>
-                                    <Typography variant="h6" sx={{ fontWeight: 600, color: "success.main", display: "flex", alignItems: "center", gap: 1 }}>
-                                        <FaWhatsapp style={{ fontSize: "1.4rem" }} /> Grup WhatsApp
-                                    </Typography>
-                                    <Typography variant="body2" color="text.secondary">
-                                        Silakan bergabung ke grup WhatsApp untuk koordinasi dan informasi lebih lanjut.
-                                    </Typography>
-                                </Box>
-                                <Button component="a" href={link_grup} target="_blank" rel="noopener noreferrer" variant="contained"
-                                    startIcon={<FaWhatsapp />}
-                                    sx={{ bgcolor: "success.main", "&:hover": { bgcolor: "success.dark" }, fontWeight: 600, px: 3, py: 1.5, borderRadius: 2, whiteSpace: "nowrap" }}>
+                        <div className="mb-4 overflow-hidden rounded-3xl border border-emerald-200 bg-gradient-to-r from-emerald-50 to-white p-4 sm:p-5">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="flex items-start gap-3">
+                                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow-sm shadow-emerald-500/30">
+                                        <FaWhatsapp style={{ fontSize: "1.35rem" }} />
+                                    </span>
+                                    <div>
+                                        <h2 className="text-sm font-bold text-emerald-900">
+                                            Grup WhatsApp
+                                        </h2>
+                                        <p className="mt-0.5 text-xs leading-relaxed text-emerald-700/80">
+                                            Bergabung ke grup WhatsApp untuk
+                                            koordinasi dan informasi terbaru.
+                                        </p>
+                                    </div>
+                                </div>
+                                <a
+                                    href={link_grup}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+                                >
+                                    <FaWhatsapp />
                                     Gabung Grup
-                                </Button>
-                            </Box>
-                        </Paper>
+                                </a>
+                            </div>
+                        </div>
                     )}
-                    <Box sx={{ mb: 4 }}>
-                        <Paper elevation={0} sx={{ p: 4, borderRadius: 3, background: "#ffffff", border: "1px solid #e5e7eb" }}>
-                            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
-                                <Box>
-                                    <Typography variant="h4" gutterBottom sx={{ fontWeight: 700 }}>Profil Mahasiswa</Typography>
-                                    <Typography variant="body1" sx={{ opacity: 0.8, maxWidth: "600px" }}>
-                                        Lengkapi dan perbarui data profil Anda. Data yang bersumber dari SIAKAD bersifat <strong>read-only</strong> dan hanya dapat diubah melalui sistem akademik.
-                                    </Typography>
-                                </Box>
-                                {/* Status Badge */}
-                                {(() => {
-                                    const statusConfig = {
-                                        submitted: { label: "Sedang Direview", color: "#ed6c02" },
-                                        rejected: { label: "Ditolak", color: "#d32f2f" },
-                                        accepted: { label: "Diterima ✓", color: "#2e7d32" },
-                                        revisi: { label: "Perlu Revisi", color: "#ed6c02" },
-                                    };
-                                    const cfg = statusConfig[mahasiswa?.data_mahasiswa?.status];
-                                    return cfg ? (
-                                        <Chip
-                                            label={cfg.label}
-                                            sx={{ fontWeight: 700, fontSize: "0.875rem", height: 36, px: 1, bgcolor: cfg.color, color: "#fff" }}
-                                        />
-                                    ) : (
-                                        <Chip label="Lengkapi Profil" sx={{ fontWeight: 700, fontSize: "0.875rem", height: 36, px: 1, bgcolor: "#d32f2f", color: "#fff" }} />
-                                    );
-                                })()}
-                            </Box>
-                        </Paper>
-                    </Box>
+                    <div className="mb-5 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+                        <div className="relative overflow-hidden bg-gradient-to-br from-[#06359f] via-[#06359f] to-[#0b7a63] p-6 text-white sm:p-8">
+                            <div className="pointer-events-none absolute -right-10 -top-16 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
+                            <div className="pointer-events-none absolute -bottom-20 left-1/3 h-56 w-56 rounded-full bg-emerald-300/10 blur-3xl" />
+
+                            <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="flex items-center gap-4">
+                                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/15 text-2xl font-extrabold ring-1 ring-inset ring-white/25">
+                                        {initialName}
+                                    </div>
+                                    <div>
+                                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/60">
+                                            Profil Mahasiswa
+                                        </p>
+                                        <h1 className="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl">
+                                            {name || "Mahasiswa"}
+                                        </h1>
+                                        <p className="mt-1 text-sm text-white/75">
+                                            {nim} · {prodi?.name || "Program Studi"}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <span
+                                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold ring-1 ring-inset ${profileStatusInfo.className}`}
+                                    >
+                                        {profileStatusInfo.label}
+                                    </span>
+                                    <span className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/85 ring-1 ring-inset ring-white/15">
+                                        {clusterKegiatan || "Cluster belum diisi"}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 divide-x divide-slate-100 sm:grid-cols-4">
+                            {[
+                                { label: "Semester", value: semester || "-" },
+                                { label: "IPK", value: IPK || "-" },
+                                {
+                                    label: "Micro Teaching",
+                                    value: nilaiMicro || "-",
+                                },
+                                {
+                                    label: "Status",
+                                    value: profileStatusInfo.label,
+                                },
+                            ].map((item) => (
+                                <div
+                                    key={item.label}
+                                    className="px-4 py-4 sm:px-5"
+                                >
+                                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                                        {item.label}
+                                    </p>
+                                    <p className="mt-1 truncate text-sm font-bold text-slate-800">
+                                        {item.value}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
 
                     {/* Alert Revisi / Ditolak */}
                     {mahasiswa?.data_mahasiswa?.status === "revisi" && (
@@ -1665,9 +1801,12 @@ const Profil = ({
                                 {/* Card: Data Akun */}
                                 <Card elevation={0} sx={{ borderRadius: 3, border: "1px solid #e5e7eb", mb: 3 }}>
                                     <CardContent className="space-y-6">
-                                        <Typography variant="h6" sx={{ borderBottom: "2px solid #008a01", pb: 1, width: "fit-content" }}>
-                                            Data Akun
-                                        </Typography>
+                                        <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+                                            <span className="h-4 w-1 rounded-full bg-[#06359f]" />
+                                            <h2 className="text-sm font-bold text-slate-800">
+                                                Data Akun
+                                            </h2>
+                                        </div>
 
                                         <Grid container spacing={2}>
                                             {/* Username (NIM) — readonly */}
@@ -1714,9 +1853,12 @@ const Profil = ({
                                 {/* Card: Data Pribadi & Akademik */}
                                 <Card elevation={0} sx={{ borderRadius: 3, border: "1px solid #e5e7eb", mb: 3 }}>
                                     <CardContent className="space-y-6">
-                                        <Typography variant="h6" sx={{ borderBottom: "2px solid #008a01", pb: 1, width: "fit-content" }}>
-                                            Data Pribadi &amp; Akademik
-                                        </Typography>
+                                        <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+                                            <span className="h-4 w-1 rounded-full bg-[#06359f]" />
+                                            <h2 className="text-sm font-bold text-slate-800">
+                                                Data Pribadi &amp; Akademik
+                                            </h2>
+                                        </div>
 
                                         <Grid container spacing={2}>
                                             {/* Nama — readonly dari SIAKAD */}
@@ -1800,9 +1942,12 @@ const Profil = ({
                                 {/* Card: Informasi Alamat */}
                                 <Card elevation={0} sx={{ borderRadius: 3, border: "1px solid #e5e7eb", mb: 3 }}>
                                     <CardContent>
-                                        <Typography variant="h6" sx={{ borderBottom: "2px solid #008a01", pb: 1, width: "fit-content", mb: 2 }}>
-                                            Informasi Alamat
-                                        </Typography>
+                                        <div className="mb-2 flex items-center gap-2 border-b border-slate-100 pb-3">
+                                            <span className="h-4 w-1 rounded-full bg-[#06359f]" />
+                                            <h2 className="text-sm font-bold text-slate-800">
+                                                Informasi Alamat
+                                            </h2>
+                                        </div>
 
                                         {/* Alamat Lengkap */}
                                         <Box sx={{ mb: 2 }}>
@@ -1935,9 +2080,19 @@ const Profil = ({
                                 {/* Info Akademik Summary — readonly card */}
                                 <Card elevation={0} sx={{ borderRadius: 3, border: "1px solid #e5e7eb", mb: 3, bgcolor: "#f8fffe" }}>
                                     <CardContent>
-                                        <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: "primary.main" }}>
-                                            📋 Ringkasan Akademik
-                                        </Typography>
+                                        <div className="mb-4 flex items-center gap-3 border-b border-slate-100 pb-3">
+                                            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-[#06359f]">
+                                                <AssignmentInd sx={{ fontSize: 18 }} />
+                                            </span>
+                                            <div>
+                                                <h2 className="text-sm font-bold text-slate-800">
+                                                    Ringkasan Akademik
+                                                </h2>
+                                                <p className="text-[11px] text-slate-500">
+                                                    Data ringkas profil Anda
+                                                </p>
+                                            </div>
+                                        </div>
                                         <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
                                             {[
                                                 {
@@ -1960,7 +2115,12 @@ const Profil = ({
                                 </Card>
 
                                 {/* Dokumen Pendukung */}
-                                <Typography variant="h6" className="mb-3 px-1">Dokumen Pendukung</Typography>
+                                <div className="mb-3 flex items-center gap-2 px-1">
+                                    <span className="h-4 w-1 rounded-full bg-[#06359f]" />
+                                    <h2 className="text-sm font-bold text-slate-800">
+                                        Dokumen Pendukung
+                                    </h2>
+                                </div>
 
                                 {/* Transkrip Nilai */}
                                 <Card variant="outlined" sx={{ mb: 2, borderColor: "divider" }}>

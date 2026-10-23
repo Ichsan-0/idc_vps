@@ -65,7 +65,7 @@ class ClassroomPPLController extends Controller
                 m_tbl.nilai_pamong,
                 m_tbl.link_instrument_penilaian,
                 (SELECT tps.link FROM task_ppl_submission tps WHERE tps.username_mahasiswa = lamaran_ppl_tbl.username_mahasiswa AND tps.id_kelas = s_tbl.id ORDER BY tps.id DESC LIMIT 1) AS link_laporan,
-                CASE WHEN m_tbl.nilai_supervisor_ppl IS NULL AND m_tbl.nilai_pamong IS NULL AND m_tbl.link_instrument_penilaian IS NULL THEN "Belum Dinilai" ELSE "Sudah Dinilai" END AS status
+                CASE WHEN m_tbl.nilai_supervisor_ppl IS NOT NULL AND m_tbl.nilai_pamong IS NOT NULL THEN "Sudah Dinilai" ELSE "Belum Dinilai" END AS status
                 '
             )->get();
 
